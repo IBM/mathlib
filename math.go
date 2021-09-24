@@ -22,7 +22,6 @@ type CurveID int
 
 const (
 	FP256BN_AMCL CurveID = iota
-	BN256
 	BN254
 	FP256BN_AMCL_MIRACL
 )
@@ -36,15 +35,6 @@ var Curves []*Curve = []*Curve{
 		GroupOrder: &Zr{zr: (&amcl.Fp256bn{}).GroupOrder(), curveID: FP256BN_AMCL},
 		FieldBytes: (&amcl.Fp256bn{}).FieldBytes(),
 		curveID:    FP256BN_AMCL,
-	},
-	{
-		c:          &gurvy.Bn256{},
-		GenG1:      &G1{g1: (&gurvy.Bn256{}).GenG1(), curveID: BN256},
-		GenG2:      &G2{g2: (&gurvy.Bn256{}).GenG2(), curveID: BN256},
-		GenGt:      &Gt{gt: (&gurvy.Bn256{}).GenGt(), curveID: BN256},
-		GroupOrder: &Zr{zr: (&gurvy.Bn256{}).GroupOrder(), curveID: BN256},
-		FieldBytes: (&gurvy.Bn256{}).FieldBytes(),
-		curveID:    BN256,
 	},
 	{
 		c:          &gurvy.Bn254{},
