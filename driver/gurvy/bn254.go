@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"regexp"
 	"strings"
 
 	"github.com/IBM/mathlib/driver"
@@ -126,6 +127,8 @@ func (g *bn254G1) Sub(a driver.G1) {
 func (g *bn254G1) IsInfinity() bool {
 	return g.G1Affine.IsInfinity()
 }
+
+var g1StrRegexp *regexp.Regexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\),$`)
 
 func (g *bn254G1) String() string {
 	rawstr := g.G1Affine.String()
