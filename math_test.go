@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"math/rand"
 	"testing"
 	"time"
@@ -122,6 +123,29 @@ func runG2Test(t *testing.T, c *Curve) {
 	g4.Add(g5)
 	assert.True(t, g4.Equals(g6))
 	assert.True(t, g5.Equals(c.GenG2.Mul(c.NewZrFromInt(23))))
+}
+
+func runPowTest(t *testing.T, c *Curve) {
+	rand.Seed(time.Now().Unix())
+
+	a := big.NewInt(int64(rand.Int31()))
+	b := big.NewInt(int64(rand.Int31()))
+	ab := big.NewInt(0).Mul(a, b)
+
+	x := c.NewZrFromInt(a.Int64())
+	y := c.NewZrFromInt(b.Int64())
+	xy := c.NewZrFromInt(ab.Int64())
+
+	g1x := c.GenG1.Mul(x)
+	g2y := c.GenG2.Mul(y)
+	expected := c.Pairing(g2y, g1x)
+	expected = c.FExp(expected)
+
+	actual := c.Pairing(c.GenG2, c.GenG1)
+	actual = c.FExp(actual)
+	actual.Exp(xy)
+
+	assert.True(t, expected.Equals(actual))
 }
 
 func runPairingTest(t *testing.T, c *Curve) {
@@ -415,5 +439,6 @@ func TestCurves(t *testing.T) {
 		runDHTestG2(t, curve)
 		runCopyCloneTest(t, curve)
 		runJsonMarshaler(t, curve)
+		runPowTest(t, curve)
 	}
 }

@@ -220,6 +220,10 @@ func (g *Gt) Mul(a *Gt) {
 	g.gt.Mul(a.gt)
 }
 
+func (g *Gt) Exp(z *Zr) {
+	g.gt.Exp(z.zr)
+}
+
 func (g *Gt) IsUnity() bool {
 	return g.gt.IsUnity()
 }
