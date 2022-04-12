@@ -81,4 +81,5 @@ type Gt interface {
 	IsUnity() bool
 	ToString() string
 	Bytes() []byte
+	Exp(Zr)
 }

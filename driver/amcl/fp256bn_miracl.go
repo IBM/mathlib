@@ -73,6 +73,10 @@ type fp256bnMiraclGt struct {
 	*FP256BN.FP12
 }
 
+func (a *fp256bnMiraclGt) Exp(x driver.Zr) {
+	a.FP12.Pow(x.(*fp256bnMiraclZr).BIG)
+}
+
 func (a *fp256bnMiraclGt) Equals(b driver.Gt) bool {
 	return a.FP12.Equals(b.(*fp256bnMiraclGt).FP12)
 }
