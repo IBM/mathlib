@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"math/big"
 	"math/rand"
 	"testing"
 	"time"
@@ -126,26 +125,29 @@ func runG2Test(t *testing.T, c *Curve) {
 }
 
 func runPowTest(t *testing.T, c *Curve) {
-	rand.Seed(time.Now().Unix())
+	rng, err := c.Rand()
+	assert.NoError(t, err)
 
-	a := big.NewInt(int64(rand.Int31()))
-	b := big.NewInt(int64(rand.Int31()))
-	ab := big.NewInt(0).Mul(a, b)
+	a := c.NewRandomZr(rng)
+	b := c.NewRandomZr(rng)
 
-	x := c.NewZrFromInt(a.Int64())
-	y := c.NewZrFromInt(b.Int64())
-	xy := c.NewZrFromInt(ab.Int64())
+	gta := c.GenGt.Exp(a)
+	gtb := c.GenGt.Exp(b)
+	gtab := gta.Exp(b)
+	gtba := gtb.Exp(a)
 
-	g1x := c.GenG1.Mul(x)
-	g2y := c.GenG2.Mul(y)
-	expected := c.Pairing(g2y, g1x)
-	expected = c.FExp(expected)
+	assert.True(t, gtab.Equals(gtba))
 
-	actual := c.Pairing(c.GenG2, c.GenG1)
-	actual = c.FExp(actual)
-	actual.Exp(xy)
+	g1a := c.GenG1.Mul(a)
+	g2b := c.GenG2.Mul(b)
+	gt := c.Pairing(g2b, g1a)
+	gt = c.FExp(gt)
+	gt1 := c.Pairing(c.GenG2, c.GenG1)
+	gt1 = c.FExp(gt1)
+	gt1 = gt1.Exp(a)
+	gt1 = gt1.Exp(b)
 
-	assert.True(t, expected.Equals(actual))
+	assert.True(t, gt.Equals(gt1))
 }
 
 func runPairingTest(t *testing.T, c *Curve) {
