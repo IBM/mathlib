@@ -74,8 +74,8 @@ type fp256bnGt struct {
 	*FP256BN.FP12
 }
 
-func (a *fp256bnGt) Exp(x driver.Zr) {
-	a.FP12.Pow(x.(*fp256bnZr).BIG)
+func (a *fp256bnGt) Exp(x driver.Zr) driver.Gt {
+	return &fp256bnGt{a.FP12.Pow(x.(*fp256bnZr).BIG)}
 }
 
 func (a *fp256bnGt) Equals(b driver.Gt) bool {

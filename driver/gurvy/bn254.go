@@ -203,8 +203,10 @@ type bn254Gt struct {
 	*bn254.GT
 }
 
-func (g *bn254Gt) Exp(x driver.Zr) {
-	g.GT.Exp(g.GT, *x.(*bn254Zr).Int)
+func (g *bn254Gt) Exp(x driver.Zr) driver.Gt {
+	copy := &bn254.GT{}
+	copy.Set(g.GT)
+	return &bn254Gt{copy.Exp(g.GT, *x.(*bn254Zr).Int)}
 }
 
 func (g *bn254Gt) Equals(a driver.Gt) bool {
