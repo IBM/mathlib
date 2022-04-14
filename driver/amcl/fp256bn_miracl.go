@@ -30,6 +30,11 @@ func (b *fp256bnMiraclZr) Plus(a driver.Zr) driver.Zr {
 	return &fp256bnMiraclZr{b.BIG.Plus(a.(*fp256bnMiraclZr).BIG)}
 }
 
+func (b *fp256bnMiraclZr) Mul(a driver.Zr) driver.Zr {
+	q := FP256BN.NewBIGints(FP256BN.CURVE_Order)
+	return &fp256bnMiraclZr{FP256BN.Modmul(a.(*fp256bnMiraclZr).BIG, b.BIG, q)}
+}
+
 func (b *fp256bnMiraclZr) PowMod(x driver.Zr) driver.Zr {
 	q := FP256BN.NewBIGints(FP256BN.CURVE_Order)
 
