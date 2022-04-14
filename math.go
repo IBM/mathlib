@@ -67,6 +67,10 @@ func (z *Zr) Plus(a *Zr) *Zr {
 	return &Zr{zr: z.zr.Plus(a.zr), curveID: z.curveID}
 }
 
+func (z *Zr) Mul(a *Zr) *Zr {
+	return &Zr{zr: z.zr.Mul(a.zr), curveID: z.curveID}
+}
+
 func (z *Zr) Mod(a *Zr) {
 	z.zr.Mod(a.zr)
 }

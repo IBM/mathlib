@@ -130,6 +130,7 @@ func runPowTest(t *testing.T, c *Curve) {
 
 	a := c.NewRandomZr(rng)
 	b := c.NewRandomZr(rng)
+	ab := a.Mul(b)
 
 	gta := c.GenGt.Exp(a)
 	gtb := c.GenGt.Exp(b)
@@ -148,6 +149,11 @@ func runPowTest(t *testing.T, c *Curve) {
 	gt1 = gt1.Exp(b)
 
 	assert.True(t, gt.Equals(gt1))
+
+	gtab = c.Pairing(c.GenG2, c.GenG1)
+	gtab = c.FExp(gtab)
+	gtab = gtab.Exp(ab)
+	assert.True(t, gtab.Equals(gt))
 }
 
 func runPairingTest(t *testing.T, c *Curve) {
@@ -274,6 +280,55 @@ func runModAddSubNegTest(t *testing.T, c *Curve) {
 	apb := c.ModAdd(a, b, c.GroupOrder)
 	bagain := c.ModSub(apb, a, c.GroupOrder)
 	assert.True(t, bagain.Equals(b))
+}
+
+func runMulTest(t *testing.T, c *Curve) {
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+
+	r := c.NewRandomZr(rng)
+	rInv := r.Copy()
+	rInv.InvModP(c.GroupOrder)
+	assert.True(t, r.Mul(rInv).Equals(c.NewZrFromInt(1)))
+
+	rr := r.Mul(r)   // r^2
+	rrr := rr.Mul(r) // r^3
+	r3 := r.PowMod(c.NewZrFromInt(3))
+	assert.True(t, rrr.Equals(r3))
+}
+
+func runQuadDHTestPairing(t *testing.T, c *Curve) {
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+	x := c.NewRandomZr(rng)
+	y := c.NewRandomZr(rng)
+	z := c.NewRandomZr(rng)
+	w := c.NewRandomZr(rng)
+
+	gx := c.GenG1.Mul(x)
+	gy := c.GenG1.Mul(y)
+	gz := c.GenG2.Mul(z)
+	gw := c.GenG2.Mul(w)
+
+	gyx := c.GenG1.Mul(y.Mul(x))
+	gwz := c.GenG2.Mul(w.Mul(z))
+
+	assert.True(t, gx.Mul(y).Equals(gyx))
+	assert.True(t, gz.Mul(w).Equals(gwz))
+
+	gtwy := c.Pairing(gw, gy)
+	gtwy = c.FExp(gtwy)
+
+	gtxyzw := gtwy.Exp(x).Exp(z)
+
+	gtzx := c.Pairing(gz, gx)
+	c.FExp(gtzx)
+
+	xyzw := x.Mul(y).Mul(z).Mul(w)
+	gt := c.Pairing(c.GenG2, c.GenG1)
+	gt = c.FExp(gt)
+
+	assert.True(t, gtxyzw.Equals(gt.Exp(xyzw)))
 }
 
 func runDHTestG1(t *testing.T, c *Curve) {
@@ -442,5 +497,7 @@ func TestCurves(t *testing.T) {
 		runCopyCloneTest(t, curve)
 		runJsonMarshaler(t, curve)
 		runPowTest(t, curve)
+		runMulTest(t, curve)
+		runQuadDHTestPairing(t, curve)
 	}
 }

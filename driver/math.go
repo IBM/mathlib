@@ -39,6 +39,7 @@ type Curve interface {
 
 type Zr interface {
 	Plus(Zr) Zr
+	Mul(Zr) Zr
 	Mod(Zr)
 	PowMod(Zr) Zr
 	InvModP(Zr)
