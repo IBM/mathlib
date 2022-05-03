@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
@@ -302,47 +303,86 @@ func (b *fp256bnG1) String() string {
 
 /*********************************************************************/
 
+// TODO: Putting a barrier here cause amcl produces a race condition. Remove when concurrent safe solution exists.
+var amclFP256BNMu *sync.Mutex = &sync.Mutex{}
+
 type fp256bnG2 struct {
 	*FP256BN.ECP2
 }
 
 func (e *fp256bnG2) Equals(a driver.G2) bool {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	return e.ECP2.Equals(a.(*fp256bnG2).ECP2)
 }
 
 func (e *fp256bnG2) Clone(a driver.G2) {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	e.ECP2.Copy(a.(*fp256bnG2).ECP2)
 }
 
 func (e *fp256bnG2) Copy() driver.G2 {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	c := FP256BN.NewECP2()
 	c.Copy(e.ECP2)
 	return &fp256bnG2{c}
 }
 
 func (e *fp256bnG2) Add(a driver.G2) {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	e.ECP2.Add(a.(*fp256bnG2).ECP2)
 }
 
 func (e *fp256bnG2) Sub(a driver.G2) {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	e.ECP2.Sub(a.(*fp256bnG2).ECP2)
 }
 
 func (e *fp256bnG2) Mul(a driver.Zr) driver.G2 {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	return &fp256bnG2{e.ECP2.Mul(a.(*fp256bnZr).BIG)}
 }
 
 func (e *fp256bnG2) Affine() {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	e.ECP2.Affine()
 }
 
 func (e *fp256bnG2) Bytes() []byte {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
 	e.ECP2.ToBytes(b)
 	return b
 }
 
 func (b *fp256bnG2) String() string {
+	amclFP256BNMu.Lock()
+	defer func() {
+		amclFP256BNMu.Unlock()
+	}()
 	return b.ECP2.ToString()
 }
 
