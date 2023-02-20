@@ -211,7 +211,7 @@ type bn254Gt struct {
 func (g *bn254Gt) Exp(x driver.Zr) driver.Gt {
 	copy := &bn254.GT{}
 	copy.Set(g.GT)
-	return &bn254Gt{copy.Exp(g.GT, *x.(*bn254Zr).Int)}
+	return &bn254Gt{copy.Exp(*g.GT, x.(*bn254Zr).Int)}
 }
 
 func (g *bn254Gt) Equals(a driver.Gt) bool {
@@ -394,7 +394,7 @@ func (c *Bn254) HashToZr(data []byte) driver.Zr {
 }
 
 func (c *Bn254) HashToG1(data []byte) driver.G1 {
-	g1, err := bn254.HashToCurveG1Svdw(data, []byte{})
+	g1, err := bn254.HashToG1(data, []byte{})
 	if err != nil {
 		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
 	}
