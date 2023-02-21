@@ -133,7 +133,7 @@ func (g *bn254G1) IsInfinity() bool {
 	return g.G1Affine.IsInfinity()
 }
 
-var g1StrRegexp *regexp.Regexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\),$`)
+var g1StrRegexp *regexp.Regexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\)$`)
 
 func (g *bn254G1) String() string {
 	rawstr := g.G1Affine.String()
