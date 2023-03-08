@@ -15,7 +15,6 @@ import (
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
-	"github.com/consensys/gnark-crypto/ecc/bn254/fr"
 	bls12381 "github.com/kilic/bls12-381"
 )
 
@@ -393,14 +392,12 @@ func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
 }
 
 func (c *Bls12_381) NewRandomZr(rng io.Reader) driver.Zr {
-	res := new(big.Int)
-	v := &fr.Element{}
-	_, err := v.SetRandom()
+	res, err := rand.Int(rng, qBig)
 	if err != nil {
 		panic(err)
 	}
 
-	return &bls12_381Zr{v.ToBigIntRegular(res)}
+	return &bls12_381Zr{res}
 }
 
 func (c *Bls12_381) Rand() (io.Reader, error) {
