@@ -20,6 +20,18 @@ import (
 var seed = time.Now().Unix()
 
 func runZrTest(t *testing.T, c *Curve) {
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+
+	// serialising and deserialising negative numbers
+	rr := c.NewRandomZr(rng)
+	rr1 := rr.Copy()
+	rr1.Neg()
+	rr1b := rr1.Bytes()
+	rr11 := c.NewZrFromBytes(rr1b)
+	res := c.ModAdd(rr, rr11, c.GroupOrder)
+	assert.True(t, res.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+
 	assert.True(t, c.NewZrFromInt(35).Plus(c.NewZrFromInt(1)).Equals(c.NewZrFromInt(36)))
 	assert.True(t, c.NewZrFromInt(36).Copy().Equals(c.NewZrFromInt(36)))
 	i := c.NewZrFromInt(5)
@@ -38,12 +50,12 @@ func runZrTest(t *testing.T, c *Curve) {
 	assert.NoError(t, err)
 	assert.Equal(t, i64, i64_)
 
+	i1 := c.NewZrFromInt(i64)
 	i64 = 0 - i64
-	i = c.NewZrFromInt(i64)
-	i64_, err = i.Int()
-	assert.NoError(t, err)
-	assert.Equal(t, i64, i64_)
-
+	i2 := c.NewZrFromInt(i64)
+	i3 := i1.Plus(i2)
+	i3.Mod(c.GroupOrder)
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)))
 	i = c.NewZrFromInt(math.MaxInt64)
 	i = i.Plus(c.NewZrFromInt(math.MaxInt64))
 	i = i.Plus(c.NewZrFromInt(2))
@@ -51,8 +63,6 @@ func runZrTest(t *testing.T, c *Curve) {
 	assert.EqualError(t, err, "out of range")
 
 	// D/H
-	rng, err := c.Rand()
-	assert.NoError(t, err)
 	r1 := c.NewRandomZr(rng)
 	r2 := c.NewRandomZr(rng)
 	r3 := c.NewRandomZr(rng)
@@ -60,12 +70,62 @@ func runZrTest(t *testing.T, c *Curve) {
 	a2 := r1.PowMod(r3).PowMod(r2)
 	assert.True(t, a1.Equals(a2))
 
+	// large negative numbers
+	i1 = c.NewRandomZr(rng)
+	i2 = i1.Copy()
+	i2 = c.ModNeg(i2, c.GroupOrder)
+	i3 = i1.Plus(i2)
+	i3.Mod(c.GroupOrder)
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+
+	// large negative numbers with neg
+	i1 = c.NewRandomZr(rng)
+	i2 = i1.Copy()
+	i2.Neg()
+	i3 = i1.Plus(i2)
+	i3.Mod(c.GroupOrder)
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+
+	// large negative numbers with minus
+	i1 = c.NewRandomZr(rng)
+	i2 = i1.Copy()
+	i3 = i1.Minus(i2)
+	i3.Mod(c.GroupOrder)
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+
 	// Euler's totient
 	assert.True(t, r1.PowMod(c.GroupOrder.Plus(c.NewZrFromInt(-1))).Equals(c.NewZrFromInt(1)), fmt.Sprintf("failed with curve %T", c.c))
+
+	// byte size
+	assert.Len(t, r1.Bytes(), c.ScalarByteSize)
+}
+
+var expectedG1Gens = []string{
+	"(1,2)", // FP256BN_AMCL
+	"(1,2)", // BN254 - in which case 1,2 isn't really the right representation
+	"(1,2)", // FP256BN_AMCL_MIRACL
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381
+	"(81937999373150964239938255573465948239988671502647976594219695644855304257327692006745978603320413799295628339695,241266749859715473739788878240585681733927191168601896383759122102112907357779751001206799952863815012735208165030)",    // BLS12_377
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381_BBS
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381_BBS_GURVY
+}
+
+var expectedModuli = []string{
+	"fffffffffffcf0cd46e5f25eee71a49e0cdc65fb1299921af62d536cd10b500d",
+	"30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001",
+	"fffffffffffcf0cd46e5f25eee71a49e0cdc65fb1299921af62d536cd10b500d",
+	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+	"12ab655e9a2ca55660b44d1e5c37b00159aa76fed00000010a11800000000001",
+	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 }
 
 func runG1Test(t *testing.T, c *Curve) {
-	assert.Equal(t, "(1,2)", c.GenG1.String())
+	assert.Equal(t, expectedG1Gens[c.curveID], c.GenG1.String())
+
+	assert.Equal(t, expectedModuli[c.curveID], c.GroupOrder.String(), fmt.Sprintf("failed with curve %T", c.c))
 
 	g1copy := c.NewG1()
 	g1copy.Clone(c.GenG1)
@@ -96,7 +156,20 @@ func runG1Test(t *testing.T, c *Curve) {
 	g1copy.Sub(c.GenG1)
 	assert.True(t, g1copy.IsInfinity())
 
-	assert.False(t, c.HashToG1([]byte("Amazing Grace (how sweet the sound)")).IsInfinity())
+	GS := c.HashToG1([]byte("Amazing Grace (how sweet the sound)"))
+	assert.False(t, GS.IsInfinity())
+	assert.Len(t, GS.Bytes(), c.G1ByteSize)
+
+	GS = c.HashToG1WithDomain([]byte("it's a heavy metal universe"), []byte("powerplant"))
+	assert.False(t, GS.IsInfinity())
+	assert.Len(t, GS.Bytes(), c.G1ByteSize)
+
+	GS1 := GS.Copy()
+	GS1.Neg()
+	GS1.Add(GS)
+	assert.True(t, GS1.IsInfinity())
+	GS1.Add(c.GenG1)
+	assert.True(t, GS1.Equals(c.GenG1))
 }
 
 func runG2Test(t *testing.T, c *Curve) {
@@ -122,6 +195,14 @@ func runG2Test(t *testing.T, c *Curve) {
 	g4.Add(g5)
 	assert.True(t, g4.Equals(g6))
 	assert.True(t, g5.Equals(c.GenG2.Mul(c.NewZrFromInt(23))))
+
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+
+	a := c.NewRandomZr(rng)
+	p := c.GenG2.Mul(a)
+	assert.Len(t, p.Bytes(), c.G2ByteSize)
+	assert.Len(t, p.Compressed(), c.CompressedG2ByteSize)
 }
 
 func runPowTest(t *testing.T, c *Curve) {
@@ -157,7 +238,9 @@ func runPowTest(t *testing.T, c *Curve) {
 }
 
 func runPairingTest(t *testing.T, c *Curve) {
-	r0 := c.NewZrFromInt(1541)
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+	r0 := c.NewRandomZr(rng)
 	g1r := c.GenG1.Mul(r0)
 	g2r := c.GenG2.Mul(r0)
 	a := c.Pairing(g2r, c.GenG1)
@@ -166,8 +249,6 @@ func runPairingTest(t *testing.T, c *Curve) {
 	b = c.FExp(b)
 	assert.True(t, a.Equals(b))
 
-	rng, err := c.Rand()
-	assert.NoError(t, err)
 	r1 := c.NewRandomZr(rng)
 	r2 := c.NewRandomZr(rng)
 	r3 := c.NewRandomZr(rng)
@@ -237,15 +318,21 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 
 	g1r := c.GenG1.Mul(r)
 	g1rbytes := g1r.Bytes()
+	assert.Len(t, g1rbytes, c.G1ByteSize)
 	g1rback, err := c.NewG1FromBytes(g1rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
+	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
 
 	g2r := c.GenG2.Mul(r)
 	g2rbytes := g2r.Bytes()
+	assert.Len(t, g2rbytes, c.G2ByteSize)
 	g2rback, err := c.NewG2FromBytes(g2rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g2r.Equals(g2rback))
+	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
 
 	g2r = c.GenG2.Mul(r)
 	a := c.Pairing(g2r, c.GenG1)
@@ -264,6 +351,38 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 
 	gtrback, err := c.NewGtFromBytes(nil)
 	assert.Nil(t, gtrback)
+	assert.Error(t, err)
+}
+
+func runToFroCompressedTest(t *testing.T, c *Curve) {
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+	r := c.NewRandomZr(rng)
+
+	g1r := c.GenG1.Mul(r)
+	g1rbytes := g1r.Compressed()
+	assert.Len(t, g1rbytes, c.CompressedG1ByteSize)
+	g1rback, err := c.NewG1FromCompressed(g1rbytes)
+	assert.NoError(t, err)
+	assert.True(t, g1r.Equals(g1rback))
+	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+
+	g2r := c.GenG2.Mul(r)
+	g2rbytes := g2r.Compressed()
+	assert.Len(t, g2rbytes, c.CompressedG2ByteSize)
+	g2rback, err := c.NewG2FromCompressed(g2rbytes)
+	assert.NoError(t, err)
+	assert.True(t, g2r.Equals(g2rback))
+	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+
+	g1rback, err = c.NewG1FromCompressed(nil)
+	assert.Nil(t, g1rback)
+	assert.Error(t, err)
+
+	g2rback, err = c.NewG2FromCompressed(nil)
+	assert.Nil(t, g2rback)
 	assert.Error(t, err)
 }
 
@@ -491,6 +610,7 @@ func TestCurves(t *testing.T) {
 		runRndTest(t, curve)
 		runHashTest(t, curve)
 		runToFroBytesTest(t, curve)
+		runToFroCompressedTest(t, curve)
 		runModAddSubNegTest(t, curve)
 		runDHTestG1(t, curve)
 		runDHTestG2(t, curve)
@@ -500,4 +620,72 @@ func TestCurves(t *testing.T) {
 		runMulTest(t, curve)
 		runQuadDHTestPairing(t, curve)
 	}
+}
+
+func Test381Compat(t *testing.T) {
+	rng, err := Curves[BLS12_381].Rand()
+	assert.NoError(t, err)
+
+	kilic := Curves[BLS12_381]
+	gurvy := Curves[BLS12_381_GURVY]
+
+	rk := kilic.NewRandomZr(rng)
+	rg := gurvy.NewZrFromBytes(rk.Bytes())
+	assert.Equal(t, rk.Bytes(), rg.Bytes())
+
+	g1g := gurvy.GenG1.Mul(rg)
+	g1k := kilic.GenG1.Mul(rk)
+	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
+	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
+
+	g2g := gurvy.GenG2.Mul(rg)
+	g2k := kilic.GenG2.Mul(rk)
+	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
+	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
+
+	gtg := gurvy.GenGt.Exp(rg)
+	gtk := kilic.GenGt.Exp(rk)
+	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
+
+	hg := gurvy.HashToG1([]byte("Chase!"))
+	hk := kilic.HashToG1([]byte("Chase!"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
+
+	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
+}
+
+func Test381BBSCompat(t *testing.T) {
+	rng, err := Curves[BLS12_381_BBS].Rand()
+	assert.NoError(t, err)
+
+	kilic := Curves[BLS12_381_BBS]
+	gurvy := Curves[BLS12_381_BBS_GURVY]
+
+	rk := kilic.NewRandomZr(rng)
+	rg := gurvy.NewZrFromBytes(rk.Bytes())
+	assert.Equal(t, rk.Bytes(), rg.Bytes())
+
+	g1g := gurvy.GenG1.Mul(rg)
+	g1k := kilic.GenG1.Mul(rk)
+	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
+	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
+
+	g2g := gurvy.GenG2.Mul(rg)
+	g2k := kilic.GenG2.Mul(rk)
+	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
+	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
+
+	gtg := gurvy.GenGt.Exp(rg)
+	gtk := kilic.GenGt.Exp(rk)
+	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
+
+	hg := gurvy.HashToG1([]byte("Chase!"))
+	hk := kilic.HashToG1([]byte("Chase!"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
+
+	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
 }
