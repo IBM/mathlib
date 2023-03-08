@@ -64,8 +64,15 @@ func runZrTest(t *testing.T, c *Curve) {
 	assert.True(t, r1.PowMod(c.GroupOrder.Plus(c.NewZrFromInt(-1))).Equals(c.NewZrFromInt(1)), fmt.Sprintf("failed with curve %T", c.c))
 }
 
+var expectedG1Gens = []string{
+	"(1,2)", // FP256BN_AMCL
+	"(1,2)", // BN254 - in which case 1,2 isn't really the right representation
+	"(1,2)", // FP256BN_AMCL_MIRACL
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381
+}
+
 func runG1Test(t *testing.T, c *Curve) {
-	assert.Equal(t, "(1,2)", c.GenG1.String())
+	assert.Equal(t, expectedG1Gens[c.curveID], c.GenG1.String())
 
 	g1copy := c.NewG1()
 	g1copy.Clone(c.GenG1)
@@ -157,7 +164,9 @@ func runPowTest(t *testing.T, c *Curve) {
 }
 
 func runPairingTest(t *testing.T, c *Curve) {
-	r0 := c.NewZrFromInt(1541)
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+	r0 := c.NewRandomZr(rng)
 	g1r := c.GenG1.Mul(r0)
 	g2r := c.GenG2.Mul(r0)
 	a := c.Pairing(g2r, c.GenG1)
@@ -166,8 +175,6 @@ func runPairingTest(t *testing.T, c *Curve) {
 	b = c.FExp(b)
 	assert.True(t, a.Equals(b))
 
-	rng, err := c.Rand()
-	assert.NoError(t, err)
 	r1 := c.NewRandomZr(rng)
 	r2 := c.NewRandomZr(rng)
 	r3 := c.NewRandomZr(rng)

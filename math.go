@@ -15,6 +15,7 @@ import (
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/amcl"
 	"github.com/IBM/mathlib/driver/gurvy"
+	"github.com/IBM/mathlib/driver/kilic"
 	"github.com/pkg/errors"
 )
 
@@ -24,6 +25,7 @@ const (
 	FP256BN_AMCL CurveID = iota
 	BN254
 	FP256BN_AMCL_MIRACL
+	BLS12_381
 )
 
 var Curves []*Curve = []*Curve{
@@ -53,6 +55,15 @@ var Curves []*Curve = []*Curve{
 		GroupOrder: &Zr{zr: (&amcl.Fp256Miraclbn{}).GroupOrder(), curveID: FP256BN_AMCL_MIRACL},
 		FieldBytes: (&amcl.Fp256Miraclbn{}).FieldBytes(),
 		curveID:    FP256BN_AMCL_MIRACL,
+	},
+	{
+		c:          &kilic.Bls12_381{},
+		GenG1:      &G1{g1: (&kilic.Bls12_381{}).GenG1(), curveID: BLS12_381},
+		GenG2:      &G2{g2: (&kilic.Bls12_381{}).GenG2(), curveID: BLS12_381},
+		GenGt:      &Gt{gt: (&kilic.Bls12_381{}).GenGt(), curveID: BLS12_381},
+		GroupOrder: &Zr{zr: (&kilic.Bls12_381{}).GroupOrder(), curveID: BLS12_381},
+		FieldBytes: (&kilic.Bls12_381{}).FieldBytes(),
+		curveID:    BLS12_381,
 	},
 }
 
