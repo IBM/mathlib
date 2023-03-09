@@ -20,7 +20,7 @@ import (
 
 /*********************************************************************/
 
-var qBig = bls12381.NewG1().Q()
+var qBig381 = bls12381.NewG1().Q()
 
 type bls12_381Zr struct {
 	*big.Int
@@ -32,7 +32,7 @@ func (z *bls12_381Zr) Plus(a driver.Zr) driver.Zr {
 
 func (z *bls12_381Zr) Mul(a driver.Zr) driver.Zr {
 	prod := new(big.Int).Mul(z.Int, a.(*bls12_381Zr).Int)
-	return &bls12_381Zr{prod.Mod(prod, qBig)}
+	return &bls12_381Zr{prod.Mod(prod, qBig381)}
 }
 
 func (z *bls12_381Zr) Mod(a driver.Zr) {
@@ -40,7 +40,7 @@ func (z *bls12_381Zr) Mod(a driver.Zr) {
 }
 
 func (z *bls12_381Zr) PowMod(x driver.Zr) driver.Zr {
-	return &bls12_381Zr{new(big.Int).Exp(z.Int, x.(*bls12_381Zr).Int, qBig)}
+	return &bls12_381Zr{new(big.Int).Exp(z.Int, x.(*bls12_381Zr).Int, qBig381)}
 }
 
 func (z *bls12_381Zr) InvModP(a driver.Zr) {
@@ -396,7 +396,7 @@ func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
 }
 
 func (c *Bls12_381) NewRandomZr(rng io.Reader) driver.Zr {
-	res, err := rand.Int(rng, qBig)
+	res, err := rand.Int(rng, qBig381)
 	if err != nil {
 		panic(err)
 	}
