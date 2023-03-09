@@ -62,6 +62,9 @@ func runZrTest(t *testing.T, c *Curve) {
 
 	// Euler's totient
 	assert.True(t, r1.PowMod(c.GroupOrder.Plus(c.NewZrFromInt(-1))).Equals(c.NewZrFromInt(1)), fmt.Sprintf("failed with curve %T", c.c))
+
+	// byte size
+	assert.Len(t, r1.Bytes(), c.ScalarByteSize)
 }
 
 var expectedG1Gens = []string{
@@ -103,7 +106,16 @@ func runG1Test(t *testing.T, c *Curve) {
 	g1copy.Sub(c.GenG1)
 	assert.True(t, g1copy.IsInfinity())
 
-	assert.False(t, c.HashToG1([]byte("Amazing Grace (how sweet the sound)")).IsInfinity())
+	GS := c.HashToG1([]byte("Amazing Grace (how sweet the sound)"))
+	assert.False(t, GS.IsInfinity())
+	assert.Len(t, GS.Bytes(), packedSizes[c.curveID])
+}
+
+var packedSizes = []int{
+	2*Curves[FP256BN_AMCL].CoordinateByteSize + 1,        // FP256BN_AMCL
+	2 * Curves[BN254].CoordinateByteSize,                 // BN254
+	2*Curves[FP256BN_AMCL_MIRACL].CoordinateByteSize + 1, // FP256BN_AMCL_MIRACL
+	2 * Curves[BLS12_381].CoordinateByteSize,             // BLS12_381
 }
 
 func runG2Test(t *testing.T, c *Curve) {

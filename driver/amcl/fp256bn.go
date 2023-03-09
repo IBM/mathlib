@@ -152,7 +152,11 @@ func (p *Fp256bn) GroupOrder() driver.Zr {
 	return &fp256bnZr{FP256BN.NewBIGints(FP256BN.CURVE_Order)}
 }
 
-func (p *Fp256bn) FieldBytes() int {
+func (p *Fp256bn) CoordinateByteSize() int {
+	return int(FP256BN.MODBYTES)
+}
+
+func (p *Fp256bn) ScalarByteSize() int {
 	return int(FP256BN.MODBYTES)
 }
 

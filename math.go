@@ -30,40 +30,44 @@ const (
 
 var Curves []*Curve = []*Curve{
 	{
-		c:          &amcl.Fp256bn{},
-		GenG1:      &G1{g1: (&amcl.Fp256bn{}).GenG1(), curveID: FP256BN_AMCL},
-		GenG2:      &G2{g2: (&amcl.Fp256bn{}).GenG2(), curveID: FP256BN_AMCL},
-		GenGt:      &Gt{gt: (&amcl.Fp256bn{}).GenGt(), curveID: FP256BN_AMCL},
-		GroupOrder: &Zr{zr: (&amcl.Fp256bn{}).GroupOrder(), curveID: FP256BN_AMCL},
-		FieldBytes: (&amcl.Fp256bn{}).FieldBytes(),
-		curveID:    FP256BN_AMCL,
+		c:                  &amcl.Fp256bn{},
+		GenG1:              &G1{g1: (&amcl.Fp256bn{}).GenG1(), curveID: FP256BN_AMCL},
+		GenG2:              &G2{g2: (&amcl.Fp256bn{}).GenG2(), curveID: FP256BN_AMCL},
+		GenGt:              &Gt{gt: (&amcl.Fp256bn{}).GenGt(), curveID: FP256BN_AMCL},
+		GroupOrder:         &Zr{zr: (&amcl.Fp256bn{}).GroupOrder(), curveID: FP256BN_AMCL},
+		CoordinateByteSize: (&amcl.Fp256bn{}).CoordinateByteSize(),
+		ScalarByteSize:     (&amcl.Fp256bn{}).ScalarByteSize(),
+		curveID:            FP256BN_AMCL,
 	},
 	{
-		c:          &gurvy.Bn254{},
-		GenG1:      &G1{g1: (&gurvy.Bn254{}).GenG1(), curveID: BN254},
-		GenG2:      &G2{g2: (&gurvy.Bn254{}).GenG2(), curveID: BN254},
-		GenGt:      &Gt{gt: (&gurvy.Bn254{}).GenGt(), curveID: BN254},
-		GroupOrder: &Zr{zr: (&gurvy.Bn254{}).GroupOrder(), curveID: BN254},
-		FieldBytes: (&gurvy.Bn254{}).FieldBytes(),
-		curveID:    BN254,
+		c:                  &gurvy.Bn254{},
+		GenG1:              &G1{g1: (&gurvy.Bn254{}).GenG1(), curveID: BN254},
+		GenG2:              &G2{g2: (&gurvy.Bn254{}).GenG2(), curveID: BN254},
+		GenGt:              &Gt{gt: (&gurvy.Bn254{}).GenGt(), curveID: BN254},
+		GroupOrder:         &Zr{zr: (&gurvy.Bn254{}).GroupOrder(), curveID: BN254},
+		CoordinateByteSize: (&gurvy.Bn254{}).CoordinateByteSize(),
+		ScalarByteSize:     (&gurvy.Bn254{}).ScalarByteSize(),
+		curveID:            BN254,
 	},
 	{
-		c:          &amcl.Fp256Miraclbn{},
-		GenG1:      &G1{g1: (&amcl.Fp256Miraclbn{}).GenG1(), curveID: FP256BN_AMCL_MIRACL},
-		GenG2:      &G2{g2: (&amcl.Fp256Miraclbn{}).GenG2(), curveID: FP256BN_AMCL_MIRACL},
-		GenGt:      &Gt{gt: (&amcl.Fp256Miraclbn{}).GenGt(), curveID: FP256BN_AMCL_MIRACL},
-		GroupOrder: &Zr{zr: (&amcl.Fp256Miraclbn{}).GroupOrder(), curveID: FP256BN_AMCL_MIRACL},
-		FieldBytes: (&amcl.Fp256Miraclbn{}).FieldBytes(),
-		curveID:    FP256BN_AMCL_MIRACL,
+		c:                  &amcl.Fp256Miraclbn{},
+		GenG1:              &G1{g1: (&amcl.Fp256Miraclbn{}).GenG1(), curveID: FP256BN_AMCL_MIRACL},
+		GenG2:              &G2{g2: (&amcl.Fp256Miraclbn{}).GenG2(), curveID: FP256BN_AMCL_MIRACL},
+		GenGt:              &Gt{gt: (&amcl.Fp256Miraclbn{}).GenGt(), curveID: FP256BN_AMCL_MIRACL},
+		GroupOrder:         &Zr{zr: (&amcl.Fp256Miraclbn{}).GroupOrder(), curveID: FP256BN_AMCL_MIRACL},
+		CoordinateByteSize: (&amcl.Fp256Miraclbn{}).CoordinateByteSize(),
+		ScalarByteSize:     (&amcl.Fp256Miraclbn{}).ScalarByteSize(),
+		curveID:            FP256BN_AMCL_MIRACL,
 	},
 	{
-		c:          &kilic.Bls12_381{},
-		GenG1:      &G1{g1: (&kilic.Bls12_381{}).GenG1(), curveID: BLS12_381},
-		GenG2:      &G2{g2: (&kilic.Bls12_381{}).GenG2(), curveID: BLS12_381},
-		GenGt:      &Gt{gt: (&kilic.Bls12_381{}).GenGt(), curveID: BLS12_381},
-		GroupOrder: &Zr{zr: (&kilic.Bls12_381{}).GroupOrder(), curveID: BLS12_381},
-		FieldBytes: (&kilic.Bls12_381{}).FieldBytes(),
-		curveID:    BLS12_381,
+		c:                  &kilic.Bls12_381{},
+		GenG1:              &G1{g1: (&kilic.Bls12_381{}).GenG1(), curveID: BLS12_381},
+		GenG2:              &G2{g2: (&kilic.Bls12_381{}).GenG2(), curveID: BLS12_381},
+		GenGt:              &Gt{gt: (&kilic.Bls12_381{}).GenGt(), curveID: BLS12_381},
+		GroupOrder:         &Zr{zr: (&kilic.Bls12_381{}).GroupOrder(), curveID: BLS12_381},
+		CoordinateByteSize: (&kilic.Bls12_381{}).CoordinateByteSize(),
+		ScalarByteSize:     (&kilic.Bls12_381{}).ScalarByteSize(),
+		curveID:            BLS12_381,
 	},
 }
 
@@ -254,13 +258,14 @@ func (g *Gt) Bytes() []byte {
 /*********************************************************************/
 
 type Curve struct {
-	c          driver.Curve
-	GenG1      *G1
-	GenG2      *G2
-	GenGt      *Gt
-	GroupOrder *Zr
-	FieldBytes int
-	curveID    CurveID
+	c                  driver.Curve
+	GenG1              *G1
+	GenG2              *G2
+	GenGt              *Gt
+	GroupOrder         *Zr
+	CoordinateByteSize int
+	ScalarByteSize     int
+	curveID            CurveID
 }
 
 func (c *Curve) Rand() (io.Reader, error) {

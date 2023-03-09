@@ -151,7 +151,10 @@ func (p *Fp256Miraclbn) GroupOrder() driver.Zr {
 	return &fp256bnMiraclZr{FP256BN.NewBIGints(FP256BN.CURVE_Order)}
 }
 
-func (p *Fp256Miraclbn) FieldBytes() int {
+func (p *Fp256Miraclbn) CoordinateByteSize() int {
+	return int(FP256BN.MODBYTES)
+}
+func (p *Fp256Miraclbn) ScalarByteSize() int {
 	return int(FP256BN.MODBYTES)
 }
 

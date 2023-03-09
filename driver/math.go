@@ -20,7 +20,8 @@ type Curve interface {
 	GenG2() G2
 	GenGt() Gt
 	GroupOrder() Zr
-	FieldBytes() int
+	CoordinateByteSize() int
+	ScalarByteSize() int
 	NewG1() G1
 	NewG2() G2
 	NewG1FromCoords(ix, iy Zr) G1

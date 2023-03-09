@@ -332,7 +332,11 @@ func (c *Bn254) GroupOrder() driver.Zr {
 	return &bn254Zr{fr.Modulus()}
 }
 
-func (c *Bn254) FieldBytes() int {
+func (c *Bn254) CoordinateByteSize() int {
+	return 32
+}
+
+func (c *Bn254) ScalarByteSize() int {
 	return 32
 }
 

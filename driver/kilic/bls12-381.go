@@ -318,8 +318,12 @@ func (c *Bls12_381) GroupOrder() driver.Zr {
 	return &bls12_381Zr{bls12381.NewG1().Q()}
 }
 
-func (c *Bls12_381) FieldBytes() int {
+func (c *Bls12_381) CoordinateByteSize() int {
 	return 48
+}
+
+func (c *Bls12_381) ScalarByteSize() int {
+	return 32
 }
 
 func (c *Bls12_381) NewG1() driver.G1 {
