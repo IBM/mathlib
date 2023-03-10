@@ -27,6 +27,7 @@ const (
 	FP256BN_AMCL_MIRACL
 	BLS12_381
 	BLS12_377
+	BLS12_377_GURVY
 )
 
 var Curves []*Curve = []*Curve{
@@ -79,6 +80,16 @@ var Curves []*Curve = []*Curve{
 		CoordinateByteSize: (&kilic.Bls12_377{}).CoordinateByteSize(),
 		ScalarByteSize:     (&kilic.Bls12_377{}).ScalarByteSize(),
 		curveID:            BLS12_377,
+	},
+	{
+		c:                  &gurvy.Bls12_377{},
+		GenG1:              &G1{g1: (&gurvy.Bls12_377{}).GenG1(), curveID: BLS12_377_GURVY},
+		GenG2:              &G2{g2: (&gurvy.Bls12_377{}).GenG2(), curveID: BLS12_377_GURVY},
+		GenGt:              &Gt{gt: (&gurvy.Bls12_377{}).GenGt(), curveID: BLS12_377_GURVY},
+		GroupOrder:         &Zr{zr: (&gurvy.Bls12_377{}).GroupOrder(), curveID: BLS12_377_GURVY},
+		CoordinateByteSize: (&gurvy.Bls12_377{}).CoordinateByteSize(),
+		ScalarByteSize:     (&gurvy.Bls12_377{}).ScalarByteSize(),
+		curveID:            BLS12_377_GURVY,
 	},
 }
 
