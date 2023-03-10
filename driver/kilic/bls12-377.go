@@ -12,13 +12,11 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"unsafe"
 
 	bls12377 "kilic/bls12-377"
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
-	bls12381 "github.com/kilic/bls12-381"
 )
 
 /*********************************************************************/
@@ -384,20 +382,6 @@ func (c *Bls12_377) HashToZr(data []byte) driver.Zr {
 	digestBig := c.NewZrFromBytes(digest[:])
 	digestBig.Mod(c.GroupOrder())
 	return digestBig
-}
-
-func bls12381tobls12377(p *bls12381.PointG1) *bls12377.PointG1 {
-	return (*bls12377.PointG1)(unsafe.Pointer(p))
-}
-
-func (c *Bls12_377) HashToG1(data []byte) driver.G1 {
-	g1 := bls12381.NewG1()
-	p, err := g1.HashToCurve(data, domain)
-	if err != nil {
-		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
-	}
-
-	return &bls12_377G1{bls12381tobls12377(p)}
 }
 
 func (c *Bls12_377) NewRandomZr(rng io.Reader) driver.Zr {
