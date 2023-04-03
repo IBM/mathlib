@@ -132,6 +132,9 @@ func (*Fp256Miraclbn) ModMul(a1, b1, m driver.Zr) driver.Zr {
 
 func (*Fp256Miraclbn) ModNeg(a1, m driver.Zr) driver.Zr {
 	res := new(big.Int).Sub(m.(*fp256bnMiraclZr).Int, a1.(*fp256bnMiraclZr).Int)
+	if res.Sign() < 0 {
+		res = res.Add(res, &modulusBig)
+	}
 	return &fp256bnMiraclZr{res}
 }
 

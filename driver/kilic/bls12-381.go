@@ -311,6 +311,9 @@ func (c *Bls12_381) ModSub(a, b, m driver.Zr) driver.Zr {
 func (c *Bls12_381) ModNeg(a1, m driver.Zr) driver.Zr {
 	res := bls12381.NewFr()
 	res.Sub(m.(*bls12_381Zr).Fr, a1.(*bls12_381Zr).Fr)
+	if res.Cmp(bls12381.NewFr().Zero()) < 0 {
+		res.Add(res, &qbls381)
+	}
 	return &bls12_381Zr{res}
 }
 

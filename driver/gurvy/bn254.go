@@ -282,6 +282,9 @@ func (c *Bn254) ModSub(a, b, m driver.Zr) driver.Zr {
 
 func (c *Bn254) ModNeg(a1, m driver.Zr) driver.Zr {
 	res := new(big.Int).Sub(m.(*bn254Zr).Int, a1.(*bn254Zr).Int)
+	if res.Sign() < 0 {
+		res = res.Add(res, fr.Modulus())
+	}
 	return &bn254Zr{res}
 }
 

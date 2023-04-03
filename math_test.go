@@ -63,7 +63,7 @@ func runZrTest(t *testing.T, c *Curve) {
 	// large negative numbers
 	i1 = c.NewRandomZr(rng)
 	i2 = i1.Copy()
-	i2 = i2.Mul(c.NewZrFromInt(-1))
+	i2 = c.ModNeg(i2, c.GroupOrder)
 	i3 = i1.Plus(i2)
 	i3.Mod(c.GroupOrder)
 	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))

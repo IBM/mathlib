@@ -279,6 +279,9 @@ func (c *Bls12_377) ModSub(a, b, m driver.Zr) driver.Zr {
 
 func (c *Bls12_377) ModNeg(a1, m driver.Zr) driver.Zr {
 	res := new(big.Int).Sub(m.(*bls12377Zr).Int, a1.(*bls12377Zr).Int)
+	if res.Sign() < 0 {
+		res = res.Add(res, fr.Modulus())
+	}
 	return &bls12377Zr{res}
 }
 
