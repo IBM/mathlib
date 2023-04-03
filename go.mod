@@ -7,7 +7,6 @@ require (
 	github.com/hyperledger/fabric-amcl v0.0.0-20210603140002-2670f91851c8
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.8.0
-	kilic/bls12-377 v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -20,5 +19,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
-
-replace kilic/bls12-377 => github.com/kilic/bls12-377 v0.0.0-20201230075656-5449decbf102
