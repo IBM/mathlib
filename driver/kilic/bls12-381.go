@@ -309,21 +309,15 @@ func (c *Bls12_381) ModSub(a, b, m driver.Zr) driver.Zr {
 }
 
 func (c *Bls12_381) ModNeg(a1, m driver.Zr) driver.Zr {
-	a := a1.Copy()
-	a.Mod(m)
-	a.(*bls12_381Zr).Fr.Sub(m.(*bls12_381Zr).Fr, a.(*bls12_381Zr).Fr)
-	return &bls12_381Zr{a.(*bls12_381Zr).Fr}
+	res := bls12381.NewFr()
+	res.Sub(m.(*bls12_381Zr).Fr, a1.(*bls12_381Zr).Fr)
+	return &bls12_381Zr{res}
 }
 
 func (c *Bls12_381) ModMul(a1, b1, m driver.Zr) driver.Zr {
-	a := a1.Copy()
-	b := b1.Copy()
-	a.Mod(m)
-	b.Mod(m)
-	a.(*bls12_381Zr).Fr.Mul(a.(*bls12_381Zr).Fr, b.(*bls12_381Zr).Fr)
-	a.Mod(m)
-
-	return &bls12_381Zr{a.(*bls12_381Zr).Fr}
+	res := a1.Mul(b1)
+	res.Mod(m)
+	return res
 }
 
 func (c *Bls12_381) GenG1() driver.G1 {

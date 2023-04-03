@@ -378,5 +378,3 @@ func (c *Curve) ModMul(a1, b1, m *Zr) *Zr {
 func (c *Curve) ModNeg(a1, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModNeg(a1.zr, m.zr), curveID: c.curveID}
 }
-
-/*********************************************************************/

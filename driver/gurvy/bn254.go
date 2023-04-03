@@ -281,17 +281,14 @@ func (c *Bn254) ModSub(a, b, m driver.Zr) driver.Zr {
 }
 
 func (c *Bn254) ModNeg(a1, m driver.Zr) driver.Zr {
-	a := a1.Copy()
-	a.Mod(m)
-	return &bn254Zr{a.(*bn254Zr).Int.Sub(m.(*bn254Zr).Int, a.(*bn254Zr).Int)}
+	res := new(big.Int).Sub(m.(*bn254Zr).Int, a1.(*bn254Zr).Int)
+	return &bn254Zr{res}
 }
 
 func (c *Bn254) ModMul(a1, b1, m driver.Zr) driver.Zr {
-	a := a1.Copy()
-	b := b1.Copy()
-	a.Mod(m)
-	b.Mod(m)
-	return &bn254Zr{a.(*bn254Zr).Int.Mul(a.(*bn254Zr).Int, b.(*bn254Zr).Int)}
+	res := a1.Mul(b1)
+	res.Mod(m)
+	return res
 }
 
 func (c *Bn254) GenG1() driver.G1 {

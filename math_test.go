@@ -60,6 +60,14 @@ func runZrTest(t *testing.T, c *Curve) {
 	a2 := r1.PowMod(r3).PowMod(r2)
 	assert.True(t, a1.Equals(a2))
 
+	// large negative numbers
+	i1 = c.NewRandomZr(rng)
+	i2 = i1.Copy()
+	i2 = i2.Mul(c.NewZrFromInt(-1))
+	i3 = i1.Plus(i2)
+	i3.Mod(c.GroupOrder)
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+
 	// Euler's totient
 	assert.True(t, r1.PowMod(c.GroupOrder.Plus(c.NewZrFromInt(-1))).Equals(c.NewZrFromInt(1)), fmt.Sprintf("failed with curve %T", c.c))
 
