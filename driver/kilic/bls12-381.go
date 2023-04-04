@@ -147,6 +147,12 @@ func (g *bls12_381G1) Bytes() []byte {
 	return raw[:]
 }
 
+func (g *bls12_381G1) Compressed() []byte {
+	g1 := bls12381.NewG1()
+	raw := g1.ToCompressed(g.PointG1)
+	return raw[:]
+}
+
 func (g *bls12_381G1) Sub(a driver.G1) {
 	g1 := bls12381.NewG1()
 	res := g1.New()
@@ -214,6 +220,12 @@ func (g *bls12_381G2) Affine() {
 func (g *bls12_381G2) Bytes() []byte {
 	g2 := bls12381.NewG2()
 	raw := g2.ToBytes(g.PointG2)
+	return raw[:]
+}
+
+func (g *bls12_381G2) Compressed() []byte {
+	g2 := bls12381.NewG2()
+	raw := g2.ToCompressed(g.PointG2)
 	return raw[:]
 }
 
@@ -395,6 +407,26 @@ func (c *Bls12_381) NewG1FromBytes(b []byte) driver.G1 {
 func (c *Bls12_381) NewG2FromBytes(b []byte) driver.G2 {
 	g2 := bls12381.NewG2()
 	p, err := g2.FromBytes(b)
+	if err != nil {
+		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
+	}
+
+	return &bls12_381G2{p}
+}
+
+func (c *Bls12_381) NewG1FromCompressed(b []byte) driver.G1 {
+	g1 := bls12381.NewG1()
+	p, err := g1.FromCompressed(b)
+	if err != nil {
+		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
+	}
+
+	return &bls12_381G1{p}
+}
+
+func (c *Bls12_381) NewG2FromCompressed(b []byte) driver.G2 {
+	g2 := bls12381.NewG2()
+	p, err := g2.FromCompressed(b)
 	if err != nil {
 		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
 	}

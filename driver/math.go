@@ -28,7 +28,9 @@ type Curve interface {
 	NewZrFromBytes(b []byte) Zr
 	NewZrFromInt(i int64) Zr
 	NewG1FromBytes(b []byte) G1
+	NewG1FromCompressed(b []byte) G1
 	NewG2FromBytes(b []byte) G2
+	NewG2FromCompressed(b []byte) G2
 	NewGtFromBytes(b []byte) Gt
 	ModAdd(a, b, m Zr) Zr
 	ModSub(a, b, m Zr) Zr
@@ -59,6 +61,7 @@ type G1 interface {
 	Mul2(e Zr, Q G1, f Zr) G1
 	Equals(G1) bool
 	Bytes() []byte
+	Compressed() []byte
 	Sub(G1)
 	IsInfinity() bool
 	String() string
@@ -72,6 +75,7 @@ type G2 interface {
 	Sub(G2)
 	Affine()
 	Bytes() []byte
+	Compressed() []byte
 	String() string
 	Equals(G2) bool
 }

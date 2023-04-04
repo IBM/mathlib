@@ -218,6 +218,14 @@ func (p *Fp256bn) NewG2FromBytes(b []byte) driver.G2 {
 	return &fp256bnG2{FP256BN.ECP2_fromBytes(b)}
 }
 
+func (p *Fp256bn) NewG1FromCompressed(b []byte) driver.G1 {
+	return &fp256bnG1{FP256BN.ECP_fromBytes(b)}
+}
+
+func (p *Fp256bn) NewG2FromCompressed(b []byte) driver.G2 {
+	return &fp256bnG2{FP256BN.ECP2_fromBytes(b)}
+}
+
 func (p *Fp256bn) NewGtFromBytes(b []byte) driver.Gt {
 	return &fp256bnGt{FP256BN.FP12_fromBytes(b)}
 }
@@ -298,6 +306,12 @@ func (e *fp256bnG1) Bytes() []byte {
 	return b
 }
 
+func (e *fp256bnG1) Compressed() []byte {
+	b := make([]byte, int(FP256BN.MODBYTES)+1)
+	e.ECP.ToBytes(b, true)
+	return b
+}
+
 func (e *fp256bnG1) Sub(a driver.G1) {
 	e.ECP.Sub(a.(*fp256bnG1).ECP)
 }
@@ -347,6 +361,12 @@ func (e *fp256bnG2) Affine() {
 }
 
 func (e *fp256bnG2) Bytes() []byte {
+	b := make([]byte, 4*int(FP256BN.MODBYTES))
+	e.ECP2.ToBytes(b)
+	return b
+}
+
+func (e *fp256bnG2) Compressed() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
 	e.ECP2.ToBytes(b)
 	return b

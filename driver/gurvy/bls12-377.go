@@ -120,6 +120,11 @@ func (g *bls12377G1) Bytes() []byte {
 	return raw[:]
 }
 
+func (g *bls12377G1) Compressed() []byte {
+	raw := g.G1Affine.Bytes()
+	return raw[:]
+}
+
 func (g *bls12377G1) Sub(a driver.G1) {
 	j, k := &bls12377.G1Jac{}, &bls12377.G1Jac{}
 	j.FromAffine(g.G1Affine)
@@ -188,6 +193,11 @@ func (g *bls12377G2) Affine() {
 
 func (g *bls12377G2) Bytes() []byte {
 	raw := g.G2Affine.RawBytes()
+	return raw[:]
+}
+
+func (g *bls12377G2) Compressed() []byte {
+	raw := g.G2Affine.Bytes()
 	return raw[:]
 }
 
@@ -368,6 +378,26 @@ func (c *Bls12_377) NewG1FromBytes(b []byte) driver.G1 {
 }
 
 func (c *Bls12_377) NewG2FromBytes(b []byte) driver.G2 {
+	v := &bls12377.G2Affine{}
+	_, err := v.SetBytes(b)
+	if err != nil {
+		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
+	}
+
+	return &bls12377G2{v}
+}
+
+func (c *Bls12_377) NewG1FromCompressed(b []byte) driver.G1 {
+	v := &bls12377.G1Affine{}
+	_, err := v.SetBytes(b)
+	if err != nil {
+		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
+	}
+
+	return &bls12377G1{v}
+}
+
+func (c *Bls12_377) NewG2FromCompressed(b []byte) driver.G2 {
 	v := &bls12377.G2Affine{}
 	_, err := v.SetBytes(b)
 	if err != nil {

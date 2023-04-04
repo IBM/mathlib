@@ -176,6 +176,10 @@ func (g *G1) Bytes() []byte {
 	return g.g1.Bytes()
 }
 
+func (g *G1) Compressed() []byte {
+	return g.g1.Compressed()
+}
+
 func (g *G1) Sub(a *G1) {
 	g.g1.Sub(a.g1)
 }
@@ -221,6 +225,10 @@ func (g *G2) Affine() {
 
 func (g *G2) Bytes() []byte {
 	return g.g2.Bytes()
+}
+
+func (g *G2) Compressed() []byte {
+	return g.g2.Compressed()
 }
 
 func (g *G2) String() string {
@@ -312,6 +320,30 @@ func (c *Curve) NewG2FromBytes(b []byte) (p *G2, err error) {
 	}()
 
 	p = &G2{g2: c.c.NewG2FromBytes(b), curveID: c.curveID}
+	return
+}
+
+func (c *Curve) NewG1FromCompressed(b []byte) (p *G1, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("failure [%s]", r)
+			p = nil
+		}
+	}()
+
+	p = &G1{g1: c.c.NewG1FromCompressed(b), curveID: c.curveID}
+	return
+}
+
+func (c *Curve) NewG2FromCompressed(b []byte) (p *G2, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("failure [%s]", r)
+			p = nil
+		}
+	}()
+
+	p = &G2{g2: c.c.NewG2FromCompressed(b), curveID: c.curveID}
 	return
 }
 

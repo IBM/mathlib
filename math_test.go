@@ -296,6 +296,41 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 	assert.Error(t, err)
 }
 
+func runToFroCompressedTest(t *testing.T, c *Curve) {
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+	r := c.NewRandomZr(rng)
+
+	g1r := c.GenG1.Mul(r)
+	g1rbytes := g1r.Compressed()
+	g1rback, err := c.NewG1FromCompressed(g1rbytes)
+	assert.NoError(t, err)
+	assert.True(t, g1r.Equals(g1rback))
+	assert.Len(t, g1rbytes, compressedSizesG1[c.curveID], fmt.Sprintf("failed with curve %T", c.c))
+
+	g2r := c.GenG2.Mul(r)
+	g2rbytes := g2r.Compressed()
+	g2rback, err := c.NewG2FromCompressed(g2rbytes)
+	assert.NoError(t, err)
+	assert.True(t, g2r.Equals(g2rback))
+
+	g1rback, err = c.NewG1FromCompressed(nil)
+	assert.Nil(t, g1rback)
+	assert.Error(t, err)
+
+	g2rback, err = c.NewG2FromCompressed(nil)
+	assert.Nil(t, g2rback)
+	assert.Error(t, err)
+}
+
+var compressedSizesG1 = []int{
+	Curves[FP256BN_AMCL].CoordinateByteSize + 1,        // FP256BN_AMCL
+	Curves[BN254].CoordinateByteSize,                   // BN254
+	Curves[FP256BN_AMCL_MIRACL].CoordinateByteSize + 1, // FP256BN_AMCL_MIRACL
+	Curves[BLS12_381].CoordinateByteSize,               // BLS12_381
+	Curves[BLS12_377_GURVY].CoordinateByteSize,         // BLS12_377_GURVY
+}
+
 func runModAddSubNegTest(t *testing.T, c *Curve) {
 	rng, err := c.Rand()
 	assert.NoError(t, err)
@@ -520,6 +555,7 @@ func TestCurves(t *testing.T) {
 		runRndTest(t, curve)
 		runHashTest(t, curve)
 		runToFroBytesTest(t, curve)
+		runToFroCompressedTest(t, curve)
 		runModAddSubNegTest(t, curve)
 		runDHTestG1(t, curve)
 		runDHTestG2(t, curve)
