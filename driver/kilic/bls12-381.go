@@ -147,7 +147,7 @@ func (g *bls12_381G1) Equals(a driver.G1) bool {
 
 func (g *bls12_381G1) Bytes() []byte {
 	g1 := bls12381.NewG1()
-	raw := g1.ToBytes(g.PointG1)
+	raw := g1.ToUncompressed(g.PointG1)
 	return raw[:]
 }
 
@@ -400,7 +400,7 @@ func (c *Bls12_381) NewZrFromInt(i int64) driver.Zr {
 
 func (c *Bls12_381) NewG1FromBytes(b []byte) driver.G1 {
 	g1 := bls12381.NewG1()
-	p, err := g1.FromBytes(b)
+	p, err := g1.FromUncompressed(b)
 	if err != nil {
 		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
 	}
