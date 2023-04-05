@@ -49,6 +49,12 @@ func (z *bls12_381Zr) Plus(a driver.Zr) driver.Zr {
 	return &bls12_381Zr{fr}
 }
 
+func (z *bls12_381Zr) Minus(a driver.Zr) driver.Zr {
+	fr := bls12381.NewFr()
+	fr.Sub(z.Fr, a.(*bls12_381Zr).Fr)
+	return &bls12_381Zr{fr}
+}
+
 func (z *bls12_381Zr) Mul(a driver.Zr) driver.Zr {
 	fr := bls12381.NewFr()
 	fr.Mul(z.Fr, a.(*bls12_381Zr).Fr)

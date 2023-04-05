@@ -33,6 +33,10 @@ func (b *fp256bnMiraclZr) Plus(a driver.Zr) driver.Zr {
 	return &fp256bnMiraclZr{new(big.Int).Add(b.Int, a.(*fp256bnMiraclZr).Int)}
 }
 
+func (b *fp256bnMiraclZr) Minus(a driver.Zr) driver.Zr {
+	return &fp256bnMiraclZr{new(big.Int).Sub(b.Int, a.(*fp256bnMiraclZr).Int)}
+}
+
 func (b *fp256bnMiraclZr) Mul(a driver.Zr) driver.Zr {
 	prod := new(big.Int).Mul(b.Int, a.(*fp256bnMiraclZr).Int)
 	return &fp256bnMiraclZr{prod.Mod(prod, &modulusBig)}

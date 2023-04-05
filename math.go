@@ -93,6 +93,10 @@ func (z *Zr) Plus(a *Zr) *Zr {
 	return &Zr{zr: z.zr.Plus(a.zr), curveID: z.curveID}
 }
 
+func (z *Zr) Minus(a *Zr) *Zr {
+	return &Zr{zr: z.zr.Minus(a.zr), curveID: z.curveID}
+}
+
 func (z *Zr) Mul(a *Zr) *Zr {
 	return &Zr{zr: z.zr.Mul(a.zr), curveID: z.curveID}
 }
