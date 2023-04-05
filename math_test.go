@@ -142,6 +142,8 @@ func runG1Test(t *testing.T, c *Curve) {
 	GS1.Neg()
 	GS1.Add(GS)
 	assert.True(t, GS1.IsInfinity())
+	GS1.Add(c.GenG1)
+	assert.True(t, GS1.Equals(c.GenG1))
 }
 
 var packedSizes = []int{
