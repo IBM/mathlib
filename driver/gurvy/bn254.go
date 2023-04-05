@@ -449,14 +449,12 @@ func (c *Bn254) HashToG1(data []byte) driver.G1 {
 }
 
 func (c *Bn254) NewRandomZr(rng io.Reader) driver.Zr {
-	res := new(big.Int)
-	v := &fr.Element{}
-	_, err := v.SetRandom()
+	bi, err := rand.Int(rng, fr.Modulus())
 	if err != nil {
 		panic(err)
 	}
 
-	return &bn254Zr{v.ToBigIntRegular(res)}
+	return &bn254Zr{bi}
 }
 
 func (c *Bn254) Rand() (io.Reader, error) {
