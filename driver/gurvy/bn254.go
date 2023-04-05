@@ -69,6 +69,10 @@ func (z *bn254Zr) String() string {
 	return z.Int.Text(16)
 }
 
+func (z *bn254Zr) Neg() {
+	z.Int.Neg(z.Int)
+}
+
 /*********************************************************************/
 
 type bn254G1 struct {

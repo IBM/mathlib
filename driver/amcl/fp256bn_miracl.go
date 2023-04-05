@@ -71,6 +71,10 @@ func (b *fp256bnMiraclZr) String() string {
 	return b.Int.Text(16)
 }
 
+func (b *fp256bnMiraclZr) Neg() {
+	b.Int.Neg(b.Int)
+}
+
 /*********************************************************************/
 
 type fp256bnMiraclGt struct {

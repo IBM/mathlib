@@ -68,6 +68,10 @@ func (z *bls12377Zr) String() string {
 	return z.Int.Text(16)
 }
 
+func (z *bls12377Zr) Neg() {
+	z.Int.Neg(z.Int)
+}
+
 /*********************************************************************/
 
 type bls12377G1 struct {

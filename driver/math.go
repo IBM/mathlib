@@ -51,6 +51,7 @@ type Zr interface {
 	Copy() Zr
 	Clone(a Zr)
 	String() string
+	Neg()
 }
 
 type G1 interface {

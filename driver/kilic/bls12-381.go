@@ -96,6 +96,10 @@ func (z *bls12_381Zr) String() string {
 	return z.Fr.ToBig().Text(16)
 }
 
+func (z *bls12_381Zr) Neg() {
+	z.Fr.Neg(z.Fr)
+}
+
 /*********************************************************************/
 
 type bls12_381G1 struct {
