@@ -10,11 +10,13 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"hash"
 	"io"
 	"math/big"
 
 	"github.com/IBM/mathlib/driver"
 	bls12381 "github.com/kilic/bls12-381"
+	"golang.org/x/crypto/blake2b"
 )
 
 /*********************************************************************/
@@ -466,11 +468,27 @@ func (c *Bls12_381) HashToZr(data []byte) driver.Zr {
 	return digestBig
 }
 
+func hashToG1(data []byte) (*bls12381.PointG1, error) {
+	dstG1 := []byte("BLS12381G1_XMD:BLAKE2B_SSWU_RO_BBS+_SIGNATURES:1_0_0")
+
+	hashFunc := func() hash.Hash {
+		// We pass a null key so error is impossible here.
+		h, _ := blake2b.New512(nil) //nolint:errcheck
+		return h
+	}
+
+	p, err := HashToCurveGeneric(data, dstG1, hashFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
 var domain = []byte("MATHLIB_BLS12381")
 
 func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
-	g1 := bls12381.NewG1()
-	p, err := g1.HashToCurve(data, domain)
+	p, err := hashToG1(data)
 	if err != nil {
 		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
 	}
