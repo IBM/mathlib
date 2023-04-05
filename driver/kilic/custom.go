@@ -20,28 +20,28 @@ const fpByteSize = 48
 
 const fpNumberOfLimbs = 6
 
-type fe [fpNumberOfLimbs]uint64
+type Fe [fpNumberOfLimbs]uint64
 
-var modulus = fe{0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624, 0x64774b84f38512bf, 0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a}
+var modulus = Fe{0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624, 0x64774b84f38512bf, 0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a}
 
 // r1 = r mod p
-var r1 = &fe{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}
+var r1 = &Fe{0x760900000002fffd, 0xebf4000bc40c0002, 0x5f48985753c758ba, 0x77ce585370525745, 0x5c071a97a256ec6d, 0x15f65ec3fa80e493}
 
 var swuParamsForG1 = struct {
-	z           *fe
-	zInv        *fe
-	a           *fe
-	b           *fe
-	minusBOverA *fe
+	z           *Fe
+	zInv        *Fe
+	a           *Fe
+	b           *Fe
+	minusBOverA *Fe
 }{
-	a:           &fe{0x2f65aa0e9af5aa51, 0x86464c2d1e8416c3, 0xb85ce591b7bd31e2, 0x27e11c91b5f24e7c, 0x28376eda6bfc1835, 0x155455c3e5071d85},
-	b:           &fe{0xfb996971fe22a1e0, 0x9aa93eb35b742d6f, 0x8c476013de99c5c4, 0x873e27c3a221e571, 0xca72b5e45a52d888, 0x06824061418a386b},
-	z:           &fe{0x886c00000023ffdc, 0x0f70008d3090001d, 0x77672417ed5828c3, 0x9dac23e943dc1740, 0x50553f1b9c131521, 0x078c712fbe0ab6e8},
-	zInv:        &fe{0x0e8a2e8ba2e83e10, 0x5b28ba2ca4d745d1, 0x678cd5473847377a, 0x4c506dd8a8076116, 0x9bcb227d79284139, 0x0e8d3154b0ba099a},
-	minusBOverA: &fe{0x052583c93555a7fe, 0x3b40d72430f93c82, 0x1b75faa0105ec983, 0x2527e7dc63851767, 0x99fffd1f34fc181d, 0x097cab54770ca0d3},
+	a:           &Fe{0x2f65aa0e9af5aa51, 0x86464c2d1e8416c3, 0xb85ce591b7bd31e2, 0x27e11c91b5f24e7c, 0x28376eda6bfc1835, 0x155455c3e5071d85},
+	b:           &Fe{0xfb996971fe22a1e0, 0x9aa93eb35b742d6f, 0x8c476013de99c5c4, 0x873e27c3a221e571, 0xca72b5e45a52d888, 0x06824061418a386b},
+	z:           &Fe{0x886c00000023ffdc, 0x0f70008d3090001d, 0x77672417ed5828c3, 0x9dac23e943dc1740, 0x50553f1b9c131521, 0x078c712fbe0ab6e8},
+	zInv:        &Fe{0x0e8a2e8ba2e83e10, 0x5b28ba2ca4d745d1, 0x678cd5473847377a, 0x4c506dd8a8076116, 0x9bcb227d79284139, 0x0e8d3154b0ba099a},
+	minusBOverA: &Fe{0x052583c93555a7fe, 0x3b40d72430f93c82, 0x1b75faa0105ec983, 0x2527e7dc63851767, 0x99fffd1f34fc181d, 0x097cab54770ca0d3},
 }
 
-func (fe *fe) setBytes(in []byte) *fe {
+func (fe *Fe) setBytes(in []byte) *Fe {
 	l := len(in)
 	if l >= fpByteSize {
 		l = fpByteSize
@@ -59,11 +59,11 @@ func (fe *fe) setBytes(in []byte) *fe {
 	return fe
 }
 
-func (fe *fe) isValid() bool {
+func (fe *Fe) isValid() bool {
 	return fe.cmp(&modulus) == -1
 }
 
-func (fe *fe) cmp(fe2 *fe) int {
+func (fe *Fe) cmp(fe2 *Fe) int {
 	for i := fpNumberOfLimbs - 1; i >= 0; i-- {
 		if fe[i] > fe2[i] {
 			return 1
@@ -74,15 +74,15 @@ func (fe *fe) cmp(fe2 *fe) int {
 	return 0
 }
 
-func (fe *fe) isZero() bool {
+func (fe *Fe) isZero() bool {
 	return (fe[5] | fe[4] | fe[3] | fe[2] | fe[1] | fe[0]) == 0
 }
 
-func (fe *fe) one() *fe {
+func (fe *Fe) one() *Fe {
 	return fe.set(r1)
 }
 
-func (fe *fe) set(fe2 *fe) *fe {
+func (fe *Fe) set(fe2 *Fe) *Fe {
 	fe[0] = fe2[0]
 	fe[1] = fe2[1]
 	fe[2] = fe2[2]
@@ -92,74 +92,74 @@ func (fe *fe) set(fe2 *fe) *fe {
 	return fe
 }
 
-func (e *fe) signBE() bool {
-	negZ, z := new(fe), new(fe)
+func (e *Fe) signBE() bool {
+	negZ, z := new(Fe), new(Fe)
 	fromMont(z, e)
 	neg(negZ, z)
 	return negZ.cmp(z) > -1
 }
 
 //go:linkname mul github.com/kilic/bls12-381.mulADX
-func mul(c, a, b *fe)
+func mul(c, a, b *Fe)
 
 //go:linkname add github.com/kilic/bls12-381.add
-func add(c, a, b *fe)
+func add(c, a, b *Fe)
 
 //go:linkname toMont github.com/kilic/bls12-381.toMont
-func toMont(a, b *fe)
+func toMont(a, b *Fe)
 
 //go:linkname inverse github.com/kilic/bls12-381.inverse
-func inverse(inv, e *fe)
+func inverse(inv, e *Fe)
 
 //go:linkname isQuadraticNonResidue github.com/kilic/bls12-381.isQuadraticNonResidue
-func isQuadraticNonResidue(a *fe) bool
+func isQuadraticNonResidue(a *Fe) bool
 
 //go:linkname sqrt github.com/kilic/bls12-381.sqrt
-func sqrt(c, a *fe) bool
+func sqrt(c, a *Fe) bool
 
 //go:linkname square github.com/kilic/bls12-381.square
-func square(c, a *fe)
+func square(c, a *Fe)
 
 //go:linkname fromMont github.com/kilic/bls12-381.fromMont
-func fromMont(c, a *fe)
+func fromMont(c, a *Fe)
 
 //go:linkname neg github.com/kilic/bls12-381.neg
-func neg(c, a *fe)
+func neg(c, a *Fe)
 
 //go:linkname isogenyMapG1 github.com/kilic/bls12-381.isogenyMapG1
-func isogenyMapG1(x, y *fe)
+func isogenyMapG1(x, y *Fe)
 
-func swuMapG1Pre(u *fe) (*fe, *fe, *fe) {
+func swuMapG1Pre(u *Fe) (*Fe, *Fe, *Fe) {
 	var params = swuParamsForG1
-	var tv [4]*fe
+	var tv [4]*Fe
 	for i := 0; i < 4; i++ {
-		tv[i] = new(fe)
+		tv[i] = new(Fe)
 	}
 	square(tv[0], u)
 	mul(tv[0], tv[0], params.z)
 	square(tv[1], tv[0])
-	x1 := new(fe)
+	x1 := new(Fe)
 	add(x1, tv[0], tv[1])
 	inverse(x1, x1)
 	e1 := x1.isZero()
-	one := new(fe).one()
+	one := new(Fe).one()
 	add(x1, x1, one)
 	if e1 {
 		x1.set(params.zInv)
 	}
 	mul(x1, x1, params.minusBOverA)
-	gx1 := new(fe)
+	gx1 := new(Fe)
 	square(gx1, x1)
 	add(gx1, gx1, params.a)
 	mul(gx1, gx1, x1)
 	add(gx1, gx1, params.b)
-	x2 := new(fe)
+	x2 := new(Fe)
 	mul(x2, tv[0], x1)
 	mul(tv[1], tv[0], tv[1])
-	gx2 := new(fe)
+	gx2 := new(Fe)
 	mul(gx2, gx1, tv[1])
 	e2 := !isQuadraticNonResidue(gx1)
-	x, y2 := new(fe), new(fe)
+	x, y2 := new(Fe), new(Fe)
 	if e2 {
 		x.set(x1)
 		y2.set(gx1)
@@ -167,17 +167,17 @@ func swuMapG1Pre(u *fe) (*fe, *fe, *fe) {
 		x.set(x2)
 		y2.set(gx2)
 	}
-	y := new(fe)
+	y := new(Fe)
 	sqrt(y, y2)
 
 	// This function is modified to perform the sign correction outside.
 	return x, y, u
 }
 
-// swuMapG1BE is implementation of Simplified Shallue-van de Woestijne-Ulas Method
+// SwuMapG1BE is implementation of Simplified Shallue-van de Woestijne-Ulas Method
 // follows the implementation at draft-irtf-cfrg-hash-to-curve-06.
 // uses big-endian variant: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-06#section-4.1.1
-func swuMapG1BE(u *fe) (*fe, *fe) {
+func SwuMapG1BE(u *Fe) (*Fe, *Fe) {
 	x, y, u := swuMapG1Pre(u)
 
 	if y.signBE() != u.signBE() {
@@ -186,14 +186,14 @@ func swuMapG1BE(u *fe) (*fe, *fe) {
 	return x, y
 }
 
-type PointG1 [3]fe
+type PointG1 [3]Fe
 
 func pointG1tobls12381PointG1(p *PointG1) *bls12381.PointG1 {
 	return (*bls12381.PointG1)(unsafe.Pointer(p))
 }
 
-func feAtPos(pos int, p *bls12381.PointG1) *fe {
-	return (*fe)(unsafe.Pointer(&(p[pos])))
+func feAtPos(pos int, p *bls12381.PointG1) *Fe {
+	return (*Fe)(unsafe.Pointer(&(p[pos])))
 }
 
 func HashToCurveGeneric(msg, domain []byte, hashFunc func() hash.Hash) (*bls12381.PointG1, error) {
@@ -204,9 +204,9 @@ func HashToCurveGeneric(msg, domain []byte, hashFunc func() hash.Hash) (*bls1238
 	}
 	u0, u1 := hashRes[0], hashRes[1]
 
-	x0, y0 := swuMapG1BE(u0)
-	x1, y1 := swuMapG1BE(u1)
-	one := new(fe).one()
+	x0, y0 := SwuMapG1BE(u0)
+	x1, y1 := SwuMapG1BE(u1)
+	one := new(Fe).one()
 	p0, p1 := pointG1tobls12381PointG1(&PointG1{*x0, *y0, *one}), pointG1tobls12381PointG1(&PointG1{*x1, *y1, *one})
 
 	g.Add(p0, p0, p1)
@@ -216,13 +216,13 @@ func HashToCurveGeneric(msg, domain []byte, hashFunc func() hash.Hash) (*bls1238
 	return g.Affine(p0), nil
 }
 
-func hashToFpXMD(f func() hash.Hash, msg []byte, domain []byte, count int) ([]*fe, error) {
+func hashToFpXMD(f func() hash.Hash, msg []byte, domain []byte, count int) ([]*Fe, error) {
 	randBytes, err := expandMsgXMD(f, msg, domain, count*64)
 	if err != nil {
 		return nil, err
 	}
 
-	els := make([]*fe, count)
+	els := make([]*Fe, count)
 	for i := 0; i < count; i++ {
 		var err error
 
@@ -285,7 +285,7 @@ func expandMsgXMD(f func() hash.Hash, msg []byte, domain []byte, outLen int) ([]
 	return out[:outLen], nil
 }
 
-func from64Bytes(in []byte) (*fe, error) {
+func from64Bytes(in []byte) (*Fe, error) {
 	if len(in) != 32*2 {
 		return nil, errors.New("input string must be equal 64 bytes")
 	}
@@ -302,7 +302,7 @@ func from64Bytes(in []byte) (*fe, error) {
 		return nil, err
 	}
 	// F = 2 ^ 256 * R
-	F := fe{
+	F := Fe{
 		0x75b3cd7c5ce820f,
 		0x3ec6ba621c3edb0b,
 		0x168a13d82bff6bce,
@@ -316,8 +316,8 @@ func from64Bytes(in []byte) (*fe, error) {
 	return e1, nil
 }
 
-func fromBytes(in []byte) (*fe, error) {
-	fe := &fe{}
+func fromBytes(in []byte) (*Fe, error) {
+	fe := &Fe{}
 	if len(in) != fpByteSize {
 		return nil, errors.New("input string must be equal 48 bytes")
 	}

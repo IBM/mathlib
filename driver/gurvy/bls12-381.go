@@ -10,6 +10,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"hash"
 	"io"
 	"math/big"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/IBM/mathlib/driver/common"
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
+	"golang.org/x/crypto/blake2b"
 )
 
 /*********************************************************************/
@@ -437,7 +439,15 @@ func (c *Bls12_381) HashToZr(data []byte) driver.Zr {
 }
 
 func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
-	g1, err := bls12381.HashToG1(data, []byte{})
+	dstG1 := []byte("BLS12381G1_XMD:BLAKE2B_SSWU_RO_BBS+_SIGNATURES:1_0_0")
+
+	hashFunc := func() hash.Hash {
+		// We pass a null key so error is impossible here.
+		h, _ := blake2b.New512(nil) //nolint:errcheck
+		return h
+	}
+
+	g1, err := HashToG1(data, dstG1, hashFunc)
 	if err != nil {
 		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
 	}

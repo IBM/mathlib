@@ -620,4 +620,8 @@ func Test381Compat(t *testing.T) {
 	gtg := gurvy.GenGt.Exp(rg)
 	gtk := kilic.GenGt.Exp(rk)
 	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
+
+	hg := gurvy.HashToG1([]byte("Chase!"))
+	hk := kilic.HashToG1([]byte("Chase!"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
 }
