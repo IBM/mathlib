@@ -67,6 +67,7 @@ type G1 interface {
 	Sub(G1)
 	IsInfinity() bool
 	String() string
+	Neg()
 }
 
 type G2 interface {

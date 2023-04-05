@@ -200,6 +200,10 @@ func (g *G1) String() string {
 	return g.g1.String()
 }
 
+func (g *G1) Neg() {
+	g.g1.Neg()
+}
+
 /*********************************************************************/
 
 type G2 struct {

@@ -154,6 +154,10 @@ func (g *bn254G1) String() string {
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
+func (g *bn254G1) Neg() {
+	g.G1Affine.Neg(g.G1Affine)
+}
+
 /*********************************************************************/
 
 type bn254G2 struct {

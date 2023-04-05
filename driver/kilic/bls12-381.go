@@ -183,6 +183,11 @@ func (g *bls12_381G1) String() string {
 	return "(" + x.String() + "," + y.String() + ")"
 }
 
+func (g *bls12_381G1) Neg() {
+	g1 := bls12381.NewG1()
+	g1.Neg(g.PointG1, g.PointG1)
+}
+
 /*********************************************************************/
 
 type bls12_381G2 struct {

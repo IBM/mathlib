@@ -335,6 +335,10 @@ func (b *fp256bnMiraclG1) String() string {
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
+func (e *fp256bnMiraclG1) Neg() {
+	e.ECP.Neg()
+}
+
 /*********************************************************************/
 
 type fp256bnMiraclG2 struct {

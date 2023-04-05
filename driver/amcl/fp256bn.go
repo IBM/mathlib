@@ -332,6 +332,11 @@ func (b *fp256bnG1) String() string {
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
+func (e *fp256bnG1) Neg() {
+	res := e.Mul(new(Fp256bn).NewZrFromInt(-1))
+	e.ECP = res.(*fp256bnG1).ECP
+}
+
 /*********************************************************************/
 
 type fp256bnG2 struct {

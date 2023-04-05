@@ -133,6 +133,15 @@ func runG1Test(t *testing.T, c *Curve) {
 	GS := c.HashToG1([]byte("Amazing Grace (how sweet the sound)"))
 	assert.False(t, GS.IsInfinity())
 	assert.Len(t, GS.Bytes(), packedSizes[c.curveID])
+
+	GS = c.HashToG1([]byte("it's a heavy metal universe"))
+	assert.False(t, GS.IsInfinity())
+	assert.Len(t, GS.Bytes(), packedSizes[c.curveID])
+
+	GS1 := GS.Copy()
+	GS1.Neg()
+	GS1.Add(GS)
+	assert.True(t, GS1.IsInfinity())
 }
 
 var packedSizes = []int{

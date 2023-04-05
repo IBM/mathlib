@@ -151,6 +151,10 @@ func (g *bls12377G1) String() string {
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
+func (g *bls12377G1) Neg() {
+	g.G1Affine.Neg(g.G1Affine)
+}
+
 /*********************************************************************/
 
 type bls12377G2 struct {
