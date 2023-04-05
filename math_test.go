@@ -96,6 +96,7 @@ var expectedG1Gens = []string{
 	"(1,2)", // FP256BN_AMCL_MIRACL
 	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381
 	"(81937999373150964239938255573465948239988671502647976594219695644855304257327692006745978603320413799295628339695,241266749859715473739788878240585681733927191168601896383759122102112907357779751001206799952863815012735208165030)",    // BLS12_377
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381
 }
 
 func runG1Test(t *testing.T, c *Curve) {
@@ -152,6 +153,7 @@ var packedSizes = []int{
 	2*Curves[FP256BN_AMCL_MIRACL].CoordinateByteSize + 1, // FP256BN_AMCL_MIRACL
 	2 * Curves[BLS12_381].CoordinateByteSize,             // BLS12_381
 	2 * Curves[BLS12_377_GURVY].CoordinateByteSize,       // BLS12_377_GURVY
+	2 * Curves[BLS12_381_GURVY].CoordinateByteSize,       // BLS12_381_GURVY
 }
 
 func runG2Test(t *testing.T, c *Curve) {
@@ -355,6 +357,7 @@ var compressedSizesG1 = []int{
 	Curves[FP256BN_AMCL_MIRACL].CoordinateByteSize + 1, // FP256BN_AMCL_MIRACL
 	Curves[BLS12_381].CoordinateByteSize,               // BLS12_381
 	Curves[BLS12_377_GURVY].CoordinateByteSize,         // BLS12_377_GURVY
+	Curves[BLS12_381_GURVY].CoordinateByteSize,         // BLS12_381_GURVY
 }
 
 func runModAddSubNegTest(t *testing.T, c *Curve) {
@@ -591,4 +594,30 @@ func TestCurves(t *testing.T) {
 		runMulTest(t, curve)
 		runQuadDHTestPairing(t, curve)
 	}
+}
+
+func Test381Compat(t *testing.T) {
+	rng, err := Curves[BLS12_381].Rand()
+	assert.NoError(t, err)
+
+	kilic := Curves[BLS12_381]
+	gurvy := Curves[BLS12_381_GURVY]
+
+	rk := kilic.NewRandomZr(rng)
+	rg := gurvy.NewZrFromBytes(rk.Bytes())
+	assert.Equal(t, rk.Bytes(), rg.Bytes())
+
+	g1g := gurvy.GenG1.Mul(rg)
+	g1k := kilic.GenG1.Mul(rk)
+	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
+	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
+
+	g2g := gurvy.GenG2.Mul(rg)
+	g2k := kilic.GenG2.Mul(rk)
+	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
+	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
+
+	gtg := gurvy.GenGt.Exp(rg)
+	gtk := kilic.GenGt.Exp(rk)
+	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
 }
