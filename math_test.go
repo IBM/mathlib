@@ -20,6 +20,18 @@ import (
 var seed = time.Now().Unix()
 
 func runZrTest(t *testing.T, c *Curve) {
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+
+	// serialising and deserialising negative numbers
+	rr := c.NewRandomZr(rng)
+	rr1 := rr.Copy()
+	rr1.Neg()
+	rr1b := rr1.Bytes()
+	rr11 := c.NewZrFromBytes(rr1b)
+	res := c.ModAdd(rr, rr11, c.GroupOrder)
+	assert.True(t, res.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+
 	assert.True(t, c.NewZrFromInt(35).Plus(c.NewZrFromInt(1)).Equals(c.NewZrFromInt(36)))
 	assert.True(t, c.NewZrFromInt(36).Copy().Equals(c.NewZrFromInt(36)))
 	i := c.NewZrFromInt(5)
@@ -51,8 +63,6 @@ func runZrTest(t *testing.T, c *Curve) {
 	assert.EqualError(t, err, "out of range")
 
 	// D/H
-	rng, err := c.Rand()
-	assert.NoError(t, err)
 	r1 := c.NewRandomZr(rng)
 	r2 := c.NewRandomZr(rng)
 	r3 := c.NewRandomZr(rng)

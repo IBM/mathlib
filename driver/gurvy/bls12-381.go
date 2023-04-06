@@ -54,7 +54,17 @@ func (z *bls12381Zr) InvModP(a driver.Zr) {
 }
 
 func (z *bls12381Zr) Bytes() []byte {
-	return common.BigToBytes(z.Int)
+	target := z.Int
+
+	if z.Int.Sign() < 0 || z.Int.Cmp(fr.Modulus()) > 0 {
+		target = new(big.Int).Set(z.Int)
+		target = target.Mod(target, fr.Modulus())
+		if target.Sign() < 0 {
+			target = target.Add(target, fr.Modulus())
+		}
+	}
+
+	return common.BigToBytes(target)
 }
 
 func (z *bls12381Zr) Equals(a driver.Zr) bool {

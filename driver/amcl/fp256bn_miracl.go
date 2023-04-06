@@ -55,7 +55,17 @@ func (b *fp256bnMiraclZr) InvModP(p driver.Zr) {
 }
 
 func (b *fp256bnMiraclZr) Bytes() []byte {
-	return common.BigToBytes(b.Int)
+	target := b.Int
+
+	if b.Int.Sign() < 0 || b.Int.Cmp(&modulusBig) > 0 {
+		target = new(big.Int).Set(b.Int)
+		target = target.Mod(target, &modulusBig)
+		if target.Sign() < 0 {
+			target = target.Add(target, &modulusBig)
+		}
+	}
+
+	return common.BigToBytes(target)
 }
 
 func (b *fp256bnMiraclZr) Equals(p driver.Zr) bool {
