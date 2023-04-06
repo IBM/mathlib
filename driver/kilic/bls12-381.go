@@ -217,7 +217,12 @@ func (g *bls12_381Gt) Bytes() []byte {
 
 /*********************************************************************/
 
+func NewBls12_381() *Bls12_381 {
+	return &Bls12_381{&common.CurveBase{Modulus: bls12381.NewG1().Q()}}
+}
+
 type Bls12_381 struct {
+	*common.CurveBase
 }
 
 func (c *Bls12_381) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {
@@ -249,14 +254,6 @@ func (c *Bls12_381) ModSub(a, b, m driver.Zr) driver.Zr {
 	return c.ModAdd(a, c.ModNeg(b, m), m)
 }
 
-func (c *Bls12_381) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := new(big.Int).Sub(m.(*common.BaseZr).Int, a1.(*common.BaseZr).Int)
-	if res.Sign() < 0 {
-		res = res.Add(res, bls12381.NewG1().Q())
-	}
-	return &common.BaseZr{Int: res, Modulus: bls12381.NewG1().Q()}
-}
-
 func (c *Bls12_381) ModMul(a1, b1, m driver.Zr) driver.Zr {
 	res := a1.Mul(b1)
 	res.Mod(m)
@@ -281,10 +278,6 @@ func (c *Bls12_381) GenGt() driver.Gt {
 	gengt := c.Pairing(g2, g1)
 	gengt = c.FExp(gengt)
 	return gengt
-}
-
-func (c *Bls12_381) GroupOrder() driver.Zr {
-	return &common.BaseZr{Int: bls12381.NewG1().Q(), Modulus: bls12381.NewG1().Q()}
 }
 
 func (c *Bls12_381) CoordinateByteSize() int {

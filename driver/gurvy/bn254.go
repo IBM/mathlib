@@ -210,7 +210,12 @@ func (g *bn254Gt) Bytes() []byte {
 
 /*********************************************************************/
 
+func NewBn254() *Bn254 {
+	return &Bn254{&common.CurveBase{Modulus: fr.Modulus()}}
+}
+
 type Bn254 struct {
+	*common.CurveBase
 }
 
 func (c *Bn254) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {
@@ -244,14 +249,6 @@ func (*Bn254) ModAdd(a, b, m driver.Zr) driver.Zr {
 
 func (c *Bn254) ModSub(a, b, m driver.Zr) driver.Zr {
 	return c.ModAdd(a, c.ModNeg(b, m), m)
-}
-
-func (c *Bn254) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := new(big.Int).Sub(m.(*common.BaseZr).Int, a1.(*common.BaseZr).Int)
-	if res.Sign() < 0 {
-		res = res.Add(res, fr.Modulus())
-	}
-	return &common.BaseZr{Int: res, Modulus: fr.Modulus()}
 }
 
 func (c *Bn254) ModMul(a1, b1, m driver.Zr) driver.Zr {
@@ -292,10 +289,6 @@ func (c *Bn254) GenGt() driver.Gt {
 	gengt := c.Pairing(g2, g1)
 	gengt = c.FExp(gengt)
 	return gengt
-}
-
-func (c *Bn254) GroupOrder() driver.Zr {
-	return &common.BaseZr{Int: fr.Modulus(), Modulus: fr.Modulus()}
 }
 
 func (c *Bn254) CoordinateByteSize() int {

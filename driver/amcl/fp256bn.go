@@ -58,7 +58,12 @@ func (b *fp256bnGt) Bytes() []byte {
 
 /*********************************************************************/
 
+func NewFp256bn() *Fp256bn {
+	return &Fp256bn{&common.CurveBase{Modulus: &modulusBig}}
+}
+
 type Fp256bn struct {
+	*common.CurveBase
 }
 
 func (*Fp256bn) Pairing(a driver.G2, b driver.G1) driver.Gt {
@@ -79,14 +84,6 @@ func (*Fp256bn) ModMul(a1, b1, m driver.Zr) driver.Zr {
 	return res
 }
 
-func (*Fp256bn) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := new(big.Int).Sub(m.(*common.BaseZr).Int, a1.(*common.BaseZr).Int)
-	if res.Sign() < 0 {
-		res = res.Add(res, &modulusBig)
-	}
-	return &common.BaseZr{Int: res, Modulus: &modulusBig}
-}
-
 func (*Fp256bn) GenG1() driver.G1 {
 	return &fp256bnG1{FP256BN.NewECPbigs(FP256BN.NewBIGints(FP256BN.CURVE_Gx), FP256BN.NewBIGints(FP256BN.CURVE_Gy))}
 }
@@ -99,10 +96,6 @@ func (*Fp256bn) GenG2() driver.G2 {
 
 func (p *Fp256bn) GenGt() driver.Gt {
 	return &fp256bnGt{FP256BN.Fexp(FP256BN.Ate(p.GenG2().(*fp256bnG2).ECP2, p.GenG1().(*fp256bnG1).ECP))}
-}
-
-func (p *Fp256bn) GroupOrder() driver.Zr {
-	return &common.BaseZr{Int: &modulusBig, Modulus: &modulusBig}
 }
 
 func (p *Fp256bn) CoordinateByteSize() int {
