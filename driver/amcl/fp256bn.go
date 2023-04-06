@@ -22,78 +22,12 @@ import (
 
 /*********************************************************************/
 
-type fp256bnZr struct {
-	*big.Int
-}
-
-func (b *fp256bnZr) Plus(a driver.Zr) driver.Zr {
-	return &fp256bnZr{new(big.Int).Add(b.Int, a.(*fp256bnZr).Int)}
-}
-
-func (b *fp256bnZr) Minus(a driver.Zr) driver.Zr {
-	return &fp256bnZr{new(big.Int).Sub(b.Int, a.(*fp256bnZr).Int)}
-}
-
-func (b *fp256bnZr) Mul(a driver.Zr) driver.Zr {
-	prod := new(big.Int).Mul(b.Int, a.(*fp256bnZr).Int)
-	return &fp256bnZr{prod.Mod(prod, &modulusBig)}
-}
-
-func (b *fp256bnZr) PowMod(x driver.Zr) driver.Zr {
-	return &fp256bnZr{new(big.Int).Exp(b.Int, x.(*fp256bnZr).Int, &modulusBig)}
-}
-
-func (b *fp256bnZr) Mod(a driver.Zr) {
-	b.Int.Mod(b.Int, a.(*fp256bnZr).Int)
-}
-
-func (b *fp256bnZr) InvModP(p driver.Zr) {
-	b.Int.ModInverse(b.Int, p.(*fp256bnZr).Int)
-}
-
-func (b *fp256bnZr) Bytes() []byte {
-	target := b.Int
-
-	if b.Int.Sign() < 0 || b.Int.Cmp(&modulusBig) > 0 {
-		target = new(big.Int).Set(b.Int)
-		target = target.Mod(target, &modulusBig)
-		if target.Sign() < 0 {
-			target = target.Add(target, &modulusBig)
-		}
-	}
-
-	return common.BigToBytes(target)
-}
-
-func (b *fp256bnZr) Equals(p driver.Zr) bool {
-	return b.Int.Cmp(p.(*fp256bnZr).Int) == 0
-}
-
-func (b *fp256bnZr) Copy() driver.Zr {
-	return &fp256bnZr{new(big.Int).Set(b.Int)}
-}
-
-func (b *fp256bnZr) Clone(a driver.Zr) {
-	raw := a.(*fp256bnZr).Int.Bytes()
-	b.Int.SetBytes(raw)
-}
-
-func (b *fp256bnZr) String() string {
-	return b.Int.Text(16)
-}
-
-func (b *fp256bnZr) Neg() {
-	b.Int.Neg(b.Int)
-}
-
-/*********************************************************************/
-
 type fp256bnGt struct {
 	*FP256BN.FP12
 }
 
 func (a *fp256bnGt) Exp(x driver.Zr) driver.Gt {
-	return &fp256bnGt{a.FP12.Pow(bigToMiraclBIGCore(x.(*fp256bnZr).Int))}
+	return &fp256bnGt{a.FP12.Pow(bigToMiraclBIGCore(x.(*common.BaseZr).Int))}
 }
 
 func (a *fp256bnGt) Equals(b driver.Gt) bool {
@@ -146,11 +80,11 @@ func (*Fp256bn) ModMul(a1, b1, m driver.Zr) driver.Zr {
 }
 
 func (*Fp256bn) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := new(big.Int).Sub(m.(*fp256bnZr).Int, a1.(*fp256bnZr).Int)
+	res := new(big.Int).Sub(m.(*common.BaseZr).Int, a1.(*common.BaseZr).Int)
 	if res.Sign() < 0 {
 		res = res.Add(res, &modulusBig)
 	}
-	return &fp256bnZr{res}
+	return &common.BaseZr{Int: res, Modulus: &modulusBig}
 }
 
 func (*Fp256bn) GenG1() driver.G1 {
@@ -168,7 +102,7 @@ func (p *Fp256bn) GenGt() driver.Gt {
 }
 
 func (p *Fp256bn) GroupOrder() driver.Zr {
-	return &fp256bnZr{&modulusBig}
+	return &common.BaseZr{Int: &modulusBig, Modulus: &modulusBig}
 }
 
 func (p *Fp256bn) CoordinateByteSize() int {
@@ -192,7 +126,7 @@ func (p *Fp256bn) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 }
 
 func (p *Fp256bn) NewZrFromBytes(b []byte) driver.Zr {
-	return &fp256bnZr{new(big.Int).SetBytes(b)}
+	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: &modulusBig}
 }
 
 func bigToMiraclBIGCore(bi *big.Int) *FP256BN.BIG {
@@ -226,7 +160,7 @@ func bigToMiraclBIGCore(bi *big.Int) *FP256BN.BIG {
 }
 
 func (p *Fp256bn) NewZrFromInt(i int64) driver.Zr {
-	return &fp256bnZr{big.NewInt(i)}
+	return &common.BaseZr{Int: big.NewInt(i), Modulus: &modulusBig}
 }
 
 func (p *Fp256bn) NewG1FromBytes(b []byte) driver.G1 {
@@ -286,7 +220,7 @@ func (p *Fp256bn) NewRandomZr(rng io.Reader) driver.Zr {
 		panic(err)
 	}
 
-	return &fp256bnZr{bi}
+	return &common.BaseZr{Int: bi, Modulus: &modulusBig}
 }
 
 /*********************************************************************/
@@ -310,11 +244,11 @@ func (e *fp256bnG1) Add(a driver.G1) {
 }
 
 func (e *fp256bnG1) Mul(a driver.Zr) driver.G1 {
-	return &fp256bnG1{FP256BN.G1mul(e.ECP, bigToMiraclBIGCore(a.(*fp256bnZr).Int))}
+	return &fp256bnG1{FP256BN.G1mul(e.ECP, bigToMiraclBIGCore(a.(*common.BaseZr).Int))}
 }
 
 func (e *fp256bnG1) Mul2(ee driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
-	return &fp256bnG1{e.ECP.Mul2(bigToMiraclBIGCore(ee.(*fp256bnZr).Int), Q.(*fp256bnG1).ECP, bigToMiraclBIGCore(f.(*fp256bnZr).Int))}
+	return &fp256bnG1{e.ECP.Mul2(bigToMiraclBIGCore(ee.(*common.BaseZr).Int), Q.(*fp256bnG1).ECP, bigToMiraclBIGCore(f.(*common.BaseZr).Int))}
 }
 
 func (e *fp256bnG1) Equals(a driver.G1) bool {
@@ -383,7 +317,7 @@ func (e *fp256bnG2) Sub(a driver.G2) {
 }
 
 func (e *fp256bnG2) Mul(a driver.Zr) driver.G2 {
-	return &fp256bnG2{e.ECP2.Mul(bigToMiraclBIGCore(a.(*fp256bnZr).Int))}
+	return &fp256bnG2{e.ECP2.Mul(bigToMiraclBIGCore(a.(*common.BaseZr).Int))}
 }
 
 func (e *fp256bnG2) Affine() {

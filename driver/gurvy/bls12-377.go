@@ -22,72 +22,6 @@ import (
 
 /*********************************************************************/
 
-type bls12377Zr struct {
-	*big.Int
-}
-
-func (z *bls12377Zr) Plus(a driver.Zr) driver.Zr {
-	return &bls12377Zr{new(big.Int).Add(z.Int, a.(*bls12377Zr).Int)}
-}
-
-func (z *bls12377Zr) Minus(a driver.Zr) driver.Zr {
-	return &bls12377Zr{new(big.Int).Sub(z.Int, a.(*bls12377Zr).Int)}
-}
-
-func (z *bls12377Zr) Mul(a driver.Zr) driver.Zr {
-	prod := new(big.Int).Mul(z.Int, a.(*bls12377Zr).Int)
-	return &bls12377Zr{prod.Mod(prod, fr.Modulus())}
-}
-
-func (z *bls12377Zr) Mod(a driver.Zr) {
-	z.Int.Mod(z.Int, a.(*bls12377Zr).Int)
-}
-
-func (z *bls12377Zr) PowMod(x driver.Zr) driver.Zr {
-	return &bls12377Zr{new(big.Int).Exp(z.Int, x.(*bls12377Zr).Int, fr.Modulus())}
-}
-
-func (z *bls12377Zr) InvModP(a driver.Zr) {
-	z.Int.ModInverse(z.Int, a.(*bls12377Zr).Int)
-}
-
-func (z *bls12377Zr) Bytes() []byte {
-	target := z.Int
-
-	if z.Int.Sign() < 0 || z.Int.Cmp(fr.Modulus()) > 0 {
-		target = new(big.Int).Set(z.Int)
-		target = target.Mod(target, fr.Modulus())
-		if target.Sign() < 0 {
-			target = target.Add(target, fr.Modulus())
-		}
-	}
-
-	return common.BigToBytes(target)
-}
-
-func (z *bls12377Zr) Equals(a driver.Zr) bool {
-	return z.Int.Cmp(a.(*bls12377Zr).Int) == 0
-}
-
-func (z *bls12377Zr) Copy() driver.Zr {
-	return &bls12377Zr{new(big.Int).Set(z.Int)}
-}
-
-func (z *bls12377Zr) Clone(a driver.Zr) {
-	raw := a.(*bls12377Zr).Int.Bytes()
-	z.Int.SetBytes(raw)
-}
-
-func (z *bls12377Zr) String() string {
-	return z.Int.Text(16)
-}
-
-func (z *bls12377Zr) Neg() {
-	z.Int.Neg(z.Int)
-}
-
-/*********************************************************************/
-
 type bls12377G1 struct {
 	*bls12377.G1Affine
 }
@@ -116,7 +50,7 @@ func (g *bls12377G1) Add(a driver.G1) {
 func (g *bls12377G1) Mul(a driver.Zr) driver.G1 {
 	gc := &bls12377G1{&bls12377.G1Affine{}}
 	gc.Clone(g)
-	gc.G1Affine.ScalarMultiplication(g.G1Affine, a.(*bls12377Zr).Int)
+	gc.G1Affine.ScalarMultiplication(g.G1Affine, a.(*common.BaseZr).Int)
 
 	return gc
 }
@@ -188,7 +122,7 @@ func (e *bls12377G2) Copy() driver.G2 {
 func (g *bls12377G2) Mul(a driver.Zr) driver.G2 {
 	gc := &bls12377G2{&bls12377.G2Affine{}}
 	gc.Clone(g)
-	gc.G2Affine.ScalarMultiplication(g.G2Affine, a.(*bls12377Zr).Int)
+	gc.G2Affine.ScalarMultiplication(g.G2Affine, a.(*common.BaseZr).Int)
 
 	return gc
 }
@@ -240,7 +174,7 @@ type bls12377Gt struct {
 func (g *bls12377Gt) Exp(x driver.Zr) driver.Gt {
 	copy := &bls12377.GT{}
 	copy.Set(g.GT)
-	return &bls12377Gt{copy.Exp(*g.GT, x.(*bls12377Zr).Int)}
+	return &bls12377Gt{copy.Exp(*g.GT, x.(*common.BaseZr).Int)}
 }
 
 func (g *bls12377Gt) Equals(a driver.Gt) bool {
@@ -310,11 +244,11 @@ func (c *Bls12_377) ModSub(a, b, m driver.Zr) driver.Zr {
 }
 
 func (c *Bls12_377) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := new(big.Int).Sub(m.(*bls12377Zr).Int, a1.(*bls12377Zr).Int)
+	res := new(big.Int).Sub(m.(*common.BaseZr).Int, a1.(*common.BaseZr).Int)
 	if res.Sign() < 0 {
 		res = res.Add(res, fr.Modulus())
 	}
-	return &bls12377Zr{res}
+	return &common.BaseZr{Int: res, Modulus: fr.Modulus()}
 }
 
 func (c *Bls12_377) ModMul(a1, b1, m driver.Zr) driver.Zr {
@@ -358,7 +292,7 @@ func (c *Bls12_377) GenGt() driver.Gt {
 }
 
 func (c *Bls12_377) GroupOrder() driver.Zr {
-	return &bls12377Zr{fr.Modulus()}
+	return &common.BaseZr{Int: fr.Modulus(), Modulus: fr.Modulus()}
 }
 
 func (c *Bls12_377) CoordinateByteSize() int {
@@ -382,11 +316,11 @@ func (c *Bls12_377) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 }
 
 func (c *Bls12_377) NewZrFromBytes(b []byte) driver.Zr {
-	return &bls12377Zr{new(big.Int).SetBytes(b)}
+	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: fr.Modulus()}
 }
 
 func (c *Bls12_377) NewZrFromInt(i int64) driver.Zr {
-	return &bls12377Zr{big.NewInt(i)}
+	return &common.BaseZr{Int: big.NewInt(i), Modulus: fr.Modulus()}
 }
 
 func (c *Bls12_377) NewG1FromBytes(b []byte) driver.G1 {
@@ -470,7 +404,7 @@ func (c *Bls12_377) NewRandomZr(rng io.Reader) driver.Zr {
 		panic(err)
 	}
 
-	return &bls12377Zr{bi}
+	return &common.BaseZr{Int: bi, Modulus: fr.Modulus()}
 }
 
 func (c *Bls12_377) Rand() (io.Reader, error) {

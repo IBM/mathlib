@@ -25,70 +25,6 @@ func init() {
 	modulusBig.SetString("fffffffffffcf0cd46e5f25eee71a49e0cdc65fb1299921af62d536cd10b500d", 16)
 }
 
-type fp256bnMiraclZr struct {
-	*big.Int
-}
-
-func (b *fp256bnMiraclZr) Plus(a driver.Zr) driver.Zr {
-	return &fp256bnMiraclZr{new(big.Int).Add(b.Int, a.(*fp256bnMiraclZr).Int)}
-}
-
-func (b *fp256bnMiraclZr) Minus(a driver.Zr) driver.Zr {
-	return &fp256bnMiraclZr{new(big.Int).Sub(b.Int, a.(*fp256bnMiraclZr).Int)}
-}
-
-func (b *fp256bnMiraclZr) Mul(a driver.Zr) driver.Zr {
-	prod := new(big.Int).Mul(b.Int, a.(*fp256bnMiraclZr).Int)
-	return &fp256bnMiraclZr{prod.Mod(prod, &modulusBig)}
-}
-
-func (b *fp256bnMiraclZr) PowMod(x driver.Zr) driver.Zr {
-	return &fp256bnMiraclZr{new(big.Int).Exp(b.Int, x.(*fp256bnMiraclZr).Int, &modulusBig)}
-}
-
-func (b *fp256bnMiraclZr) Mod(a driver.Zr) {
-	b.Int.Mod(b.Int, a.(*fp256bnMiraclZr).Int)
-}
-
-func (b *fp256bnMiraclZr) InvModP(p driver.Zr) {
-	b.Int.ModInverse(b.Int, p.(*fp256bnMiraclZr).Int)
-}
-
-func (b *fp256bnMiraclZr) Bytes() []byte {
-	target := b.Int
-
-	if b.Int.Sign() < 0 || b.Int.Cmp(&modulusBig) > 0 {
-		target = new(big.Int).Set(b.Int)
-		target = target.Mod(target, &modulusBig)
-		if target.Sign() < 0 {
-			target = target.Add(target, &modulusBig)
-		}
-	}
-
-	return common.BigToBytes(target)
-}
-
-func (b *fp256bnMiraclZr) Equals(p driver.Zr) bool {
-	return b.Int.Cmp(p.(*fp256bnMiraclZr).Int) == 0
-}
-
-func (b *fp256bnMiraclZr) Copy() driver.Zr {
-	return &fp256bnMiraclZr{new(big.Int).Set(b.Int)}
-}
-
-func (b *fp256bnMiraclZr) Clone(a driver.Zr) {
-	raw := a.(*fp256bnMiraclZr).Int.Bytes()
-	b.Int.SetBytes(raw)
-}
-
-func (b *fp256bnMiraclZr) String() string {
-	return b.Int.Text(16)
-}
-
-func (b *fp256bnMiraclZr) Neg() {
-	b.Int.Neg(b.Int)
-}
-
 /*********************************************************************/
 
 type fp256bnMiraclGt struct {
@@ -96,7 +32,7 @@ type fp256bnMiraclGt struct {
 }
 
 func (a *fp256bnMiraclGt) Exp(x driver.Zr) driver.Gt {
-	return &fp256bnMiraclGt{a.FP12.Pow(bigToMiraclBIG(x.(*fp256bnMiraclZr).Int))}
+	return &fp256bnMiraclGt{a.FP12.Pow(bigToMiraclBIG(x.(*common.BaseZr).Int))}
 }
 
 func (a *fp256bnMiraclGt) Equals(b driver.Gt) bool {
@@ -149,11 +85,11 @@ func (*Fp256Miraclbn) ModMul(a1, b1, m driver.Zr) driver.Zr {
 }
 
 func (*Fp256Miraclbn) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := new(big.Int).Sub(m.(*fp256bnMiraclZr).Int, a1.(*fp256bnMiraclZr).Int)
+	res := new(big.Int).Sub(m.(*common.BaseZr).Int, a1.(*common.BaseZr).Int)
 	if res.Sign() < 0 {
 		res = res.Add(res, &modulusBig)
 	}
-	return &fp256bnMiraclZr{res}
+	return &common.BaseZr{Int: res, Modulus: &modulusBig}
 }
 
 func (*Fp256Miraclbn) GenG1() driver.G1 {
@@ -171,7 +107,7 @@ func (p *Fp256Miraclbn) GenGt() driver.Gt {
 }
 
 func (p *Fp256Miraclbn) GroupOrder() driver.Zr {
-	return &fp256bnMiraclZr{&modulusBig}
+	return &common.BaseZr{Int: &modulusBig, Modulus: &modulusBig}
 }
 
 func (p *Fp256Miraclbn) CoordinateByteSize() int {
@@ -194,7 +130,7 @@ func (p *Fp256Miraclbn) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 }
 
 func (p *Fp256Miraclbn) NewZrFromBytes(b []byte) driver.Zr {
-	return &fp256bnMiraclZr{new(big.Int).SetBytes(b)}
+	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: &modulusBig}
 }
 
 func bigToMiraclBIG(bi *big.Int) *FP256BN.BIG {
@@ -228,7 +164,7 @@ func bigToMiraclBIG(bi *big.Int) *FP256BN.BIG {
 }
 
 func (p *Fp256Miraclbn) NewZrFromInt(i int64) driver.Zr {
-	return &fp256bnMiraclZr{big.NewInt(i)}
+	return &common.BaseZr{Int: big.NewInt(i), Modulus: &modulusBig}
 }
 
 func (p *Fp256Miraclbn) NewG1FromBytes(b []byte) driver.G1 {
@@ -286,7 +222,7 @@ func (p *Fp256Miraclbn) NewRandomZr(rng io.Reader) driver.Zr {
 		panic(err)
 	}
 
-	return &fp256bnMiraclZr{bi}
+	return &common.BaseZr{Int: bi, Modulus: &modulusBig}
 }
 
 /*********************************************************************/
@@ -310,11 +246,11 @@ func (e *fp256bnMiraclG1) Add(a driver.G1) {
 }
 
 func (e *fp256bnMiraclG1) Mul(a driver.Zr) driver.G1 {
-	return &fp256bnMiraclG1{FP256BN.G1mul(e.ECP, bigToMiraclBIG(a.(*fp256bnMiraclZr).Int))}
+	return &fp256bnMiraclG1{FP256BN.G1mul(e.ECP, bigToMiraclBIG(a.(*common.BaseZr).Int))}
 }
 
 func (e *fp256bnMiraclG1) Mul2(ee driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
-	return &fp256bnMiraclG1{e.ECP.Mul2(bigToMiraclBIG(ee.(*fp256bnMiraclZr).Int), Q.(*fp256bnMiraclG1).ECP, bigToMiraclBIG(f.(*fp256bnMiraclZr).Int))}
+	return &fp256bnMiraclG1{e.ECP.Mul2(bigToMiraclBIG(ee.(*common.BaseZr).Int), Q.(*fp256bnMiraclG1).ECP, bigToMiraclBIG(f.(*common.BaseZr).Int))}
 }
 
 func (e *fp256bnMiraclG1) Equals(a driver.G1) bool {
@@ -380,7 +316,7 @@ func (e *fp256bnMiraclG2) Sub(a driver.G2) {
 }
 
 func (e *fp256bnMiraclG2) Mul(a driver.Zr) driver.G2 {
-	return &fp256bnMiraclG2{e.ECP2.Mul(bigToMiraclBIG(a.(*fp256bnMiraclZr).Int))}
+	return &fp256bnMiraclG2{e.ECP2.Mul(bigToMiraclBIG(a.(*common.BaseZr).Int))}
 }
 
 func (e *fp256bnMiraclG2) Affine() {
