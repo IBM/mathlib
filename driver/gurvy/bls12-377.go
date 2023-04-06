@@ -455,6 +455,15 @@ func (c *Bls12_377) HashToG1(data []byte) driver.G1 {
 	return &bls12377G1{&g1}
 }
 
+func (p *Bls12_377) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	g1, err := bls12377.HashToG1(data, domain)
+	if err != nil {
+		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
+	}
+
+	return &bls12377G1{&g1}
+}
+
 func (c *Bls12_377) NewRandomZr(rng io.Reader) driver.Zr {
 	bi, err := rand.Int(rng, fr.Modulus())
 	if err != nil {

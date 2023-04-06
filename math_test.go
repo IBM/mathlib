@@ -145,7 +145,7 @@ func runG1Test(t *testing.T, c *Curve) {
 	assert.False(t, GS.IsInfinity())
 	assert.Len(t, GS.Bytes(), packedSizes[c.curveID])
 
-	GS = c.HashToG1([]byte("it's a heavy metal universe"))
+	GS = c.HashToG1WithDomain([]byte("it's a heavy metal universe"), []byte("powerplant"))
 	assert.False(t, GS.IsInfinity())
 	assert.Len(t, GS.Bytes(), packedSizes[c.curveID])
 

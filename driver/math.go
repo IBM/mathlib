@@ -36,6 +36,7 @@ type Curve interface {
 	ModSub(a, b, m Zr) Zr
 	HashToZr(data []byte) Zr
 	HashToG1(data []byte) G1
+	HashToG1WithDomain(data, domain []byte) G1
 	NewRandomZr(rng io.Reader) Zr
 	Rand() (io.Reader, error)
 }

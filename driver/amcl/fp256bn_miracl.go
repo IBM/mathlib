@@ -269,9 +269,11 @@ func (p *Fp256Miraclbn) HashToZr(data []byte) driver.Zr {
 }
 
 func (p *Fp256Miraclbn) HashToG1(data []byte) driver.G1 {
-	zr := p.HashToZr(data)
-	fp := FP256BN.NewFPbig(bigToMiraclBIG(zr.(*fp256bnMiraclZr).Int))
-	return &fp256bnMiraclG1{FP256BN.ECP_map2point(fp)}
+	return &fp256bnMiraclG1{bls_hash_to_point_miracl(data, []byte{})}
+}
+
+func (p *Fp256Miraclbn) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	return &fp256bnMiraclG1{bls_hash_to_point_miracl(data, domain)}
 }
 
 func (p *Fp256Miraclbn) Rand() (io.Reader, error) {

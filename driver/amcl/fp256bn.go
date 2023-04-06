@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package amcl
 
 import (
+	"crypto/hmac"
 	r "crypto/rand"
 	"crypto/sha256"
 	"io"
@@ -267,6 +268,12 @@ func (p *Fp256bn) HashToZr(data []byte) driver.Zr {
 
 func (p *Fp256bn) HashToG1(data []byte) driver.G1 {
 	return &fp256bnG1{FP256BN.Bls_hash(string(data))}
+}
+
+func (p *Fp256bn) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	mac := hmac.New(sha256.New, domain)
+	mac.Write(data)
+	return &fp256bnG1{FP256BN.Bls_hash(string(mac.Sum(nil)))}
 }
 
 func (p *Fp256bn) Rand() (io.Reader, error) {

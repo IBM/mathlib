@@ -449,15 +449,28 @@ func (c *Bls12_381) HashToZr(data []byte) driver.Zr {
 }
 
 func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
-	dstG1 := []byte("BLS12381G1_XMD:BLAKE2B_SSWU_RO_BBS+_SIGNATURES:1_0_0")
-
 	hashFunc := func() hash.Hash {
 		// We pass a null key so error is impossible here.
 		h, _ := blake2b.New512(nil) //nolint:errcheck
 		return h
 	}
 
-	g1, err := HashToG1(data, dstG1, hashFunc)
+	g1, err := HashToG1(data, []byte{}, hashFunc)
+	if err != nil {
+		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
+	}
+
+	return &bls12381G1{&g1}
+}
+
+func (p *Bls12_381) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	hashFunc := func() hash.Hash {
+		// We pass a null key so error is impossible here.
+		h, _ := blake2b.New512(nil) //nolint:errcheck
+		return h
+	}
+
+	g1, err := HashToG1(data, domain, hashFunc)
 	if err != nil {
 		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
 	}

@@ -468,16 +468,14 @@ func (c *Bls12_381) HashToZr(data []byte) driver.Zr {
 	return digestBig
 }
 
-func hashToG1(data []byte) (*bls12381.PointG1, error) {
-	dstG1 := []byte("BLS12381G1_XMD:BLAKE2B_SSWU_RO_BBS+_SIGNATURES:1_0_0")
-
+func hashToG1(data, domain []byte) (*bls12381.PointG1, error) {
 	hashFunc := func() hash.Hash {
 		// We pass a null key so error is impossible here.
 		h, _ := blake2b.New512(nil) //nolint:errcheck
 		return h
 	}
 
-	p, err := HashToCurveGeneric(data, dstG1, hashFunc)
+	p, err := HashToCurveGeneric(data, domain, hashFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -485,10 +483,17 @@ func hashToG1(data []byte) (*bls12381.PointG1, error) {
 	return p, nil
 }
 
-var domain = []byte("MATHLIB_BLS12381")
-
 func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
-	p, err := hashToG1(data)
+	p, err := hashToG1(data, []byte{})
+	if err != nil {
+		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
+	}
+
+	return &bls12_381G1{p}
+}
+
+func (c *Bls12_381) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	p, err := hashToG1(data, domain)
 	if err != nil {
 		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
 	}
