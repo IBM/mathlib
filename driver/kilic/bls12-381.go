@@ -15,98 +15,10 @@ import (
 	"math/big"
 
 	"github.com/IBM/mathlib/driver"
+	"github.com/IBM/mathlib/driver/common"
 	bls12381 "github.com/kilic/bls12-381"
 	"golang.org/x/crypto/blake2b"
 )
-
-/*********************************************************************/
-
-var qbls381 = bls12381.Fr{0xffffffff00000001, 0x53bda402fffe5bfe, 0x3339d80809a1d805, 0x73eda753299d7d48}
-var qbls381Big = bls12381.NewG1().Q()
-
-func fromBig(in *big.Int) *bls12381.Fr {
-	e := bls12381.NewFr()
-	e.Zero()
-	_in := new(big.Int).Set(in)
-	zero := new(big.Int)
-	c0 := _in.Cmp(zero)
-	c1 := _in.Cmp(qbls381Big)
-	if c0 == -1 || c1 == 1 {
-		_in.Mod(_in, qbls381Big)
-	}
-	words := _in.Bits()
-	for i := 0; i < len(words); i++ {
-		e[i] = uint64(words[i])
-	}
-	return e
-}
-
-type bls12_381Zr struct {
-	*bls12381.Fr
-}
-
-func (z *bls12_381Zr) Plus(a driver.Zr) driver.Zr {
-	fr := bls12381.NewFr()
-	fr.Add(z.Fr, a.(*bls12_381Zr).Fr)
-	return &bls12_381Zr{fr}
-}
-
-func (z *bls12_381Zr) Minus(a driver.Zr) driver.Zr {
-	fr := bls12381.NewFr()
-	fr.Sub(z.Fr, a.(*bls12_381Zr).Fr)
-	return &bls12_381Zr{fr}
-}
-
-func (z *bls12_381Zr) Mul(a driver.Zr) driver.Zr {
-	fr := bls12381.NewFr()
-	fr.Mul(z.Fr, a.(*bls12_381Zr).Fr)
-	return &bls12_381Zr{fr}
-}
-
-func (z *bls12_381Zr) Mod(a driver.Zr) {
-	abig := a.(*bls12_381Zr).Fr.ToBig()
-	zBig := z.Fr.ToBig()
-	res := zBig.Mod(zBig, abig)
-	z.Fr = fromBig(res)
-}
-
-func (z *bls12_381Zr) PowMod(x driver.Zr) driver.Zr {
-	fr := bls12381.NewFr()
-	big := x.(*bls12_381Zr).Fr.ToBig()
-	fr.Exp(z.Fr, big)
-	return &bls12_381Zr{fr}
-}
-
-func (z *bls12_381Zr) InvModP(a driver.Zr) {
-	abig := a.(*bls12_381Zr).Fr.ToBig()
-	zBig := z.Fr.ToBig()
-	res := zBig.ModInverse(zBig, abig)
-	z.Fr = fromBig(res)
-}
-
-func (z *bls12_381Zr) Bytes() []byte {
-	return z.Fr.ToBytes()
-}
-
-func (z *bls12_381Zr) Equals(a driver.Zr) bool {
-	return z.Fr.Cmp(a.(*bls12_381Zr).Fr) == 0
-}
-
-func (z *bls12_381Zr) Copy() driver.Zr {
-	return &bls12_381Zr{bls12381.NewFr().Set(z.Fr)}
-}
-
-func (z *bls12_381Zr) Clone(a driver.Zr) {
-	z.Fr.Set(a.(*bls12_381Zr).Fr)
-}
-
-func (z *bls12_381Zr) String() string {
-	return z.Fr.ToBig().Text(16)
-}
-
-func (z *bls12_381Zr) Neg() {
-	z.Fr.Neg(z.Fr)
-}
 
 /*********************************************************************/
 
@@ -135,7 +47,7 @@ func (g *bls12_381G1) Mul(a driver.Zr) driver.G1 {
 	g1 := bls12381.NewG1()
 	res := g1.New()
 
-	g1.MulScalar(res, g.PointG1, a.(*bls12_381Zr).Fr)
+	g1.MulScalarBig(res, g.PointG1, a.(*common.BaseZr).Int)
 
 	return &bls12_381G1{res}
 }
@@ -210,7 +122,7 @@ func (g *bls12_381G2) Mul(a driver.Zr) driver.G2 {
 	g2 := bls12381.NewG2()
 	res := g2.New()
 
-	g2.MulScalar(res, g.PointG2, a.(*bls12_381Zr).Fr)
+	g2.MulScalarBig(res, g.PointG2, a.(*common.BaseZr).Int)
 
 	return &bls12_381G2{res}
 }
@@ -265,7 +177,7 @@ type bls12_381Gt struct {
 func (g *bls12_381Gt) Exp(x driver.Zr) driver.Gt {
 	gt := bls12381.NewGT()
 	res := gt.New()
-	gt.Exp(res, g.E, x.(*bls12_381Zr).Fr.ToBig())
+	gt.Exp(res, g.E, x.(*common.BaseZr).Int)
 
 	return &bls12_381Gt{res}
 }
@@ -338,12 +250,11 @@ func (c *Bls12_381) ModSub(a, b, m driver.Zr) driver.Zr {
 }
 
 func (c *Bls12_381) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := bls12381.NewFr()
-	res.Sub(m.(*bls12_381Zr).Fr, a1.(*bls12_381Zr).Fr)
-	if res.Cmp(bls12381.NewFr().Zero()) < 0 {
-		res.Add(res, &qbls381)
+	res := new(big.Int).Sub(m.(*common.BaseZr).Int, a1.(*common.BaseZr).Int)
+	if res.Sign() < 0 {
+		res = res.Add(res, bls12381.NewG1().Q())
 	}
-	return &bls12_381Zr{res}
+	return &common.BaseZr{Int: res, Modulus: bls12381.NewG1().Q()}
 }
 
 func (c *Bls12_381) ModMul(a1, b1, m driver.Zr) driver.Zr {
@@ -373,8 +284,7 @@ func (c *Bls12_381) GenGt() driver.Gt {
 }
 
 func (c *Bls12_381) GroupOrder() driver.Zr {
-	qcopy := qbls381
-	return &bls12_381Zr{&qcopy}
+	return &common.BaseZr{Int: bls12381.NewG1().Q(), Modulus: bls12381.NewG1().Q()}
 }
 
 func (c *Bls12_381) CoordinateByteSize() int {
@@ -398,17 +308,11 @@ func (c *Bls12_381) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 }
 
 func (c *Bls12_381) NewZrFromBytes(b []byte) driver.Zr {
-	return &bls12_381Zr{bls12381.NewFr().FromBytes(b)}
+	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: bls12381.NewG1().Q()}
 }
 
 func (c *Bls12_381) NewZrFromInt(i int64) driver.Zr {
-	bi := &big.Int{}
-	bi.SetInt64(i)
-	if i < 0 {
-		bi.Add(bi, qbls381Big)
-	}
-
-	return &bls12_381Zr{fromBig(bi)}
+	return &common.BaseZr{Int: big.NewInt(i), Modulus: bls12381.NewG1().Q()}
 }
 
 func (c *Bls12_381) NewG1FromBytes(b []byte) driver.G1 {
@@ -502,12 +406,12 @@ func (c *Bls12_381) HashToG1WithDomain(data, domain []byte) driver.G1 {
 }
 
 func (c *Bls12_381) NewRandomZr(rng io.Reader) driver.Zr {
-	fr, err := bls12381.NewFr().Rand(rng)
+	bi, err := rand.Int(rng, bls12381.NewG1().Q())
 	if err != nil {
 		panic(err)
 	}
 
-	return &bls12_381Zr{fr}
+	return &common.BaseZr{Int: bi, Modulus: bls12381.NewG1().Q()}
 }
 
 func (c *Bls12_381) Rand() (io.Reader, error) {
