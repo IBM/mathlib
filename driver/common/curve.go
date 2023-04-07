@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package common
 
 import (
+	"crypto/rand"
+	"io"
 	"math/big"
 
 	"github.com/IBM/mathlib/driver"
@@ -33,4 +35,13 @@ func (c *CurveBase) NewZrFromBytes(b []byte) driver.Zr {
 
 func (c *CurveBase) NewZrFromInt(i int64) driver.Zr {
 	return &BaseZr{Int: big.NewInt(i), Modulus: c.Modulus}
+}
+
+func (c *CurveBase) NewRandomZr(rng io.Reader) driver.Zr {
+	bi, err := rand.Int(rng, c.Modulus)
+	if err != nil {
+		panic(err)
+	}
+
+	return &BaseZr{Int: bi, Modulus: c.Modulus}
 }

@@ -201,15 +201,6 @@ func (p *Fp256Miraclbn) Rand() (io.Reader, error) {
 	return r.Reader, nil
 }
 
-func (p *Fp256Miraclbn) NewRandomZr(rng io.Reader) driver.Zr {
-	bi, err := r.Int(rng, &modulusBig)
-	if err != nil {
-		panic(err)
-	}
-
-	return &common.BaseZr{Int: bi, Modulus: &modulusBig}
-}
-
 /*********************************************************************/
 
 type fp256bnMiraclG1 struct {

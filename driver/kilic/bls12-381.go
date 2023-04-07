@@ -390,15 +390,6 @@ func (c *Bls12_381) HashToG1WithDomain(data, domain []byte) driver.G1 {
 	return &bls12_381G1{p}
 }
 
-func (c *Bls12_381) NewRandomZr(rng io.Reader) driver.Zr {
-	bi, err := rand.Int(rng, bls12381.NewG1().Q())
-	if err != nil {
-		panic(err)
-	}
-
-	return &common.BaseZr{Int: bi, Modulus: bls12381.NewG1().Q()}
-}
-
 func (c *Bls12_381) Rand() (io.Reader, error) {
 	return rand.Reader, nil
 }
