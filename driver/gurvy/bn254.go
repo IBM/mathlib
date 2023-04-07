@@ -11,7 +11,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"math/big"
 	"regexp"
 	"strings"
 
@@ -309,14 +308,6 @@ func (c *Bn254) NewG2() driver.G2 {
 
 func (c *Bn254) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 	return nil
-}
-
-func (c *Bn254) NewZrFromBytes(b []byte) driver.Zr {
-	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: fr.Modulus()}
-}
-
-func (c *Bn254) NewZrFromInt(i int64) driver.Zr {
-	return &common.BaseZr{Int: big.NewInt(i), Modulus: fr.Modulus()}
 }
 
 func (c *Bn254) NewG1FromBytes(b []byte) driver.G1 {

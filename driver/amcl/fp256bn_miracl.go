@@ -122,10 +122,6 @@ func (p *Fp256Miraclbn) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 	return nil
 }
 
-func (p *Fp256Miraclbn) NewZrFromBytes(b []byte) driver.Zr {
-	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: &modulusBig}
-}
-
 func bigToMiraclBIG(bi *big.Int) *FP256BN.BIG {
 	var i0, i1, i2, i3, i4 int64
 	biCopy := bi
@@ -154,10 +150,6 @@ func bigToMiraclBIG(bi *big.Int) *FP256BN.BIG {
 	zr := FP256BN.NewBIGints([FP256BN.NLEN]FP256BN.Chunk{FP256BN.Chunk(i0), FP256BN.Chunk(i1), FP256BN.Chunk(i2), FP256BN.Chunk(i3), FP256BN.Chunk(i4)})
 
 	return zr
-}
-
-func (p *Fp256Miraclbn) NewZrFromInt(i int64) driver.Zr {
-	return &common.BaseZr{Int: big.NewInt(i), Modulus: &modulusBig}
 }
 
 func (p *Fp256Miraclbn) NewG1FromBytes(b []byte) driver.G1 {

@@ -23,6 +23,14 @@ func (c *CurveBase) ModNeg(a1, m driver.Zr) driver.Zr {
 	return &BaseZr{Int: res, Modulus: c.Modulus}
 }
 
-func (p *CurveBase) GroupOrder() driver.Zr {
-	return &BaseZr{Int: p.Modulus, Modulus: p.Modulus}
+func (c *CurveBase) GroupOrder() driver.Zr {
+	return &BaseZr{Int: c.Modulus, Modulus: c.Modulus}
+}
+
+func (c *CurveBase) NewZrFromBytes(b []byte) driver.Zr {
+	return &BaseZr{Int: new(big.Int).SetBytes(b), Modulus: c.Modulus}
+}
+
+func (c *CurveBase) NewZrFromInt(i int64) driver.Zr {
+	return &BaseZr{Int: big.NewInt(i), Modulus: c.Modulus}
 }

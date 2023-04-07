@@ -118,10 +118,6 @@ func (p *Fp256bn) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 	return nil
 }
 
-func (p *Fp256bn) NewZrFromBytes(b []byte) driver.Zr {
-	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: &modulusBig}
-}
-
 func bigToMiraclBIGCore(bi *big.Int) *FP256BN.BIG {
 	var i0, i1, i2, i3, i4 int64
 	biCopy := bi
@@ -150,10 +146,6 @@ func bigToMiraclBIGCore(bi *big.Int) *FP256BN.BIG {
 	zr := FP256BN.NewBIGints([FP256BN.NLEN]FP256BN.Chunk{FP256BN.Chunk(i0), FP256BN.Chunk(i1), FP256BN.Chunk(i2), FP256BN.Chunk(i3), FP256BN.Chunk(i4)})
 
 	return zr
-}
-
-func (p *Fp256bn) NewZrFromInt(i int64) driver.Zr {
-	return &common.BaseZr{Int: big.NewInt(i), Modulus: &modulusBig}
 }
 
 func (p *Fp256bn) NewG1FromBytes(b []byte) driver.G1 {
@@ -277,7 +269,7 @@ func (b *fp256bnG1) String() string {
 }
 
 func (e *fp256bnG1) Neg() {
-	res := e.Mul(new(Fp256bn).NewZrFromInt(-1))
+	res := e.Mul(NewFp256bn().NewZrFromInt(-1))
 	e.ECP = res.(*fp256bnG1).ECP
 }
 

@@ -11,7 +11,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"math/big"
 	"strings"
 
 	"github.com/IBM/mathlib/driver"
@@ -306,14 +305,6 @@ func (c *Bls12_377) NewG2() driver.G2 {
 
 func (c *Bls12_377) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 	return nil
-}
-
-func (c *Bls12_377) NewZrFromBytes(b []byte) driver.Zr {
-	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: fr.Modulus()}
-}
-
-func (c *Bls12_377) NewZrFromInt(i int64) driver.Zr {
-	return &common.BaseZr{Int: big.NewInt(i), Modulus: fr.Modulus()}
 }
 
 func (c *Bls12_377) NewG1FromBytes(b []byte) driver.G1 {

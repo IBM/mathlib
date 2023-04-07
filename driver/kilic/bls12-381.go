@@ -300,14 +300,6 @@ func (c *Bls12_381) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
 	return nil
 }
 
-func (c *Bls12_381) NewZrFromBytes(b []byte) driver.Zr {
-	return &common.BaseZr{Int: new(big.Int).SetBytes(b), Modulus: bls12381.NewG1().Q()}
-}
-
-func (c *Bls12_381) NewZrFromInt(i int64) driver.Zr {
-	return &common.BaseZr{Int: big.NewInt(i), Modulus: bls12381.NewG1().Q()}
-}
-
 func (c *Bls12_381) NewG1FromBytes(b []byte) driver.G1 {
 	g1 := bls12381.NewG1()
 	p, err := g1.FromUncompressed(b)
