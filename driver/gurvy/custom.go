@@ -158,7 +158,7 @@ func Hash(msg, dst []byte, count int, hashFunc func() hash.Hash) ([]fp.Element, 
 	return res, nil
 }
 
-func HashToG1(msg, dst []byte, hashFunc func() hash.Hash) (bls12381.G1Affine, error) {
+func HashToG1GenericBESwu(msg, dst []byte, hashFunc func() hash.Hash) (bls12381.G1Affine, error) {
 	u, err := Hash(msg, dst, 2*1, hashFunc)
 	if err != nil {
 		return bls12381.G1Affine{}, err

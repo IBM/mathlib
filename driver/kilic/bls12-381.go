@@ -8,13 +8,11 @@ package kilic
 
 import (
 	"fmt"
-	"hash"
 	"math/big"
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
 	bls12381 "github.com/kilic/bls12-381"
-	"golang.org/x/crypto/blake2b"
 )
 
 /*********************************************************************/
@@ -218,8 +216,16 @@ func NewBls12_381() *Bls12_381 {
 	return &Bls12_381{&common.CurveBase{Modulus: bls12381.NewG1().Q()}}
 }
 
+func NewBls12_381BBS() *Bls12_381BBS {
+	return &Bls12_381BBS{NewBls12_381()}
+}
+
 type Bls12_381 struct {
 	*common.CurveBase
+}
+
+type Bls12_381BBS struct {
+	*Bls12_381
 }
 
 func (c *Bls12_381) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {
@@ -327,23 +333,8 @@ func (c *Bls12_381) NewGtFromBytes(b []byte) driver.Gt {
 	return &bls12_381Gt{p}
 }
 
-func hashToG1(data, domain []byte) (*bls12381.PointG1, error) {
-	hashFunc := func() hash.Hash {
-		// We pass a null key so error is impossible here.
-		h, _ := blake2b.New512(nil) //nolint:errcheck
-		return h
-	}
-
-	p, err := HashToCurveGeneric(data, domain, hashFunc)
-	if err != nil {
-		return nil, err
-	}
-
-	return p, nil
-}
-
 func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
-	p, err := hashToG1(data, []byte{})
+	p, err := bls12381.NewG1().HashToCurve(data, []byte{})
 	if err != nil {
 		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
 	}
@@ -352,7 +343,25 @@ func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
 }
 
 func (c *Bls12_381) HashToG1WithDomain(data, domain []byte) driver.G1 {
-	p, err := hashToG1(data, domain)
+	p, err := bls12381.NewG1().HashToCurve(data, domain)
+	if err != nil {
+		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
+	}
+
+	return &bls12_381G1{p}
+}
+
+func (c *Bls12_381BBS) HashToG1(data []byte) driver.G1 {
+	p, err := HashToG1GenericBESwu(data, []byte{})
+	if err != nil {
+		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
+	}
+
+	return &bls12_381G1{p}
+}
+
+func (c *Bls12_381BBS) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	p, err := HashToG1GenericBESwu(data, domain)
 	if err != nil {
 		panic(fmt.Sprintf("HashToCurve failed [%s]", err.Error()))
 	}

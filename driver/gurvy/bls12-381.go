@@ -209,8 +209,16 @@ func NewBls12_381() *Bls12_381 {
 	return &Bls12_381{&common.CurveBase{Modulus: fr.Modulus()}}
 }
 
+func NewBls12_381BBS() *Bls12_381BBS {
+	return &Bls12_381BBS{NewBls12_381()}
+}
+
 type Bls12_381 struct {
 	*common.CurveBase
+}
+
+type Bls12_381BBS struct {
+	*Bls12_381
 }
 
 func (c *Bls12_381) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {
@@ -337,13 +345,7 @@ func (c *Bls12_381) NewGtFromBytes(b []byte) driver.Gt {
 }
 
 func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
-	hashFunc := func() hash.Hash {
-		// We pass a null key so error is impossible here.
-		h, _ := blake2b.New512(nil) //nolint:errcheck
-		return h
-	}
-
-	g1, err := HashToG1(data, []byte{}, hashFunc)
+	g1, err := bls12381.HashToG1(data, []byte{})
 	if err != nil {
 		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
 	}
@@ -352,13 +354,37 @@ func (c *Bls12_381) HashToG1(data []byte) driver.G1 {
 }
 
 func (p *Bls12_381) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	g1, err := bls12381.HashToG1(data, domain)
+	if err != nil {
+		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
+	}
+
+	return &bls12381G1{&g1}
+}
+
+func (c *Bls12_381BBS) HashToG1(data []byte) driver.G1 {
 	hashFunc := func() hash.Hash {
 		// We pass a null key so error is impossible here.
 		h, _ := blake2b.New512(nil) //nolint:errcheck
 		return h
 	}
 
-	g1, err := HashToG1(data, domain, hashFunc)
+	g1, err := HashToG1GenericBESwu(data, []byte{}, hashFunc)
+	if err != nil {
+		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
+	}
+
+	return &bls12381G1{&g1}
+}
+
+func (p *Bls12_381BBS) HashToG1WithDomain(data, domain []byte) driver.G1 {
+	hashFunc := func() hash.Hash {
+		// We pass a null key so error is impossible here.
+		h, _ := blake2b.New512(nil) //nolint:errcheck
+		return h
+	}
+
+	g1, err := HashToG1GenericBESwu(data, domain, hashFunc)
 	if err != nil {
 		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
 	}

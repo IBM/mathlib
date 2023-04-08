@@ -107,6 +107,8 @@ var expectedG1Gens = []string{
 	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381
 	"(81937999373150964239938255573465948239988671502647976594219695644855304257327692006745978603320413799295628339695,241266749859715473739788878240585681733927191168601896383759122102112907357779751001206799952863815012735208165030)",    // BLS12_377
 	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381_BBS
+	"(3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507,1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569)", // BLS12_381_BBS_GURVY
 }
 
 var expectedModuli = []string{
@@ -115,6 +117,8 @@ var expectedModuli = []string{
 	"fffffffffffcf0cd46e5f25eee71a49e0cdc65fb1299921af62d536cd10b500d",
 	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 	"12ab655e9a2ca55660b44d1e5c37b00159aa76fed00000010a11800000000001",
+	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
+	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 	"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 }
 
@@ -175,6 +179,8 @@ var packedSizes = []int{
 	2 * Curves[BLS12_381].CoordinateByteSize,             // BLS12_381
 	2 * Curves[BLS12_377_GURVY].CoordinateByteSize,       // BLS12_377_GURVY
 	2 * Curves[BLS12_381_GURVY].CoordinateByteSize,       // BLS12_381_GURVY
+	2 * Curves[BLS12_381_BBS].CoordinateByteSize,         // BLS12_381_BBS
+	2 * Curves[BLS12_381_BBS_GURVY].CoordinateByteSize,   // BLS12_381_BBS_GURVY
 }
 
 func runG2Test(t *testing.T, c *Curve) {
@@ -379,6 +385,8 @@ var compressedSizesG1 = []int{
 	Curves[BLS12_381].CoordinateByteSize,               // BLS12_381
 	Curves[BLS12_377_GURVY].CoordinateByteSize,         // BLS12_377_GURVY
 	Curves[BLS12_381_GURVY].CoordinateByteSize,         // BLS12_381_GURVY
+	Curves[BLS12_381_BBS].CoordinateByteSize,           // BLS12_381_BBS
+	Curves[BLS12_381_BBS_GURVY].CoordinateByteSize,     // BLS12_381_BBS_GURVY
 }
 
 func runModAddSubNegTest(t *testing.T, c *Curve) {
@@ -644,5 +652,43 @@ func Test381Compat(t *testing.T) {
 
 	hg := gurvy.HashToG1([]byte("Chase!"))
 	hk := kilic.HashToG1([]byte("Chase!"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
+
+	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
+}
+
+func Test381BBSCompat(t *testing.T) {
+	rng, err := Curves[BLS12_381_BBS].Rand()
+	assert.NoError(t, err)
+
+	kilic := Curves[BLS12_381_BBS]
+	gurvy := Curves[BLS12_381_BBS_GURVY]
+
+	rk := kilic.NewRandomZr(rng)
+	rg := gurvy.NewZrFromBytes(rk.Bytes())
+	assert.Equal(t, rk.Bytes(), rg.Bytes())
+
+	g1g := gurvy.GenG1.Mul(rg)
+	g1k := kilic.GenG1.Mul(rk)
+	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
+	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
+
+	g2g := gurvy.GenG2.Mul(rg)
+	g2k := kilic.GenG2.Mul(rk)
+	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
+	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
+
+	gtg := gurvy.GenGt.Exp(rg)
+	gtk := kilic.GenGt.Exp(rk)
+	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
+
+	hg := gurvy.HashToG1([]byte("Chase!"))
+	hk := kilic.HashToG1([]byte("Chase!"))
+	assert.Equal(t, hg.Bytes(), hk.Bytes())
+
+	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
 	assert.Equal(t, hg.Bytes(), hk.Bytes())
 }

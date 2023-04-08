@@ -28,6 +28,8 @@ const (
 	BLS12_381
 	BLS12_377_GURVY
 	BLS12_381_GURVY
+	BLS12_381_BBS
+	BLS12_381_BBS_GURVY
 )
 
 var Curves []*Curve = []*Curve{
@@ -90,6 +92,26 @@ var Curves []*Curve = []*Curve{
 		CoordinateByteSize: (&gurvy.Bls12_381{}).CoordinateByteSize(),
 		ScalarByteSize:     (&gurvy.Bls12_381{}).ScalarByteSize(),
 		curveID:            BLS12_381_GURVY,
+	},
+	{
+		c:                  kilic.NewBls12_381BBS(),
+		GenG1:              &G1{g1: kilic.NewBls12_381BBS().GenG1(), curveID: BLS12_381_BBS},
+		GenG2:              &G2{g2: kilic.NewBls12_381BBS().GenG2(), curveID: BLS12_381_BBS},
+		GenGt:              &Gt{gt: kilic.NewBls12_381BBS().GenGt(), curveID: BLS12_381_BBS},
+		GroupOrder:         &Zr{zr: kilic.NewBls12_381().GroupOrder(), curveID: BLS12_381_BBS},
+		CoordinateByteSize: kilic.NewBls12_381BBS().CoordinateByteSize(),
+		ScalarByteSize:     kilic.NewBls12_381BBS().ScalarByteSize(),
+		curveID:            BLS12_381_BBS,
+	},
+	{
+		c:                  gurvy.NewBls12_381BBS(),
+		GenG1:              &G1{g1: gurvy.NewBls12_381BBS().GenG1(), curveID: BLS12_381_BBS_GURVY},
+		GenG2:              &G2{g2: gurvy.NewBls12_381BBS().GenG2(), curveID: BLS12_381_BBS_GURVY},
+		GenGt:              &Gt{gt: gurvy.NewBls12_381BBS().GenGt(), curveID: BLS12_381_BBS_GURVY},
+		GroupOrder:         &Zr{zr: gurvy.NewBls12_381().GroupOrder(), curveID: BLS12_381_BBS_GURVY},
+		CoordinateByteSize: gurvy.NewBls12_381BBS().CoordinateByteSize(),
+		ScalarByteSize:     gurvy.NewBls12_381BBS().ScalarByteSize(),
+		curveID:            BLS12_381_BBS_GURVY,
 	},
 }
 

@@ -14,6 +14,7 @@ import (
 	_ "unsafe"
 
 	bls12381 "github.com/kilic/bls12-381"
+	"golang.org/x/crypto/blake2b"
 )
 
 const fpByteSize = 48
@@ -196,7 +197,22 @@ func feAtPos(pos int, p *bls12381.PointG1) *Fe {
 	return (*Fe)(unsafe.Pointer(&(p[pos])))
 }
 
-func HashToCurveGeneric(msg, domain []byte, hashFunc func() hash.Hash) (*bls12381.PointG1, error) {
+func HashToG1GenericBESwu(data, domain []byte) (*bls12381.PointG1, error) {
+	hashFunc := func() hash.Hash {
+		// We pass a null key so error is impossible here.
+		h, _ := blake2b.New512(nil) //nolint:errcheck
+		return h
+	}
+
+	p, err := HashToCurveGenericBESwu(data, domain, hashFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
+func HashToCurveGenericBESwu(msg, domain []byte, hashFunc func() hash.Hash) (*bls12381.PointG1, error) {
 	g := bls12381.NewG1()
 	hashRes, err := hashToFpXMD(hashFunc, msg, domain, 2)
 	if err != nil {
