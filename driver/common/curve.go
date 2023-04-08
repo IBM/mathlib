@@ -8,6 +8,7 @@ package common
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"io"
 	"math/big"
 
@@ -67,4 +68,9 @@ func (c *CurveBase) NewRandomZr(rng io.Reader) driver.Zr {
 	return &BaseZr{Int: bi, Modulus: c.Modulus}
 }
 
-// TODO: add modAdd, modMul, modSub
+func (c *CurveBase) HashToZr(data []byte) driver.Zr {
+	digest := sha256.Sum256(data)
+	digestBig := new(big.Int).SetBytes(digest[:])
+	digestBig.Mod(digestBig, c.Modulus)
+	return &BaseZr{Int: digestBig, Modulus: c.Modulus}
+}

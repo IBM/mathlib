@@ -158,13 +158,6 @@ func (p *Fp256bn) NewGtFromBytes(b []byte) driver.Gt {
 	return &fp256bnGt{FP256BN.FP12_fromBytes(b)}
 }
 
-func (p *Fp256bn) HashToZr(data []byte) driver.Zr {
-	digest := sha256.Sum256(data)
-	digestBig := p.NewZrFromBytes(digest[:])
-	digestBig.Mod(p.GroupOrder())
-	return digestBig
-}
-
 func (p *Fp256bn) HashToG1(data []byte) driver.G1 {
 	return &fp256bnG1{FP256BN.Bls_hash(string(data))}
 }

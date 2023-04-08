@@ -8,7 +8,6 @@ package gurvy
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"hash"
 	"io"
@@ -337,13 +336,6 @@ func (c *Bls12_381) NewGtFromBytes(b []byte) driver.Gt {
 	}
 
 	return &bls12381Gt{v}
-}
-
-func (c *Bls12_381) HashToZr(data []byte) driver.Zr {
-	digest := sha256.Sum256(data)
-	digestBig := c.NewZrFromBytes(digest[:])
-	digestBig.Mod(c.GroupOrder())
-	return digestBig
 }
 
 func (c *Bls12_381) HashToG1(data []byte) driver.G1 {

@@ -8,7 +8,6 @@ package amcl
 
 import (
 	r "crypto/rand"
-	"crypto/sha256"
 	"io"
 	"math/big"
 	"strings"
@@ -160,13 +159,6 @@ func (p *Fp256Miraclbn) NewG2FromCompressed(b []byte) driver.G2 {
 
 func (p *Fp256Miraclbn) NewGtFromBytes(b []byte) driver.Gt {
 	return &fp256bnMiraclGt{FP256BN.FP12_fromBytes(b)}
-}
-
-func (p *Fp256Miraclbn) HashToZr(data []byte) driver.Zr {
-	digest := sha256.Sum256(data)
-	digestBig := p.NewZrFromBytes(digest[:])
-	digestBig.Mod(p.GroupOrder())
-	return digestBig
 }
 
 func (p *Fp256Miraclbn) HashToG1(data []byte) driver.G1 {
