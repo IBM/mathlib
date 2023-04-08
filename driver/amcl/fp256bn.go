@@ -8,9 +8,7 @@ package amcl
 
 import (
 	"crypto/hmac"
-	r "crypto/rand"
 	"crypto/sha256"
-	"io"
 	"math/big"
 	"regexp"
 	"strings"
@@ -166,10 +164,6 @@ func (p *Fp256bn) HashToG1WithDomain(data, domain []byte) driver.G1 {
 	mac := hmac.New(sha256.New, domain)
 	mac.Write(data)
 	return &fp256bnG1{FP256BN.Bls_hash(string(mac.Sum(nil)))}
-}
-
-func (p *Fp256bn) Rand() (io.Reader, error) {
-	return r.Reader, nil
 }
 
 /*********************************************************************/

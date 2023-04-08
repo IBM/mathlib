@@ -7,10 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package kilic
 
 import (
-	"crypto/rand"
 	"fmt"
 	"hash"
-	"io"
 	"math/big"
 
 	"github.com/IBM/mathlib/driver"
@@ -360,8 +358,4 @@ func (c *Bls12_381) HashToG1WithDomain(data, domain []byte) driver.G1 {
 	}
 
 	return &bls12_381G1{p}
-}
-
-func (c *Bls12_381) Rand() (io.Reader, error) {
-	return rand.Reader, nil
 }

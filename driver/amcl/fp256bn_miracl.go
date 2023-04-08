@@ -7,8 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package amcl
 
 import (
-	r "crypto/rand"
-	"io"
 	"math/big"
 	"strings"
 
@@ -167,10 +165,6 @@ func (p *Fp256Miraclbn) HashToG1(data []byte) driver.G1 {
 
 func (p *Fp256Miraclbn) HashToG1WithDomain(data, domain []byte) driver.G1 {
 	return &fp256bnMiraclG1{bls_hash_to_point_miracl(data, domain)}
-}
-
-func (p *Fp256Miraclbn) Rand() (io.Reader, error) {
-	return r.Reader, nil
 }
 
 /*********************************************************************/

@@ -7,9 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package gurvy
 
 import (
-	"crypto/rand"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/IBM/mathlib/driver"
@@ -352,8 +350,4 @@ func (p *Bls12_377) HashToG1WithDomain(data, domain []byte) driver.G1 {
 	}
 
 	return &bls12377G1{&g1}
-}
-
-func (c *Bls12_377) Rand() (io.Reader, error) {
-	return rand.Reader, nil
 }

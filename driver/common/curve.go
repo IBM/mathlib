@@ -74,3 +74,7 @@ func (c *CurveBase) HashToZr(data []byte) driver.Zr {
 	digestBig.Mod(digestBig, c.Modulus)
 	return &BaseZr{Int: digestBig, Modulus: c.Modulus}
 }
+
+func (p *CurveBase) Rand() (io.Reader, error) {
+	return rand.Reader, nil
+}
