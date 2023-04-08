@@ -237,12 +237,6 @@ func (c *Bls12_377) FExp(a driver.Gt) driver.Gt {
 	return &bls12377Gt{&gt}
 }
 
-func (*Bls12_377) ModAdd(a, b, m driver.Zr) driver.Zr {
-	c := a.Plus(b)
-	c.Mod(m)
-	return c
-}
-
 func (c *Bls12_377) GenG1() driver.G1 {
 	_, _, g1, _ := bls12377.Generators()
 	raw := g1.Bytes()

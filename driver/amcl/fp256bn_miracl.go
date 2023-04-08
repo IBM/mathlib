@@ -166,12 +166,6 @@ func (p *Fp256Miraclbn) NewGtFromBytes(b []byte) driver.Gt {
 	return &fp256bnMiraclGt{FP256BN.FP12_fromBytes(b)}
 }
 
-func (p *Fp256Miraclbn) ModAdd(a, b, m driver.Zr) driver.Zr {
-	c := a.Plus(b)
-	c.Mod(m)
-	return c
-}
-
 func (p *Fp256Miraclbn) HashToZr(data []byte) driver.Zr {
 	digest := sha256.Sum256(data)
 	digestBig := p.NewZrFromBytes(digest[:])

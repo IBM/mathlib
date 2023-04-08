@@ -240,12 +240,6 @@ func (c *Bn254) FExp(a driver.Gt) driver.Gt {
 	return &bn254Gt{&gt}
 }
 
-func (*Bn254) ModAdd(a, b, m driver.Zr) driver.Zr {
-	c := a.Plus(b)
-	c.Mod(m)
-	return c
-}
-
 func (c *Bn254) GenG1() driver.G1 {
 	_, _, g1, _ := bn254.Generators()
 	raw := g1.Bytes()
