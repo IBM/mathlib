@@ -245,10 +245,6 @@ func (*Bls12_381) ModAdd(a, b, m driver.Zr) driver.Zr {
 	return c
 }
 
-func (c *Bls12_381) ModSub(a, b, m driver.Zr) driver.Zr {
-	return c.ModAdd(a, c.ModNeg(b, m), m)
-}
-
 func (c *Bls12_381) GenG1() driver.G1 {
 	_, _, g1, _ := bls12381.Generators()
 	raw := g1.Bytes()

@@ -168,10 +168,6 @@ func (p *Fp256bn) ModAdd(a, b, m driver.Zr) driver.Zr {
 	return c
 }
 
-func (p *Fp256bn) ModSub(a, b, m driver.Zr) driver.Zr {
-	return p.ModAdd(a, p.ModNeg(b, m), m)
-}
-
 func (p *Fp256bn) HashToZr(data []byte) driver.Zr {
 	digest := sha256.Sum256(data)
 	digestBig := p.NewZrFromBytes(digest[:])

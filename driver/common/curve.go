@@ -32,6 +32,13 @@ func (c *CurveBase) ModMul(a1, b1, m driver.Zr) driver.Zr {
 	return &BaseZr{Int: res, Modulus: c.Modulus}
 }
 
+func (c *CurveBase) ModSub(a1, b1, m driver.Zr) driver.Zr {
+	res := new(big.Int).Sub(a1.(*BaseZr).Int, b1.(*BaseZr).Int)
+	res.Mod(res, m.(*BaseZr).Int)
+
+	return &BaseZr{Int: res, Modulus: c.Modulus}
+}
+
 func (c *CurveBase) GroupOrder() driver.Zr {
 	return &BaseZr{Int: c.Modulus, Modulus: c.Modulus}
 }
