@@ -24,7 +24,6 @@ type Curve interface {
 	ScalarByteSize() int
 	NewG1() G1
 	NewG2() G2
-	NewG1FromCoords(ix, iy Zr) G1
 	NewZrFromBytes(b []byte) Zr
 	NewZrFromInt(i int64) Zr
 	NewG1FromBytes(b []byte) G1

@@ -289,10 +289,6 @@ func (c *Bls12_381) NewG2() driver.G2 {
 	return &bls12381G2{&bls12381.G2Affine{}}
 }
 
-func (c *Bls12_381) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
-	return nil
-}
-
 func (c *Bls12_381) NewG1FromBytes(b []byte) driver.G1 {
 	v := &bls12381.G1Affine{}
 	_, err := v.SetBytes(b)

@@ -280,10 +280,6 @@ func (c *Bls12_381) NewG2() driver.G2 {
 	return &bls12_381G2{&bls12381.PointG2{}}
 }
 
-func (c *Bls12_381) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
-	return nil
-}
-
 func (c *Bls12_381) NewG1FromBytes(b []byte) driver.G1 {
 	g1 := bls12381.NewG1()
 	p, err := g1.FromUncompressed(b)

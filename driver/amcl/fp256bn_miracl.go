@@ -112,10 +112,6 @@ func (p *Fp256Miraclbn) NewG2() driver.G2 {
 	return &fp256bnMiraclG2{FP256BN.NewECP2()}
 }
 
-func (p *Fp256Miraclbn) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
-	return nil
-}
-
 func bigToMiraclBIG(bi *big.Int) *FP256BN.BIG {
 	var i0, i1, i2, i3, i4 int64
 	biCopy := bi

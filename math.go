@@ -386,10 +386,6 @@ func (c *Curve) NewZrFromInt(i int64) *Zr {
 	return &Zr{zr: c.c.NewZrFromInt(i), curveID: c.curveID}
 }
 
-// func (c *Curve) NewG1FromCoords(ix, iy *Zr) *G1 {
-// 	return &G1{c.c.NewG1FromCoords(ix.zr, iy.zr)}
-// }
-
 func (c *Curve) NewG2() *G2 {
 	return &G2{g2: c.c.NewG2(), curveID: c.curveID}
 }

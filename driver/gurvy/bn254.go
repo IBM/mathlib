@@ -290,10 +290,6 @@ func (c *Bn254) NewG2() driver.G2 {
 	return &bn254G2{&bn254.G2Affine{}}
 }
 
-func (c *Bn254) NewG1FromCoords(ix, iy driver.Zr) driver.G1 {
-	return nil
-}
-
 func (c *Bn254) NewG1FromBytes(b []byte) driver.G1 {
 	v := &bn254.G1Affine{}
 	_, err := v.SetBytes(b)
