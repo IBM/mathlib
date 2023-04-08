@@ -83,12 +83,6 @@ func (*Fp256Miraclbn) FExp(e driver.Gt) driver.Gt {
 	return &fp256bnMiraclGt{FP256BN.Fexp(e.(*fp256bnMiraclGt).FP12)}
 }
 
-func (*Fp256Miraclbn) ModMul(a1, b1, m driver.Zr) driver.Zr {
-	res := a1.Mul(b1)
-	res.Mod(m)
-	return res
-}
-
 func (*Fp256Miraclbn) GenG1() driver.G1 {
 	return &fp256bnMiraclG1{FP256BN.NewECPbigs(FP256BN.NewBIGints(FP256BN.CURVE_Gx), FP256BN.NewBIGints(FP256BN.CURVE_Gy))}
 }

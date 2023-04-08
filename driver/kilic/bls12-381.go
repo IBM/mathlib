@@ -254,12 +254,6 @@ func (c *Bls12_381) ModSub(a, b, m driver.Zr) driver.Zr {
 	return c.ModAdd(a, c.ModNeg(b, m), m)
 }
 
-func (c *Bls12_381) ModMul(a1, b1, m driver.Zr) driver.Zr {
-	res := a1.Mul(b1)
-	res.Mod(m)
-	return res
-}
-
 func (c *Bls12_381) GenG1() driver.G1 {
 	g := bls12381.NewG1()
 	g1 := g.One()
