@@ -100,9 +100,6 @@ func (e *Fe) signBE() bool {
 	return negZ.cmp(z) > -1
 }
 
-//go:linkname mul github.com/kilic/bls12-381.mulADX
-func mul(c, a, b *Fe)
-
 //go:linkname add github.com/kilic/bls12-381.add
 func add(c, a, b *Fe)
 
