@@ -1,4 +1,4 @@
-//go:build !amd64 || generic
+//go:build arm64 && !generic
 
 /*
 Copyright IBM Corp. All Rights Reserved.
