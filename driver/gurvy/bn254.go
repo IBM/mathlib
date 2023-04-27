@@ -271,6 +271,10 @@ func (c *Bn254) GenGt() driver.Gt {
 	return gengt
 }
 
+func (c *Bn254) CoordinateByteSize() int {
+	return 32
+}
+
 func (c *Bn254) G1ByteSize() int {
 	return 2 * 32
 }

@@ -20,6 +20,7 @@ type Curve interface {
 	GenG2() G2
 	GenGt() Gt
 	GroupOrder() Zr
+	CoordinateByteSize() int
 	G1ByteSize() int
 	CompressedG1ByteSize() int
 	G2ByteSize() int

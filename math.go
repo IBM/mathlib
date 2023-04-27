@@ -39,6 +39,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: (&amcl.Fp256bn{}).GenG2(), curveID: FP256BN_AMCL},
 		GenGt:                &Gt{gt: (&amcl.Fp256bn{}).GenGt(), curveID: FP256BN_AMCL},
 		GroupOrder:           &Zr{zr: amcl.NewFp256bn().GroupOrder(), curveID: FP256BN_AMCL},
+		CoordByteSize:        (&amcl.Fp256bn{}).CoordinateByteSize(),
 		G1ByteSize:           (&amcl.Fp256bn{}).G1ByteSize(),
 		CompressedG1ByteSize: (&amcl.Fp256bn{}).CompressedG1ByteSize(),
 		G2ByteSize:           (&amcl.Fp256bn{}).G2ByteSize(),
@@ -52,6 +53,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: (&gurvy.Bn254{}).GenG2(), curveID: BN254},
 		GenGt:                &Gt{gt: (&gurvy.Bn254{}).GenGt(), curveID: BN254},
 		GroupOrder:           &Zr{zr: gurvy.NewBn254().GroupOrder(), curveID: BN254},
+		CoordByteSize:        (&gurvy.Bn254{}).CoordinateByteSize(),
 		G1ByteSize:           (&gurvy.Bn254{}).G1ByteSize(),
 		CompressedG1ByteSize: (&gurvy.Bn254{}).CompressedG1ByteSize(),
 		G2ByteSize:           (&gurvy.Bn254{}).G2ByteSize(),
@@ -65,6 +67,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: (&amcl.Fp256Miraclbn{}).GenG2(), curveID: FP256BN_AMCL_MIRACL},
 		GenGt:                &Gt{gt: (&amcl.Fp256Miraclbn{}).GenGt(), curveID: FP256BN_AMCL_MIRACL},
 		GroupOrder:           &Zr{zr: amcl.NewFp256Miraclbn().GroupOrder(), curveID: FP256BN_AMCL_MIRACL},
+		CoordByteSize:        (&amcl.Fp256Miraclbn{}).CoordinateByteSize(),
 		G1ByteSize:           (&amcl.Fp256Miraclbn{}).G1ByteSize(),
 		CompressedG1ByteSize: (&amcl.Fp256Miraclbn{}).CompressedG1ByteSize(),
 		G2ByteSize:           (&amcl.Fp256Miraclbn{}).G2ByteSize(),
@@ -78,6 +81,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: (&kilic.Bls12_381{}).GenG2(), curveID: BLS12_381},
 		GenGt:                &Gt{gt: (&kilic.Bls12_381{}).GenGt(), curveID: BLS12_381},
 		GroupOrder:           &Zr{zr: kilic.NewBls12_381().GroupOrder(), curveID: BLS12_381},
+		CoordByteSize:        (&kilic.Bls12_381{}).CoordinateByteSize(),
 		G1ByteSize:           (&kilic.Bls12_381{}).G1ByteSize(),
 		CompressedG1ByteSize: (&kilic.Bls12_381{}).CompressedG1ByteSize(),
 		G2ByteSize:           (&kilic.Bls12_381{}).G2ByteSize(),
@@ -91,6 +95,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: (&gurvy.Bls12_377{}).GenG2(), curveID: BLS12_377_GURVY},
 		GenGt:                &Gt{gt: (&gurvy.Bls12_377{}).GenGt(), curveID: BLS12_377_GURVY},
 		GroupOrder:           &Zr{zr: gurvy.NewBls12_377().GroupOrder(), curveID: BLS12_377_GURVY},
+		CoordByteSize:        (&gurvy.Bls12_377{}).CoordinateByteSize(),
 		G1ByteSize:           (&gurvy.Bls12_377{}).G1ByteSize(),
 		CompressedG1ByteSize: (&gurvy.Bls12_377{}).CompressedG1ByteSize(),
 		G2ByteSize:           (&gurvy.Bls12_377{}).G2ByteSize(),
@@ -104,6 +109,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: (&gurvy.Bls12_381{}).GenG2(), curveID: BLS12_381_GURVY},
 		GenGt:                &Gt{gt: (&gurvy.Bls12_381{}).GenGt(), curveID: BLS12_381_GURVY},
 		GroupOrder:           &Zr{zr: gurvy.NewBls12_381().GroupOrder(), curveID: BLS12_381_GURVY},
+		CoordByteSize:        (&gurvy.Bls12_381{}).CoordinateByteSize(),
 		G1ByteSize:           (&gurvy.Bls12_381{}).G1ByteSize(),
 		CompressedG1ByteSize: (&gurvy.Bls12_381{}).CompressedG1ByteSize(),
 		G2ByteSize:           (&gurvy.Bls12_381{}).G2ByteSize(),
@@ -117,6 +123,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: kilic.NewBls12_381BBS().GenG2(), curveID: BLS12_381_BBS},
 		GenGt:                &Gt{gt: kilic.NewBls12_381BBS().GenGt(), curveID: BLS12_381_BBS},
 		GroupOrder:           &Zr{zr: kilic.NewBls12_381().GroupOrder(), curveID: BLS12_381_BBS},
+		CoordByteSize:        kilic.NewBls12_381BBS().CoordinateByteSize(),
 		G1ByteSize:           kilic.NewBls12_381BBS().G1ByteSize(),
 		CompressedG1ByteSize: kilic.NewBls12_381BBS().CompressedG1ByteSize(),
 		G2ByteSize:           kilic.NewBls12_381BBS().G2ByteSize(),
@@ -130,6 +137,7 @@ var Curves []*Curve = []*Curve{
 		GenG2:                &G2{g2: gurvy.NewBls12_381BBS().GenG2(), curveID: BLS12_381_BBS_GURVY},
 		GenGt:                &Gt{gt: gurvy.NewBls12_381BBS().GenGt(), curveID: BLS12_381_BBS_GURVY},
 		GroupOrder:           &Zr{zr: gurvy.NewBls12_381().GroupOrder(), curveID: BLS12_381_BBS_GURVY},
+		CoordByteSize:        gurvy.NewBls12_381BBS().CoordinateByteSize(),
 		G1ByteSize:           gurvy.NewBls12_381BBS().G1ByteSize(),
 		CompressedG1ByteSize: gurvy.NewBls12_381BBS().CompressedG1ByteSize(),
 		G2ByteSize:           gurvy.NewBls12_381BBS().G2ByteSize(),
@@ -351,6 +359,7 @@ type Curve struct {
 	GenG2                *G2
 	GenGt                *Gt
 	GroupOrder           *Zr
+	CoordByteSize        int
 	G1ByteSize           int
 	CompressedG1ByteSize int
 	G2ByteSize           int
