@@ -267,7 +267,11 @@ func (c *Bls12_381) GenGt() driver.Gt {
 	return gengt
 }
 
-func (c *Bls12_381) CoordinateByteSize() int {
+func (c *Bls12_381) G1ByteSize() int {
+	return 2 * 48
+}
+
+func (c *Bls12_381) CompressedG1ByteSize() int {
 	return 48
 }
 

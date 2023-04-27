@@ -158,11 +158,11 @@ func runG1Test(t *testing.T, c *Curve) {
 
 	GS := c.HashToG1([]byte("Amazing Grace (how sweet the sound)"))
 	assert.False(t, GS.IsInfinity())
-	assert.Len(t, GS.Bytes(), packedSizes[c.curveID])
+	assert.Len(t, GS.Bytes(), c.G1ByteSize)
 
 	GS = c.HashToG1WithDomain([]byte("it's a heavy metal universe"), []byte("powerplant"))
 	assert.False(t, GS.IsInfinity())
-	assert.Len(t, GS.Bytes(), packedSizes[c.curveID])
+	assert.Len(t, GS.Bytes(), c.G1ByteSize)
 
 	GS1 := GS.Copy()
 	GS1.Neg()
@@ -170,17 +170,6 @@ func runG1Test(t *testing.T, c *Curve) {
 	assert.True(t, GS1.IsInfinity())
 	GS1.Add(c.GenG1)
 	assert.True(t, GS1.Equals(c.GenG1))
-}
-
-var packedSizes = []int{
-	2*Curves[FP256BN_AMCL].CoordinateByteSize + 1,        // FP256BN_AMCL
-	2 * Curves[BN254].CoordinateByteSize,                 // BN254
-	2*Curves[FP256BN_AMCL_MIRACL].CoordinateByteSize + 1, // FP256BN_AMCL_MIRACL
-	2 * Curves[BLS12_381].CoordinateByteSize,             // BLS12_381
-	2 * Curves[BLS12_377_GURVY].CoordinateByteSize,       // BLS12_377_GURVY
-	2 * Curves[BLS12_381_GURVY].CoordinateByteSize,       // BLS12_381_GURVY
-	2 * Curves[BLS12_381_BBS].CoordinateByteSize,         // BLS12_381_BBS
-	2 * Curves[BLS12_381_BBS_GURVY].CoordinateByteSize,   // BLS12_381_BBS_GURVY
 }
 
 func runG2Test(t *testing.T, c *Curve) {
@@ -321,6 +310,7 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 
 	g1r := c.GenG1.Mul(r)
 	g1rbytes := g1r.Bytes()
+	assert.Len(t, g1rbytes, c.G1ByteSize)
 	g1rback, err := c.NewG1FromBytes(g1rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
@@ -358,10 +348,11 @@ func runToFroCompressedTest(t *testing.T, c *Curve) {
 
 	g1r := c.GenG1.Mul(r)
 	g1rbytes := g1r.Compressed()
+	assert.Len(t, g1rbytes, c.CompressedG1ByteSize)
 	g1rback, err := c.NewG1FromCompressed(g1rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
-	assert.Len(t, g1rbytes, compressedSizesG1[c.curveID], fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rbytes, c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
 
 	g2r := c.GenG2.Mul(r)
 	g2rbytes := g2r.Compressed()
@@ -376,17 +367,6 @@ func runToFroCompressedTest(t *testing.T, c *Curve) {
 	g2rback, err = c.NewG2FromCompressed(nil)
 	assert.Nil(t, g2rback)
 	assert.Error(t, err)
-}
-
-var compressedSizesG1 = []int{
-	Curves[FP256BN_AMCL].CoordinateByteSize + 1,        // FP256BN_AMCL
-	Curves[BN254].CoordinateByteSize,                   // BN254
-	Curves[FP256BN_AMCL_MIRACL].CoordinateByteSize + 1, // FP256BN_AMCL_MIRACL
-	Curves[BLS12_381].CoordinateByteSize,               // BLS12_381
-	Curves[BLS12_377_GURVY].CoordinateByteSize,         // BLS12_377_GURVY
-	Curves[BLS12_381_GURVY].CoordinateByteSize,         // BLS12_381_GURVY
-	Curves[BLS12_381_BBS].CoordinateByteSize,           // BLS12_381_BBS
-	Curves[BLS12_381_BBS_GURVY].CoordinateByteSize,     // BLS12_381_BBS_GURVY
 }
 
 func runModAddSubNegTest(t *testing.T, c *Curve) {

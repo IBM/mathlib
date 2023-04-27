@@ -94,9 +94,14 @@ func (p *Fp256Miraclbn) GenGt() driver.Gt {
 	return &fp256bnMiraclGt{FP256BN.Fexp(FP256BN.Ate(p.GenG2().(*fp256bnMiraclG2).ECP2, p.GenG1().(*fp256bnMiraclG1).ECP))}
 }
 
-func (p *Fp256Miraclbn) CoordinateByteSize() int {
-	return int(FP256BN.MODBYTES)
+func (p *Fp256Miraclbn) G1ByteSize() int {
+	return 2*int(FP256BN.MODBYTES) + 1
 }
+
+func (p *Fp256Miraclbn) CompressedG1ByteSize() int {
+	return int(FP256BN.MODBYTES) + 1
+}
+
 func (p *Fp256Miraclbn) ScalarByteSize() int {
 	return int(FP256BN.MODBYTES)
 }

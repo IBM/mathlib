@@ -90,8 +90,12 @@ func (p *Fp256bn) GenGt() driver.Gt {
 	return &fp256bnGt{FP256BN.Fexp(FP256BN.Ate(p.GenG2().(*fp256bnG2).ECP2, p.GenG1().(*fp256bnG1).ECP))}
 }
 
-func (p *Fp256bn) CoordinateByteSize() int {
-	return int(FP256BN.MODBYTES)
+func (p *Fp256bn) G1ByteSize() int {
+	return 2*int(FP256BN.MODBYTES) + 1
+}
+
+func (p *Fp256bn) CompressedG1ByteSize() int {
+	return int(FP256BN.MODBYTES) + 1
 }
 
 func (p *Fp256bn) ScalarByteSize() int {
