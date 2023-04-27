@@ -195,6 +195,14 @@ func runG2Test(t *testing.T, c *Curve) {
 	g4.Add(g5)
 	assert.True(t, g4.Equals(g6))
 	assert.True(t, g5.Equals(c.GenG2.Mul(c.NewZrFromInt(23))))
+
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+
+	a := c.NewRandomZr(rng)
+	p := c.GenG2.Mul(a)
+	assert.Len(t, p.Bytes(), c.G2ByteSize)
+	assert.Len(t, p.Compressed(), c.CompressedG2ByteSize)
 }
 
 func runPowTest(t *testing.T, c *Curve) {
@@ -314,12 +322,17 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 	g1rback, err := c.NewG1FromBytes(g1rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
+	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
 
 	g2r := c.GenG2.Mul(r)
 	g2rbytes := g2r.Bytes()
+	assert.Len(t, g2rbytes, c.G2ByteSize)
 	g2rback, err := c.NewG2FromBytes(g2rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g2r.Equals(g2rback))
+	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
 
 	g2r = c.GenG2.Mul(r)
 	a := c.Pairing(g2r, c.GenG1)
@@ -352,13 +365,17 @@ func runToFroCompressedTest(t *testing.T, c *Curve) {
 	g1rback, err := c.NewG1FromCompressed(g1rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
-	assert.Len(t, g1rbytes, c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
 
 	g2r := c.GenG2.Mul(r)
 	g2rbytes := g2r.Compressed()
+	assert.Len(t, g2rbytes, c.CompressedG2ByteSize)
 	g2rback, err := c.NewG2FromCompressed(g2rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g2r.Equals(g2rback))
+	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
 
 	g1rback, err = c.NewG1FromCompressed(nil)
 	assert.Nil(t, g1rback)

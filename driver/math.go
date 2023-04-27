@@ -22,6 +22,8 @@ type Curve interface {
 	GroupOrder() Zr
 	G1ByteSize() int
 	CompressedG1ByteSize() int
+	G2ByteSize() int
+	CompressedG2ByteSize() int
 	ScalarByteSize() int
 	NewG1() G1
 	NewG2() G2

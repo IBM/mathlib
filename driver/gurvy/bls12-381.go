@@ -286,6 +286,14 @@ func (c *Bls12_381) CompressedG1ByteSize() int {
 	return 48
 }
 
+func (c *Bls12_381) G2ByteSize() int {
+	return 2 * 48 * 2
+}
+
+func (c *Bls12_381) CompressedG2ByteSize() int {
+	return 48 * 2
+}
+
 func (c *Bls12_381) ScalarByteSize() int {
 	return 32
 }

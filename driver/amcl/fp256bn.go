@@ -98,6 +98,14 @@ func (p *Fp256bn) CompressedG1ByteSize() int {
 	return int(FP256BN.MODBYTES) + 1
 }
 
+func (p *Fp256bn) G2ByteSize() int {
+	return 4 * int(FP256BN.MODBYTES)
+}
+
+func (p *Fp256bn) CompressedG2ByteSize() int {
+	return 4 * int(FP256BN.MODBYTES)
+}
+
 func (p *Fp256bn) ScalarByteSize() int {
 	return int(FP256BN.MODBYTES)
 }
