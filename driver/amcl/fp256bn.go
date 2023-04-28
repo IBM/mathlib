@@ -111,7 +111,7 @@ func (p *Fp256bn) CompressedG2ByteSize() int {
 }
 
 func (p *Fp256bn) ScalarByteSize() int {
-	return int(FP256BN.MODBYTES)
+	return common.ScalarByteSize
 }
 
 func (p *Fp256bn) NewG1() driver.G1 {

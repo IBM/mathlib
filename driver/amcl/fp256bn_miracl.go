@@ -115,7 +115,7 @@ func (p *Fp256Miraclbn) CompressedG2ByteSize() int {
 }
 
 func (p *Fp256Miraclbn) ScalarByteSize() int {
-	return int(FP256BN.MODBYTES)
+	return common.ScalarByteSize
 }
 
 func (p *Fp256Miraclbn) NewG1() driver.G1 {

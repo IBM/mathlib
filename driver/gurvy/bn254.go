@@ -272,27 +272,27 @@ func (c *Bn254) GenGt() driver.Gt {
 }
 
 func (c *Bn254) CoordinateByteSize() int {
-	return 32
+	return bn254.SizeOfG1AffineCompressed
 }
 
 func (c *Bn254) G1ByteSize() int {
-	return 2 * 32
+	return bn254.SizeOfG1AffineUncompressed
 }
 
 func (c *Bn254) CompressedG1ByteSize() int {
-	return 32
+	return bn254.SizeOfG1AffineCompressed
 }
 
 func (c *Bn254) G2ByteSize() int {
-	return 2 * 32 * 2
+	return bn254.SizeOfG2AffineUncompressed
 }
 
 func (c *Bn254) CompressedG2ByteSize() int {
-	return 32 * 2
+	return bn254.SizeOfG2AffineCompressed
 }
 
 func (c *Bn254) ScalarByteSize() int {
-	return 32
+	return common.ScalarByteSize
 }
 
 func (c *Bn254) NewG1() driver.G1 {

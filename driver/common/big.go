@@ -12,14 +12,21 @@ import (
 	"github.com/IBM/mathlib/driver"
 )
 
-var onebytes = []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+var onebytes = []byte{
+	255, 255, 255, 255, 255, 255, 255, 255,
+	255, 255, 255, 255, 255, 255, 255, 255,
+	255, 255, 255, 255, 255, 255, 255, 255,
+	255, 255, 255, 255, 255, 255, 255, 255,
+}
 var onebig = new(big.Int).SetBytes(onebytes)
+
+const ScalarByteSize = 32
 
 func BigToBytes(bi *big.Int) []byte {
 	b := bi.Bytes()
 
 	if bi.Sign() >= 0 {
-		return append(make([]byte, 32-len(b)), b...)
+		return append(make([]byte, ScalarByteSize-len(b)), b...)
 	}
 
 	twoscomp := new(big.Int).Set(onebig)
@@ -27,7 +34,7 @@ func BigToBytes(bi *big.Int) []byte {
 	twoscomp = twoscomp.Sub(twoscomp, pos)
 	twoscomp = twoscomp.Add(twoscomp, big.NewInt(1))
 	b = twoscomp.Bytes()
-	return append(onebytes[:32-len(b)], b...)
+	return append(onebytes[:ScalarByteSize-len(b)], b...)
 }
 
 type BaseZr struct {
