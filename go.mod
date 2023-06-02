@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/consensys/gnark-crypto v0.9.1
-	github.com/hyperledger/fabric-amcl v0.0.0-20210603140002-2670f91851c8
+	github.com/hyperledger/fabric-amcl v0.0.0-20230602151747-d4537c6e9851
 	github.com/pkg/errors v0.8.1
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.1.0
