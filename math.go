@@ -13,9 +13,9 @@ import (
 	"io"
 
 	"github.com/IBM/mathlib/driver"
-	"github.com/IBM/mathlib/driver/amcl"
 	"github.com/IBM/mathlib/driver/gurvy"
 	"github.com/IBM/mathlib/driver/kilic"
+	"github.com/IBM/mathlib/driver/unsupported"
 	"github.com/pkg/errors"
 )
 
@@ -34,17 +34,17 @@ const (
 
 var Curves []*Curve = []*Curve{
 	{
-		c:                    amcl.NewFp256bn(),
-		GenG1:                &G1{g1: (&amcl.Fp256bn{}).GenG1(), curveID: FP256BN_AMCL},
-		GenG2:                &G2{g2: (&amcl.Fp256bn{}).GenG2(), curveID: FP256BN_AMCL},
-		GenGt:                &Gt{gt: (&amcl.Fp256bn{}).GenGt(), curveID: FP256BN_AMCL},
-		GroupOrder:           &Zr{zr: amcl.NewFp256bn().GroupOrder(), curveID: FP256BN_AMCL},
-		CoordByteSize:        (&amcl.Fp256bn{}).CoordinateByteSize(),
-		G1ByteSize:           (&amcl.Fp256bn{}).G1ByteSize(),
-		CompressedG1ByteSize: (&amcl.Fp256bn{}).CompressedG1ByteSize(),
-		G2ByteSize:           (&amcl.Fp256bn{}).G2ByteSize(),
-		CompressedG2ByteSize: (&amcl.Fp256bn{}).CompressedG2ByteSize(),
-		ScalarByteSize:       (&amcl.Fp256bn{}).ScalarByteSize(),
+		c:                    &unsupported.UnsupportedCurve{},
+		GenG1:                &G1{g1: &unsupported.UnsupportedG1{}, curveID: FP256BN_AMCL},
+		GenG2:                &G2{g2: &unsupported.UnsupportedG2{}, curveID: FP256BN_AMCL},
+		GenGt:                &Gt{gt: &unsupported.UnsupportedGt{}, curveID: FP256BN_AMCL},
+		GroupOrder:           &Zr{zr: &unsupported.UnsupportedZr{}, curveID: FP256BN_AMCL},
+		CoordByteSize:        -1,
+		G1ByteSize:           -1,
+		CompressedG1ByteSize: -1,
+		G2ByteSize:           -1,
+		CompressedG2ByteSize: -1,
+		ScalarByteSize:       -1,
 		curveID:              FP256BN_AMCL,
 	},
 	{
@@ -62,17 +62,17 @@ var Curves []*Curve = []*Curve{
 		curveID:              BN254,
 	},
 	{
-		c:                    amcl.NewFp256Miraclbn(),
-		GenG1:                &G1{g1: (&amcl.Fp256Miraclbn{}).GenG1(), curveID: FP256BN_AMCL_MIRACL},
-		GenG2:                &G2{g2: (&amcl.Fp256Miraclbn{}).GenG2(), curveID: FP256BN_AMCL_MIRACL},
-		GenGt:                &Gt{gt: (&amcl.Fp256Miraclbn{}).GenGt(), curveID: FP256BN_AMCL_MIRACL},
-		GroupOrder:           &Zr{zr: amcl.NewFp256Miraclbn().GroupOrder(), curveID: FP256BN_AMCL_MIRACL},
-		CoordByteSize:        (&amcl.Fp256Miraclbn{}).CoordinateByteSize(),
-		G1ByteSize:           (&amcl.Fp256Miraclbn{}).G1ByteSize(),
-		CompressedG1ByteSize: (&amcl.Fp256Miraclbn{}).CompressedG1ByteSize(),
-		G2ByteSize:           (&amcl.Fp256Miraclbn{}).G2ByteSize(),
-		CompressedG2ByteSize: (&amcl.Fp256Miraclbn{}).CompressedG2ByteSize(),
-		ScalarByteSize:       (&amcl.Fp256Miraclbn{}).ScalarByteSize(),
+		c:                    &unsupported.UnsupportedCurve{},
+		GenG1:                &G1{g1: &unsupported.UnsupportedG1{}, curveID: FP256BN_AMCL_MIRACL},
+		GenG2:                &G2{g2: &unsupported.UnsupportedG2{}, curveID: FP256BN_AMCL_MIRACL},
+		GenGt:                &Gt{gt: &unsupported.UnsupportedGt{}, curveID: FP256BN_AMCL_MIRACL},
+		GroupOrder:           &Zr{zr: &unsupported.UnsupportedZr{}, curveID: FP256BN_AMCL_MIRACL},
+		CoordByteSize:        -1,
+		G1ByteSize:           -1,
+		CompressedG1ByteSize: -1,
+		G2ByteSize:           -1,
+		CompressedG2ByteSize: -1,
+		ScalarByteSize:       -1,
 		curveID:              FP256BN_AMCL_MIRACL,
 	},
 	{

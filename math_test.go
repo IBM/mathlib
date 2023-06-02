@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/IBM/mathlib/driver/unsupported"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -573,33 +574,36 @@ func TestJSONMarshalerFails(t *testing.T) {
 	var err error
 	zr, g1, g2, gt := &Zr{}, &G1{}, &G2{}, &Gt{}
 
-	err = json.Unmarshal([]byte(`{"element":1}`), zr)
+	err = json.Unmarshal([]byte(`{"element":1, "curve":1}`), zr)
 	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
-	err = json.Unmarshal([]byte(`{"element":1}`), g1)
+	err = json.Unmarshal([]byte(`{"element":1, "curve":1}`), g1)
 	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
-	err = json.Unmarshal([]byte(`{"element":1}`), g2)
+	err = json.Unmarshal([]byte(`{"element":1, "curve":1}`), g2)
 	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
-	err = json.Unmarshal([]byte(`{"element":1}`), gt)
+	err = json.Unmarshal([]byte(`{"element":1, "curve":1}`), gt)
 	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
-	// err = json.Unmarshal([]byte(`{"element":"YQo="}`), zr)
-	// assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
+	err = json.Unmarshal([]byte(`{"element":"YQo=", "curve":1}`), g1)
+	assert.EqualError(t, err, "failure [set bytes failed [short buffer]]")
 
-	err = json.Unmarshal([]byte(`{"element":"YQo="}`), g1)
-	assert.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	err = json.Unmarshal([]byte(`{"element":"YQo=", "curve":1}`), g2)
+	assert.EqualError(t, err, "failure [set bytes failed [short buffer]]")
 
-	err = json.Unmarshal([]byte(`{"element":"YQo="}`), g2)
-	assert.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
-
-	err = json.Unmarshal([]byte(`{"element":"YQo="}`), gt)
-	assert.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	err = json.Unmarshal([]byte(`{"element":"YQo=", "curve":1}`), gt)
+	assert.EqualError(t, err, "failure [set bytes failed [invalid buffer size]]")
 }
 
 func TestCurves(t *testing.T) {
 	for _, curve := range Curves {
+
+		if _, ok := curve.c.(*unsupported.UnsupportedCurve); ok {
+			// skip test for unsupported curves
+			continue
+		}
+
 		testNotZeroAfterAdd(t, curve)
 		testModAdd(t, curve)
 		runZrTest(t, curve)
