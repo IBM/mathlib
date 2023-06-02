@@ -6,8 +6,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/subcommands v1.2.0/go.mod h1:ZjhPrFU+Olkh9WazFPsl27BQ4UPiG37m3yTrtFlrHVk=
-github.com/hyperledger/fabric-amcl v0.0.0-20230602151747-d4537c6e9851 h1:brPEwYVxBmor1QmU5CuK1V9M4n/UcmnnSV3tLq8TOPY=
-github.com/hyperledger/fabric-amcl v0.0.0-20230602151747-d4537c6e9851/go.mod h1:X+DIyUsaTmalOpmpQfIvFZjKHQedrURQ5t4YqquX7lE=
+github.com/hyperledger/fabric-amcl v0.0.0-20230602173724-9e02669dceb2 h1:B1Nt8hKb//KvgGRprk0h1t4lCnwhE9/ryb1WqfZbV+M=
+github.com/hyperledger/fabric-amcl v0.0.0-20230602173724-9e02669dceb2/go.mod h1:X+DIyUsaTmalOpmpQfIvFZjKHQedrURQ5t4YqquX7lE=
 github.com/kilic/bls12-381 v0.1.0 h1:encrdjqKMEvabVQ7qYOKu1OvhqpK4s47wDYtNiPtlp4=
 github.com/kilic/bls12-381 v0.1.0/go.mod h1:vDTTHJONJ6G+P2R74EhnyotQDTliQDnFEwhdmfzw1ig=
 github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7c=
