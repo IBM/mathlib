@@ -123,7 +123,6 @@ func (p *Fp256bn) NewG2() driver.G2 {
 }
 
 func bigToMiraclBIGCore(bi *big.Int) *FP256BN.BIG {
-	var i0, i1, i2, i3, i4 int64
 	biCopy := bi
 
 	if bi.Sign() < 0 || bi.Cmp(&modulusBig) > 0 {
@@ -134,22 +133,7 @@ func bigToMiraclBIGCore(bi *big.Int) *FP256BN.BIG {
 		}
 	}
 
-	b := common.BigToBytes(biCopy)
-
-	pos := 32
-	i0 = new(big.Int).SetBytes(b[pos-7 : pos]).Int64()
-	pos -= 7
-	i1 = new(big.Int).SetBytes(b[pos-7 : pos]).Int64()
-	pos -= 7
-	i2 = new(big.Int).SetBytes(b[pos-7 : pos]).Int64()
-	pos -= 7
-	i3 = new(big.Int).SetBytes(b[pos-7 : pos]).Int64()
-	pos -= 7
-	i4 = new(big.Int).SetBytes(b[0:pos]).Int64()
-
-	zr := FP256BN.NewBIGints([FP256BN.NLEN]FP256BN.Chunk{FP256BN.Chunk(i0), FP256BN.Chunk(i1), FP256BN.Chunk(i2), FP256BN.Chunk(i3), FP256BN.Chunk(i4)})
-
-	return zr
+	return FP256BN.FromBytes(common.BigToBytes(biCopy))
 }
 
 func (p *Fp256bn) NewG1FromBytes(b []byte) driver.G1 {
