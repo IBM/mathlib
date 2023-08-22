@@ -56,7 +56,7 @@ func Benchmark_PedersenCommitmentPoKGurvy(b *testing.B) {
 
 	b.ResetTimer()
 
-	b.Run("bls12-381", func(b *testing.B) {
+	b.Run("curve BLS12_381_GURVY (direct)", func(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 
@@ -97,7 +97,7 @@ func Benchmark_PedersenCommitmentPoK(b *testing.B) {
 
 		b.ResetTimer()
 
-		b.Run(fmt.Sprintf("PoK Pedersen Commitment with curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+		b.Run(fmt.Sprintf("curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				r := curve.NewRandomZr(rng)
