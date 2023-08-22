@@ -17,7 +17,7 @@ unit-tests-race:
 
 .PHONY: perf
 perf:
-	@go test -benchmem -bench=Benchmark_PedersenCommitmentPoK -run=^$$ -v
+	@go test -benchmem -bench=Benchmark -run=^$$ -v
 
 .PHONY: check-deps
 check-deps:

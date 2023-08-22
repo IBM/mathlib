@@ -27,6 +27,37 @@ func newRandZr(rng io.Reader, m *big.Int) *big.Int {
 	return bi
 }
 
+func blsInit(b *testing.B, curve *Curve) (*G1, *G2, *Zr, error) {
+	rng, err := curve.Rand()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	g := curve.GenG2.Mul(curve.NewRandomZr(rng))
+	g = curve.GenG2.Mul(curve.NewZrFromInt(35))
+	h := curve.GenG1.Mul(curve.NewRandomZr(rng))
+	h = curve.GenG1.Mul(curve.NewZrFromInt(135))
+	x := curve.NewRandomZr(rng)
+	x = curve.NewZrFromInt(20)
+
+	return h, g, x, nil
+}
+
+func blsInitGurvy(b *testing.B) (*bls12381.G1Affine, *bls12381.G2Affine, *big.Int) {
+	rng := rand.Reader
+
+	_, _, g1, g2 := bls12381.Generators()
+
+	// g := g2.ScalarMultiplication(&g2, newRandZr(rng, fr.Modulus()))
+	g := g2.ScalarMultiplication(&g2, big.NewInt(35))
+	// h := g1.ScalarMultiplication(&g1, newRandZr(rng, fr.Modulus()))
+	h := g1.ScalarMultiplication(&g1, big.NewInt(135))
+	x := newRandZr(rng, fr.Modulus())
+	x = big.NewInt(20)
+
+	return h, g, x
+}
+
 func pokPedersenCommittmentInit(b *testing.B, curve *Curve) (io.Reader, *G1, *G1, *Zr, error) {
 	rng, err := curve.Rand()
 	if err != nil {
@@ -182,6 +213,64 @@ func Benchmark_PedersenCommitmentPoK(b *testing.B) {
 
 				if !v1.Equals(v2) {
 					panic("invalid PoK")
+				}
+			}
+		})
+	}
+}
+
+func Benchmark_BLSGurvy(b *testing.B) {
+	h, g, x := blsInitGurvy(b)
+
+	b.ResetTimer()
+
+	b.Run("curve BLS12_381_GURVY (direct)", func(b *testing.B) {
+
+		for i := 0; i < b.N; i++ {
+			pk := new(bls12381.G2Affine).ScalarMultiplication(g, x)
+			sig := new(bls12381.G1Affine).ScalarMultiplication(h, x)
+
+			sig.Neg(sig)
+
+			t, err := bls12381.MillerLoop([]bls12381.G1Affine{*sig, *h}, []bls12381.G2Affine{*g, *pk})
+			if err != nil {
+				panic(err)
+			}
+
+			t1 := bls12381.FinalExponentiation(&t)
+
+			unity := &bls12381.GT{}
+			unity.SetOne()
+			if !unity.Equal(&t1) {
+				panic("invalid signature")
+			}
+		}
+	})
+}
+
+func Benchmark_BLS(b *testing.B) {
+
+	for _, curve := range Curves {
+		h, g, x, err := blsInit(b, curve)
+		if err != nil {
+			panic(err)
+		}
+
+		b.ResetTimer()
+
+		b.Run(fmt.Sprintf("curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+
+			for i := 0; i < b.N; i++ {
+				pk := g.Mul(x)
+				sig := h.Mul(x)
+
+				sig.Neg()
+
+				p := curve.Pairing2(g, sig, pk, h)
+
+				p = curve.FExp(p)
+				if !p.IsUnity() {
+					panic("invalid signature")
 				}
 			}
 		})
