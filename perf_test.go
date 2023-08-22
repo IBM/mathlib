@@ -152,23 +152,23 @@ func Benchmark_PedersenCommitmentPoKGurvy(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 
 			r := newRandZr(rng, fr.Modulus())
-			c := g.ScalarMultiplication(g, x)
-			c.Add(c, h.ScalarMultiplication(h, r))
+			c := new(bls12381.G1Affine).ScalarMultiplication(g, x)
+			c.Add(c, new(bls12381.G1Affine).ScalarMultiplication(h, r))
 
 			x_tilde := newRandZr(rng, fr.Modulus())
 			r_tilde := newRandZr(rng, fr.Modulus())
-			t := g.ScalarMultiplication(g, x_tilde)
-			t.Add(c, h.ScalarMultiplication(h, r_tilde))
+			t := new(bls12381.G1Affine).ScalarMultiplication(g, x_tilde)
+			t.Add(t, new(bls12381.G1Affine).ScalarMultiplication(h, r_tilde))
 
 			chal := newRandZr(rng, fr.Modulus())
 
 			x_hat := new(big.Int).Add(x_tilde, new(big.Int).Mul(chal, x))
 			r_hat := new(big.Int).Add(r_tilde, new(big.Int).Mul(chal, r))
 
-			v1 := g.ScalarMultiplication(g, x_hat)
-			v1.Add(v1, h.ScalarMultiplication(h, r_hat))
+			v1 := new(bls12381.G1Affine).ScalarMultiplication(g, x_hat)
+			v1.Add(v1, new(bls12381.G1Affine).ScalarMultiplication(h, r_hat))
 
-			v2 := c.ScalarMultiplication(c, chal)
+			v2 := new(bls12381.G1Affine).ScalarMultiplication(c, chal)
 			v2.Add(v2, t)
 
 			if !v1.Equal(v2) {
