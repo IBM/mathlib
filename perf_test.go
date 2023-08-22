@@ -102,26 +102,27 @@ func Benchmark_PedersenCommitmentPoKKilic(b *testing.B) {
 	rng, g, h, x := pokPedersenCommittmentInitKilic(b)
 	_g := kilic.NewG1()
 	tmp := _g.New()
+	mod := fr.Modulus()
 
 	b.ResetTimer()
 
 	b.Run("curve BLS12_381 (direct)", func(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
-			r := newRandZr(rng, fr.Modulus())
+			r := newRandZr(rng, mod)
 			c := _g.New()
 			_g.MulScalarBig(c, g, x)
 			_g.MulScalarBig(tmp, h, r)
 			_g.Add(c, c, tmp)
 
-			x_tilde := newRandZr(rng, fr.Modulus())
-			r_tilde := newRandZr(rng, fr.Modulus())
+			x_tilde := newRandZr(rng, mod)
+			r_tilde := newRandZr(rng, mod)
 			t := _g.New()
 			_g.MulScalarBig(t, g, x_tilde)
 			_g.MulScalarBig(tmp, h, r_tilde)
 			_g.Add(t, t, tmp)
 
-			chal := newRandZr(rng, fr.Modulus())
+			chal := newRandZr(rng, mod)
 
 			x_hat := new(big.Int).Add(x_tilde, new(big.Int).Mul(chal, x))
 			r_hat := new(big.Int).Add(r_tilde, new(big.Int).Mul(chal, r))
