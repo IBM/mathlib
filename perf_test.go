@@ -15,6 +15,7 @@ import (
 
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
+	kilic "github.com/kilic/bls12-381"
 )
 
 func newRandZr(rng io.Reader, m *big.Int) *big.Int {
@@ -49,6 +50,65 @@ func pokPedersenCommittmentInitGurvy(b *testing.B) (io.Reader, *bls12381.G1Affin
 	x := newRandZr(rng, fr.Modulus())
 
 	return rng, g, h, x
+}
+
+func pokPedersenCommittmentInitKilic(b *testing.B) (io.Reader, *kilic.PointG1, *kilic.PointG1, *big.Int) {
+	rng := rand.Reader
+
+	_g := kilic.NewG1()
+	g1 := _g.One()
+	g := _g.New()
+	h := _g.New()
+
+	_g.MulScalarBig(g, g1, newRandZr(rng, fr.Modulus()))
+	_g.MulScalarBig(h, g1, newRandZr(rng, fr.Modulus()))
+	x := newRandZr(rng, fr.Modulus())
+
+	return rng, g, h, x
+}
+
+func Benchmark_PedersenCommitmentPoKKilic(b *testing.B) {
+	rng, g, h, x := pokPedersenCommittmentInitKilic(b)
+	_g := kilic.NewG1()
+	tmp := _g.New()
+
+	b.ResetTimer()
+
+	b.Run("curve BLS12_381 (direct)", func(b *testing.B) {
+
+		for i := 0; i < b.N; i++ {
+			r := newRandZr(rng, fr.Modulus())
+			c := _g.New()
+			_g.MulScalarBig(c, g, x)
+			_g.MulScalarBig(tmp, h, r)
+			_g.Add(c, c, tmp)
+
+			x_tilde := newRandZr(rng, fr.Modulus())
+			r_tilde := newRandZr(rng, fr.Modulus())
+			t := _g.New()
+			_g.MulScalarBig(t, g, x_tilde)
+			_g.MulScalarBig(tmp, h, r_tilde)
+			_g.Add(t, t, tmp)
+
+			chal := newRandZr(rng, fr.Modulus())
+
+			x_hat := new(big.Int).Add(x_tilde, new(big.Int).Mul(chal, x))
+			r_hat := new(big.Int).Add(r_tilde, new(big.Int).Mul(chal, r))
+
+			v1 := _g.New()
+			_g.MulScalarBig(v1, g, x_hat)
+			_g.MulScalarBig(tmp, h, r_hat)
+			_g.Add(v1, v1, tmp)
+
+			v2 := _g.New()
+			_g.MulScalarBig(v2, c, chal)
+			_g.Add(v2, v2, t)
+
+			if !_g.Equal(v1, v2) {
+				panic("invalid PoK")
+			}
+		}
+	})
 }
 
 func Benchmark_PedersenCommitmentPoKGurvy(b *testing.B) {
