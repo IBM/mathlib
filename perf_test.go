@@ -27,35 +27,27 @@ func newRandZr(rng io.Reader, m *big.Int) *big.Int {
 	return bi
 }
 
-func blsInit(b *testing.B, curve *Curve) (*G1, *G2, *Zr, error) {
+func blsInit(b *testing.B, curve *Curve) (*G2, *Zr, error) {
 	rng, err := curve.Rand()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	g := curve.GenG2.Mul(curve.NewRandomZr(rng))
-	g = curve.GenG2.Mul(curve.NewZrFromInt(35))
-	h := curve.GenG1.Mul(curve.NewRandomZr(rng))
-	h = curve.GenG1.Mul(curve.NewZrFromInt(135))
 	x := curve.NewRandomZr(rng)
-	x = curve.NewZrFromInt(20)
 
-	return h, g, x, nil
+	return g, x, nil
 }
 
-func blsInitGurvy(b *testing.B) (*bls12381.G1Affine, *bls12381.G2Affine, *big.Int) {
+func blsInitGurvy(b *testing.B) (*bls12381.G2Affine, *big.Int) {
 	rng := rand.Reader
 
-	_, _, g1, g2 := bls12381.Generators()
+	_, _, _, g2 := bls12381.Generators()
 
-	// g := g2.ScalarMultiplication(&g2, newRandZr(rng, fr.Modulus()))
-	g := g2.ScalarMultiplication(&g2, big.NewInt(35))
-	// h := g1.ScalarMultiplication(&g1, newRandZr(rng, fr.Modulus()))
-	h := g1.ScalarMultiplication(&g1, big.NewInt(135))
+	g := g2.ScalarMultiplication(&g2, newRandZr(rng, fr.Modulus()))
 	x := newRandZr(rng, fr.Modulus())
-	x = big.NewInt(20)
 
-	return h, g, x
+	return g, x
 }
 
 func pokPedersenCommittmentInit(b *testing.B, curve *Curve) (io.Reader, *G1, *G1, *Zr, error) {
@@ -221,59 +213,193 @@ func Benchmark_PedersenCommitmentPoK(b *testing.B) {
 }
 
 func Benchmark_BLSGurvy(b *testing.B) {
-	h, g, x := blsInitGurvy(b)
+	g, x := blsInitGurvy(b)
+	pk := new(bls12381.G2Affine).ScalarMultiplication(g, x)
 
 	b.ResetTimer()
 
-	b.Run("curve BLS12_381_GURVY (direct)", func(b *testing.B) {
+	var sig *bls12381.G1Affine
 
-		for i := 0; i < b.N; i++ {
-			pk := new(bls12381.G2Affine).ScalarMultiplication(g, x)
-			sig := new(bls12381.G1Affine).ScalarMultiplication(h, x)
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("sign curve BLS12_381_GURVY (direct)-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					h, err := bls12381.HashToG1([]byte("msg"), []byte("context"))
+					if err != nil {
+						panic(err)
+					}
+					sig = new(bls12381.G1Affine).ScalarMultiplication(&h, x)
+				}
+			})
+		})
+	}
 
-			sig.Neg(sig)
+	sig.Neg(sig)
 
-			t, err := bls12381.MillerLoop([]bls12381.G1Affine{*sig, *h}, []bls12381.G2Affine{*g, *pk})
-			if err != nil {
-				panic(err)
-			}
+	b.ResetTimer()
 
-			t1 := bls12381.FinalExponentiation(&t)
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("verify curve BLS12_381_GURVY (direct)-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					h, err := bls12381.HashToG1([]byte("msg"), []byte("context"))
+					if err != nil {
+						panic(err)
+					}
 
-			unity := &bls12381.GT{}
-			unity.SetOne()
-			if !unity.Equal(&t1) {
-				panic("invalid signature")
-			}
-		}
-	})
+					t, err := bls12381.MillerLoop([]bls12381.G1Affine{*sig, h}, []bls12381.G2Affine{*g, *pk})
+					if err != nil {
+						panic(err)
+					}
+
+					t1 := bls12381.FinalExponentiation(&t)
+
+					unity := &bls12381.GT{}
+					unity.SetOne()
+					if !unity.Equal(&t1) {
+						panic("invalid signature")
+					}
+				}
+			})
+		})
+	}
 }
 
 func Benchmark_BLS(b *testing.B) {
 
 	for _, curve := range Curves {
-		h, g, x, err := blsInit(b, curve)
+		g, x, err := blsInit(b, curve)
 		if err != nil {
 			panic(err)
 		}
 
+		pk := g.Mul(x)
+
 		b.ResetTimer()
 
-		b.Run(fmt.Sprintf("curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+		var sig *G1
 
-			for i := 0; i < b.N; i++ {
-				pk := g.Mul(x)
-				sig := h.Mul(x)
+		for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+			b.Run(fmt.Sprintf("sign curve %s-p%d", CurveIDToString(curve.curveID), parallelism), func(b *testing.B) {
+				b.RunParallel(func(pb *testing.PB) {
+					for pb.Next() {
+						for i := 0; i < b.N; i++ {
+							h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
+							sig = h.Mul(x)
+						}
+					}
+				})
+			})
+		}
 
-				sig.Neg()
+		sig.Neg()
 
-				p := curve.Pairing2(g, sig, pk, h)
+		for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+			b.Run(fmt.Sprintf("verify curve %s-p%d", CurveIDToString(curve.curveID), parallelism), func(b *testing.B) {
+				b.RunParallel(func(pb *testing.PB) {
+					for pb.Next() {
+						for i := 0; i < b.N; i++ {
+							h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
 
-				p = curve.FExp(p)
-				if !p.IsUnity() {
-					panic("invalid signature")
+							p := curve.Pairing2(g, sig, pk, h)
+
+							p = curve.FExp(p)
+							if !p.IsUnity() {
+								panic("invalid signature")
+							}
+						}
+					}
+				})
+			})
+		}
+	}
+}
+
+func Benchmark_IndividualOps(b *testing.B) {
+	curve := Curves[BLS12_381_GURVY]
+	g_gurv, x_gurv := blsInitGurvy(b)
+	g_math, x_math, err := blsInit(b, curve)
+	if err != nil {
+		panic(err)
+	}
+
+	pk_gurv := new(bls12381.G2Affine).ScalarMultiplication(g_gurv, x_gurv)
+	pk_math := g_math.Mul(x_math)
+
+	var h_gurv bls12381.G1Affine
+	var h_math *G1
+
+	var sig_gurv *bls12381.G1Affine
+	var sig_math *G1
+
+	var t_gurv bls12381.GT
+	var t_math *Gt
+
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("hash/gurvy-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					h_gurv, _ = bls12381.HashToG1([]byte("msg"), []byte("context"))
 				}
-			}
+			})
+		})
+	}
+
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("hash/mathlib-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					h_math = curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
+				}
+			})
+		})
+	}
+
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("sign/gurvy-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					sig_gurv = new(bls12381.G1Affine).ScalarMultiplication(&h_gurv, x_gurv)
+				}
+			})
+		})
+	}
+
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("sign/mathlib-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					sig_math = h_math.Mul(x_math)
+				}
+			})
+		})
+	}
+
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("pairing2/gurvy-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+
+					t_gurv, err = bls12381.MillerLoop([]bls12381.G1Affine{*sig_gurv, h_gurv}, []bls12381.G2Affine{*g_gurv, *pk_gurv})
+					if err != nil {
+						panic(err)
+					}
+
+					t_gurv = bls12381.FinalExponentiation(&t_gurv)
+				}
+			})
+		})
+	}
+
+	for _, parallelism := range []int{1, 2, 4, 8, 16, 32, 96} {
+		b.Run(fmt.Sprintf("pairing2/mathlib-p%d", parallelism), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					t_math = curve.Pairing2(g_math, sig_math, pk_math, h_math)
+
+					t_math = curve.FExp(t_math)
+				}
+			})
 		})
 	}
 }
