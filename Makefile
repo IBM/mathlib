@@ -17,7 +17,8 @@ unit-tests-race:
 
 .PHONY: perf
 perf:
-	@go test -benchmem -bench=Benchmark -run=^$$ -v
+	@go test -benchmem -bench=Benchmark_Sequential.* -run=^$$ -v
+	@go test -benchmem -bench=Benchmark_Parallel.* -run=^$$ -cpu=1,2,4,8,16,32,64 -v
 
 .PHONY: check-deps
 check-deps:
