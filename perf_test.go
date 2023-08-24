@@ -50,6 +50,19 @@ func blsInitGurvy(b *testing.B) (*bls12381.G2Affine, *big.Int) {
 	return g, x
 }
 
+func blsInitKilic(b *testing.B) (*kilic.PointG2, *big.Int) {
+	rng := rand.Reader
+
+	_g := kilic.NewG2()
+	g2 := _g.One()
+	g := _g.New()
+
+	_g.MulScalarBig(g, g2, newRandZr(rng, fr.Modulus()))
+	x := newRandZr(rng, fr.Modulus())
+
+	return g, x
+}
+
 func pokPedersenCommittmentInit(b *testing.B, curve *Curve) (io.Reader, *G1, *G1, *Zr, error) {
 	rng, err := curve.Rand()
 	if err != nil {
@@ -299,39 +312,49 @@ func Benchmark_Parallel_BLSGurvy(b *testing.B) {
 	})
 }
 
-func Benchmark_Parallel_BLS(b *testing.B) {
-	curve := Curves[BLS12_381_GURVY]
-	g, x, err := blsInit(b, curve)
-	if err != nil {
-		panic(err)
-	}
-
-	pk := g.Mul(x)
+func Benchmark_Parallel_BLSKilic(b *testing.B) {
+	g, x := blsInitKilic(b)
+	_g := kilic.NewG2()
+	pk := _g.New()
+	_g.MulScalarBig(pk, g, x)
 
 	b.ResetTimer()
 
-	var sig *G1
+	var sig *kilic.PointG1
 
-	b.Run(fmt.Sprintf("sign curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+	b.Run("sign curve BLS12_381_GURVY (direct)", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {
+			_g := kilic.NewG1()
 			for pb.Next() {
-				h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
-				sig = h.Mul(x)
+				g1 := kilic.NewG1()
+				h, err := g1.HashToCurve([]byte("msg"), []byte("context"))
+				if err != nil {
+					panic(err)
+				}
+
+				sig = _g.New()
+				_g.MulScalarBig(sig, h, x)
 			}
 		})
 	})
 
-	sig.Neg()
+	kilic.NewG1().Neg(sig, sig)
 
-	b.Run(fmt.Sprintf("verify curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+	b.ResetTimer()
+
+	b.Run("verify curve BLS12_381_GURVY (direct)", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
+				g1 := kilic.NewG1()
+				h, err := g1.HashToCurve([]byte("msg"), []byte("context"))
+				if err != nil {
+					panic(err)
+				}
+				bls := kilic.NewEngine()
+				bls.AddPair(sig, g)
+				bls.AddPair(h, pk)
 
-				p := curve.Pairing2(g, sig, pk, h)
-
-				p = curve.FExp(p)
-				if !p.IsUnity() {
+				if !bls.Check() {
 					panic("invalid signature")
 				}
 			}
@@ -339,7 +362,52 @@ func Benchmark_Parallel_BLS(b *testing.B) {
 	})
 }
 
-func Benchmark_Parallel_IndividualOps(b *testing.B) {
+func Benchmark_Parallel_BLS(b *testing.B) {
+	for _, curve := range Curves {
+		if curve.curveID != BLS12_381 && curve.curveID != BLS12_381_GURVY {
+			continue
+		}
+
+		g, x, err := blsInit(b, curve)
+		if err != nil {
+			panic(err)
+		}
+
+		pk := g.Mul(x)
+
+		b.ResetTimer()
+
+		var sig *G1
+
+		b.Run(fmt.Sprintf("sign curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
+					sig = h.Mul(x)
+				}
+			})
+		})
+
+		sig.Neg()
+
+		b.Run(fmt.Sprintf("verify curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
+
+					p := curve.Pairing2(g, sig, pk, h)
+
+					p = curve.FExp(p)
+					if !p.IsUnity() {
+						panic("invalid signature")
+					}
+				}
+			})
+		})
+	}
+}
+
+func Benchmark_Parallel_IndividualOpsGurvy(b *testing.B) {
 	curve := Curves[BLS12_381_GURVY]
 	g_gurv, x_gurv := blsInitGurvy(b)
 	g_math, x_math, err := blsInit(b, curve)
@@ -401,6 +469,84 @@ func Benchmark_Parallel_IndividualOps(b *testing.B) {
 				}
 
 				t_gurv = bls12381.FinalExponentiation(&t_gurv)
+			}
+		})
+	})
+
+	b.Run("pairing2/mathlib", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				t_math = curve.Pairing2(g_math, sig_math, pk_math, h_math)
+
+				t_math = curve.FExp(t_math)
+			}
+		})
+	})
+}
+
+func Benchmark_Parallel_IndividualOpsKilic(b *testing.B) {
+	curve := Curves[BLS12_381]
+	g_kili, x_kili := blsInitKilic(b)
+	g_math, x_math, err := blsInit(b, curve)
+	if err != nil {
+		panic(err)
+	}
+
+	_g := kilic.NewG2()
+	pk_kili := _g.New()
+	_g.MulScalarBig(pk_kili, g_kili, x_kili)
+	pk_math := g_math.Mul(x_math)
+
+	var h_kili *kilic.PointG1
+	var h_math *G1
+
+	var sig_kili *kilic.PointG1
+	var sig_math *G1
+
+	var t_math *Gt
+
+	b.Run("hash/kilic", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				g1 := kilic.NewG1()
+				h_kili, _ = g1.HashToCurve([]byte("msg"), []byte("context"))
+			}
+		})
+	})
+
+	b.Run("hash/mathlib", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				h_math = curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
+			}
+		})
+	})
+
+	b.Run("sign/kilic", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			_g := kilic.NewG1()
+			for pb.Next() {
+				sig_kili = _g.New()
+				_g.MulScalarBig(sig_kili, h_kili, x_kili)
+			}
+		})
+	})
+
+	b.Run("sign/mathlib", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				sig_math = h_math.Mul(x_math)
+			}
+		})
+	})
+
+	b.Run("pairing2/kilic", func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				bls := kilic.NewEngine()
+				bls.AddPair(sig_kili, g_kili)
+				bls.AddPair(h_kili, pk_kili)
+				bls.Result()
 			}
 		})
 	})
