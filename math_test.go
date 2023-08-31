@@ -9,6 +9,7 @@ package math
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"testing"
@@ -18,6 +19,88 @@ import (
 )
 
 var seed = time.Now().Unix()
+
+func TestImmutability(t *testing.T) {
+	for _, curve := range Curves {
+		rng, err := curve.Rand()
+		assert.NoError(t, err)
+
+		testImmutabilityZr(t, curve, rng)
+		testImmutabilityG1(t, curve, rng)
+		testImmutabilityG2(t, curve, rng)
+		testImmutabilityGt(t, curve, rng)
+	}
+}
+
+var r *Zr
+var g1 *G1
+var g2 *G2
+var gt *Gt
+
+func testImmutabilityGt(t *testing.T, c *Curve, rng io.Reader) {
+	g := c.GenGt.Exp(c.NewRandomZr(rng))
+	orig, err := c.NewGtFromBytes(g.Bytes())
+	assert.NoError(t, err)
+
+	// Exp(Zr) Gt
+	gt = g.Exp(c.NewRandomZr(rng))
+	assert.True(t, g.Equals(orig))
+}
+
+func testImmutabilityG2(t *testing.T, c *Curve, rng io.Reader) {
+	g := c.GenG2.Mul(c.NewRandomZr(rng))
+	orig := g.Copy()
+
+	// Mul(Zr) G2
+	g2 = g.Mul(c.NewRandomZr(rng))
+	assert.True(t, g.Equals(orig))
+
+	// Copy() G2
+	g2 = g.Copy()
+	assert.True(t, g.Equals(orig))
+}
+
+func testImmutabilityG1(t *testing.T, c *Curve, rng io.Reader) {
+	g := c.GenG1.Mul(c.NewRandomZr(rng))
+	orig := g.Copy()
+
+	// Mul(Zr) G1
+	g1 = g.Mul(c.NewRandomZr(rng))
+	assert.True(t, g.Equals(orig))
+
+	// Mul2(e Zr, Q G1, f Zr) G1
+	g1 = g.Mul2(c.NewRandomZr(rng), c.GenG1, c.NewRandomZr(rng))
+	assert.True(t, g.Equals(orig))
+
+	// Copy() G1
+	g1 = g.Copy()
+	assert.True(t, g.Equals(orig))
+}
+
+func testImmutabilityZr(t *testing.T, c *Curve, rng io.Reader) {
+	_r := c.NewRandomZr(rng)
+	orig := _r.Copy()
+
+	// Plus(Zr) Zr
+	r = _r.Plus(c.NewRandomZr(rng))
+	assert.True(t, _r.Equals(orig))
+
+	// Minus(Zr) Zr
+	r = _r.Minus(c.NewRandomZr(rng))
+	assert.True(t, _r.Equals(orig))
+
+	// Mul(Zr) Zr
+	r = _r.Mul(c.NewRandomZr(rng))
+	assert.True(t, _r.Equals(orig))
+
+	// PowMod(Zr) Zr
+	r = _r.PowMod(c.NewRandomZr(rng))
+	assert.True(t, _r.Equals(orig))
+
+	// Copy() Zr
+	r = _r.Copy()
+	assert.True(t, _r.Equals(orig))
+}
 
 func runZrTest(t *testing.T, c *Curve) {
 	rng, err := c.Rand()
