@@ -499,6 +499,14 @@ func (c *Curve) HashToG1WithDomain(data, domain []byte) *G1 {
 	return &G1{g1: c.c.HashToG1WithDomain(data, domain), curveID: c.curveID}
 }
 
+func (c *Curve) HashToG2(data []byte) *G2 {
+	return &G2{g2: c.c.HashToG2(data), curveID: c.curveID}
+}
+
+func (c *Curve) HashToG2WithDomain(data, domain []byte) *G2 {
+	return &G2{g2: c.c.HashToG2WithDomain(data, domain), curveID: c.curveID}
+}
+
 func (c *Curve) ModSub(a, b, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModSub(a.zr, b.zr, m.zr), curveID: c.curveID}
 }
