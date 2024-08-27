@@ -286,6 +286,14 @@ func runG2Test(t *testing.T, c *Curve) {
 	p := c.GenG2.Mul(a)
 	assert.Len(t, p.Bytes(), c.G2ByteSize)
 	assert.Len(t, p.Compressed(), c.CompressedG2ByteSize)
+
+	if c.curveID != FP256BN_AMCL && c.curveID != FP256BN_AMCL_MIRACL {
+		GS := c.HashToG2([]byte("Amazing Grace (how sweet the sound)"))
+		assert.Len(t, GS.Bytes(), c.G2ByteSize)
+
+		GS = c.HashToG2WithDomain([]byte("it's a heavy metal universe"), []byte("with a Heavy Metal sound"))
+		assert.Len(t, GS.Bytes(), c.G2ByteSize)
+	}
 }
 
 func runPowTest(t *testing.T, c *Curve) {

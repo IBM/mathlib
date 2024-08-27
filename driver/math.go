@@ -40,6 +40,8 @@ type Curve interface {
 	HashToZr(data []byte) Zr
 	HashToG1(data []byte) G1
 	HashToG1WithDomain(data, domain []byte) G1
+	HashToG2(data []byte) G2
+	HashToG2WithDomain(data, domain []byte) G2
 	NewRandomZr(rng io.Reader) Zr
 	Rand() (io.Reader, error)
 }
