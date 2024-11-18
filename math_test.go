@@ -32,6 +32,24 @@ func TestImmutability(t *testing.T) {
 	}
 }
 
+func TestCurveId(t *testing.T) {
+	for _, curve := range Curves {
+		rng, err := curve.Rand()
+		assert.NoError(t, err)
+
+		runCurveIdTest(t, curve, rng)
+	}
+}
+
+func runCurveIdTest(t *testing.T, c *Curve, rng io.Reader) {
+	r := c.NewRandomZr(rng)
+
+	assert.Equal(t, r.CurveID(), c.curveID)
+	assert.Equal(t, c.GenG1.Mul(r).CurveID(), c.curveID)
+	assert.Equal(t, c.GenG2.Mul(r).CurveID(), c.curveID)
+	assert.Equal(t, c.GenGt.Exp(r).CurveID(), c.curveID)
+}
+
 var r *Zr
 var g1 *G1
 var g2 *G2
