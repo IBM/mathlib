@@ -177,6 +177,10 @@ type Zr struct {
 	curveID CurveID
 }
 
+func (z *Zr) CurveID() CurveID {
+	return z.curveID
+}
+
 func (z *Zr) Plus(a *Zr) *Zr {
 	return &Zr{zr: z.zr.Plus(a.zr), curveID: z.curveID}
 }
@@ -244,6 +248,10 @@ type G1 struct {
 	curveID CurveID
 }
 
+func (g *G1) CurveID() CurveID {
+	return g.curveID
+}
+
 func (g *G1) Clone(a *G1) {
 	g.g1.Clone(a.g1)
 }
@@ -299,6 +307,10 @@ type G2 struct {
 	curveID CurveID
 }
 
+func (g *G2) CurveID() CurveID {
+	return g.curveID
+}
+
 func (g *G2) Clone(a *G2) {
 	g.g2.Clone(a.g2)
 }
@@ -344,6 +356,10 @@ func (g *G2) Equals(a *G2) bool {
 type Gt struct {
 	gt      driver.Gt
 	curveID CurveID
+}
+
+func (g *Gt) CurveID() CurveID {
+	return g.curveID
 }
 
 func (g *Gt) Equals(a *Gt) bool {
