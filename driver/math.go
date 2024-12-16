@@ -29,7 +29,8 @@ type Curve interface {
 	NewG1() G1
 	NewG2() G2
 	NewZrFromBytes(b []byte) Zr
-	NewZrFromInt(i int64) Zr
+	NewZrFromInt64(i int64) Zr
+	NewZrFromUint64(i uint64) Zr
 	NewG1FromBytes(b []byte) G1
 	NewG1FromCompressed(b []byte) G1
 	NewG2FromBytes(b []byte) G2
