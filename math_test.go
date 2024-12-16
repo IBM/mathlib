@@ -124,6 +124,11 @@ func runZrTest(t *testing.T, c *Curve) {
 	rng, err := c.Rand()
 	assert.NoError(t, err)
 
+	maxint64 := c.NewZrFromInt(math.MaxInt64)
+	maxuint64 := c.NewZrFromUint64(math.MaxUint64)
+	assert.Equal(t, fmt.Sprintf("%x", math.MaxInt64), maxint64.String())
+	assert.Equal(t, fmt.Sprintf("%x", uint64(math.MaxUint64)), maxuint64.String())
+
 	// serialising and deserialising negative numbers
 	rr := c.NewRandomZr(rng)
 	rr1 := rr.Copy()

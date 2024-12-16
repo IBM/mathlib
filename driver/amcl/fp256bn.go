@@ -235,7 +235,7 @@ func (b *fp256bnG1) String() string {
 }
 
 func (e *fp256bnG1) Neg() {
-	res := e.Mul(NewFp256bn().NewZrFromInt(-1))
+	res := e.Mul(NewFp256bn().NewZrFromInt64(-1))
 	e.ECP = res.(*fp256bnG1).ECP
 }
 

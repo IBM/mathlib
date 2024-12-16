@@ -480,7 +480,11 @@ func (c *Curve) NewGtFromBytes(b []byte) (p *Gt, err error) {
 }
 
 func (c *Curve) NewZrFromInt(i int64) *Zr {
-	return &Zr{zr: c.c.NewZrFromInt(i), curveID: c.curveID}
+	return &Zr{zr: c.c.NewZrFromInt64(i), curveID: c.curveID}
+}
+
+func (c *Curve) NewZrFromUint64(i uint64) *Zr {
+	return &Zr{zr: c.c.NewZrFromUint64(i), curveID: c.curveID}
 }
 
 func (c *Curve) NewG2() *G2 {
