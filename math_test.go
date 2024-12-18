@@ -126,6 +126,33 @@ func runZrTest(t *testing.T, c *Curve) {
 
 	maxint64 := c.NewZrFromInt(math.MaxInt64)
 	maxuint64 := c.NewZrFromUint64(math.MaxUint64)
+
+	iu, err := maxint64.Uint()
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(math.MaxInt64), iu)
+
+	i64, err := maxint64.Int()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(math.MaxInt64), i64)
+
+	ui, err := maxuint64.Int()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(-1), ui)
+
+	u64, err := maxuint64.Uint()
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(math.MaxUint64), u64)
+
+	a, b := rand.Int63(), rand.Int63()
+	cr, err := c.NewZrFromInt(a).Plus(c.NewZrFromInt(b)).Int()
+	assert.NoError(t, err)
+	assert.Equal(t, a+b, cr)
+
+	au, bu := uint64(rand.Int63()), uint64(rand.Int63())
+	cru, err := c.NewZrFromUint64(au).Plus(c.NewZrFromUint64(bu)).Uint()
+	assert.NoError(t, err)
+	assert.Equal(t, au+bu, cru)
+
 	assert.Equal(t, fmt.Sprintf("%x", math.MaxInt64), maxint64.String())
 	assert.Equal(t, fmt.Sprintf("%x", uint64(math.MaxUint64)), maxuint64.String())
 
@@ -150,7 +177,7 @@ func runZrTest(t *testing.T, c *Curve) {
 
 	rand.Seed(seed)
 
-	i64 := rand.Int63()
+	i64 = rand.Int63()
 	i = c.NewZrFromInt(i64)
 	i64_, err := i.Int()
 	assert.NoError(t, err)
