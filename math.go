@@ -232,6 +232,15 @@ func (z *Zr) Neg() {
 var zerobytes = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 var onebytes = []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
 
+func (z *Zr) Uint() (uint64, error) {
+	b := z.Bytes()
+	if !bytes.Equal(zerobytes, b[:32-8]) && !bytes.Equal(onebytes, b[:32-8]) {
+		return 0, fmt.Errorf("out of range")
+	}
+
+	return uint64(binary.BigEndian.Uint64(b[32-8:])), nil
+}
+
 func (z *Zr) Int() (int64, error) {
 	b := z.Bytes()
 	if !bytes.Equal(zerobytes, b[:32-8]) && !bytes.Equal(onebytes, b[:32-8]) {
