@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package math
 
 import (
+	"bytes"
+	cr "crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +21,136 @@ import (
 )
 
 var seed = time.Now().Unix()
+
+func FuzzPointAddition(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(), curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(), curve1.GenG1.Bytes())
+	f.Add(curve1.GenG1.Bytes(), curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes())
+	tmp := curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader))
+	tmpneg := tmp.Copy()
+	tmpneg.Neg()
+	f.Add(tmp.Bytes(), tmpneg.Bytes())
+	tmp = curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader))
+	tmpneg = tmp.Copy()
+	tmpneg.Neg()
+	f.Add(tmpneg.Bytes(), tmp.Bytes())
+	tmp = curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader))
+	f.Add(tmp.Bytes(), tmp.Bytes())
+
+	f.Fuzz(func(t *testing.T, aBytes, bBytes []byte) {
+		a1, err1 := curve1.NewG1FromBytes(aBytes)
+		b1, err2 := curve1.NewG1FromBytes(bBytes)
+		a2, err3 := curve2.NewG1FromBytes(aBytes)
+		b2, err4 := curve2.NewG1FromBytes(bBytes)
+
+		if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+			return
+		}
+
+		c1 := a1.Copy()
+		c1.Add(b1)
+		c2 := a2.Copy()
+		c2.Add(b2)
+
+		if !bytes.Equal(c1.Bytes(), c2.Bytes()) {
+			t.Error("c1 and c2 are not equal")
+		}
+
+		a1b := c1.Copy()
+		a1b.Sub(b1)
+		a2b := c2.Copy()
+		a2b.Sub(b2)
+
+		if !bytes.Equal(a1b.Bytes(), a2b.Bytes()) {
+			t.Error("a1b and a2b are not equal")
+		}
+
+		if !a1.Equals(a1b) {
+			t.Error("a1 and a1b are not equal")
+		}
+
+		if !a2.Equals(a2b) {
+			t.Error("a2 and a2b are not equal")
+		}
+
+		b1b := c1.Copy()
+		b1b.Sub(a1)
+		b2b := c2.Copy()
+		b2b.Sub(a2)
+
+		if !bytes.Equal(b1b.Bytes(), b2b.Bytes()) {
+			t.Error("b1b and b2b are not equal")
+		}
+
+		if !b1.Equals(b1b) {
+			t.Error("b1 and b1b are not equal")
+		}
+
+		if !b2.Equals(b2b) {
+			t.Error("b2 and b2b are not equal")
+		}
+	})
+}
+
+func FuzzAdd(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	f.Add(curve1.NewRandomZr(cr.Reader).Bytes(), curve1.NewRandomZr(cr.Reader).Bytes())
+	f.Add(curve1.NewZrFromInt(0).Bytes(), curve1.NewRandomZr(cr.Reader).Bytes())
+	f.Add(curve1.NewRandomZr(cr.Reader).Bytes(), curve1.NewZrFromInt(0).Bytes())
+	f.Add(curve1.NewZrFromInt(1).Bytes(), curve1.NewRandomZr(cr.Reader).Bytes())
+	f.Add(curve1.NewRandomZr(cr.Reader).Bytes(), curve1.NewZrFromInt(1).Bytes())
+	f.Add(curve1.NewZrFromInt(-1).Bytes(), curve1.NewRandomZr(cr.Reader).Bytes())
+	f.Add(curve1.NewRandomZr(cr.Reader).Bytes(), curve1.NewZrFromInt(-1).Bytes())
+
+	f.Fuzz(func(t *testing.T, aBytes, bBytes []byte) {
+		a1 := curve1.NewZrFromBytes(aBytes)
+		b1 := curve1.NewZrFromBytes(bBytes)
+		a2 := curve2.NewZrFromBytes(aBytes)
+		b2 := curve2.NewZrFromBytes(bBytes)
+
+		c1 := a1.Plus(b1)
+		c2 := a2.Plus(b2)
+
+		if !bytes.Equal(c1.Bytes(), c2.Bytes()) {
+			t.Error("c1 and c2 are not equal")
+		}
+
+		a1b := c1.Minus(b1)
+		a2b := c2.Minus(b2)
+
+		if !bytes.Equal(a1b.Bytes(), a2b.Bytes()) {
+			t.Error("a1b and a2b are not equal")
+		}
+
+		if !a1.Equals(a1b) {
+			t.Error("a1 and a1b are not equal")
+		}
+
+		if !a2.Equals(a2b) {
+			t.Error("a1 and a1b are not equal")
+		}
+
+		b1b := c1.Minus(a1)
+		b2b := c2.Minus(a2)
+
+		if !bytes.Equal(b1b.Bytes(), b2b.Bytes()) {
+			t.Error("b1b and b2b are not equal")
+		}
+
+		if !b1.Equals(b1b) {
+			t.Error("b1 and b1b are not equal")
+		}
+
+		if !b2.Equals(b2b) {
+			t.Error("b2 and b2b are not equal")
+		}
+	})
+}
 
 func TestImmutability(t *testing.T) {
 	for _, curve := range Curves {
