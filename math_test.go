@@ -22,6 +22,74 @@ import (
 
 var seed = time.Now().Unix()
 
+func FuzzPointMultiplication(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	pb := curve1.GroupOrder.Bytes()
+	pb = append(pb, 0x0, 0x0)
+
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(), pb)
+
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(), curve1.NewRandomZr(cr.Reader).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(), curve1.NewZrFromInt(1).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(), curve1.NewZrFromInt(0).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(), curve1.NewZrFromInt(-1).Bytes())
+	f.Add(curve1.GenG1.Bytes(), curve1.NewRandomZr(cr.Reader).Bytes())
+	r := curve1.NewRandomZr(cr.Reader)
+	rInv := r.Copy()
+	rInv.InvModP(curve1.GroupOrder)
+	f.Add(curve1.GenG1.Mul(r).Bytes(), rInv.Bytes())
+
+	f.Fuzz(func(t *testing.T, aBytes, rBytes []byte) {
+		g1, err1 := curve1.NewG1FromBytes(aBytes)
+		g2, err2 := curve1.NewG1FromBytes(aBytes)
+		r1 := curve1.NewZrFromBytes(rBytes)
+		r2 := curve2.NewZrFromBytes(rBytes)
+
+		if err1 != nil || err2 != nil {
+			if err1 == nil || err2 == nil {
+				t.Error("err1 and err2 have not both occurred")
+			}
+			return
+		}
+
+		gr1 := g1.Mul(r1)
+		gr2 := g2.Mul(r2)
+
+		if !bytes.Equal(gr1.Bytes(), gr2.Bytes()) {
+			t.Error("gr1 and gr2 are not equal")
+		}
+
+		r1Inv := r1.Copy()
+		err1 = r1Inv.InvModP(curve1.GroupOrder)
+		r2Inv := r2.Copy()
+		err2 = r2Inv.InvModP(curve2.GroupOrder)
+
+		if err1 != nil || err2 != nil {
+			if err1 == nil || err2 == nil {
+				t.Error("err1 and err2 have not both occurred")
+			}
+			return
+		}
+
+		g1_ := gr1.Mul(r1Inv)
+		g2_ := gr2.Mul(r2Inv)
+
+		if !bytes.Equal(g1_.Bytes(), g2_.Bytes()) {
+			t.Error("g1_ and g2_ are not equal")
+		}
+
+		if !g1.Equals(g1_) {
+			t.Error("g1 and g1_ are not equal")
+		}
+
+		if !g2.Equals(g2_) {
+			t.Error("g2 and g2_ are not equal")
+		}
+	})
+}
+
 func FuzzPointAddition(f *testing.F) {
 	curve1 := Curves[BLS12_381]
 	curve2 := Curves[BLS12_381_GURVY]
@@ -303,7 +371,8 @@ func runZrTest(t *testing.T, c *Curve) {
 	i.Mod(c.NewZrFromInt(3))
 	assert.True(t, i.Equals(c.NewZrFromInt(2)))
 	i = c.NewZrFromInt(3)
-	i.InvModP(c.NewZrFromInt(11))
+	err = i.InvModP(c.NewZrFromInt(11))
+	assert.NoError(t, err)
 	assert.True(t, i.Equals(c.NewZrFromInt(4)))
 	assert.Equal(t, c.NewZrFromInt(35).String(), "23")
 
@@ -563,7 +632,9 @@ func runRndTest(t *testing.T, c *Curve) {
 	r := c.NewRandomZr(rng)
 	gr := c.GenG1.Mul(r)
 
-	r.InvModP(c.GroupOrder)
+	err = r.InvModP(c.GroupOrder)
+	assert.NoError(t, err)
+
 	one := gr.Mul(r)
 	assert.True(t, c.GenG1.Equals(one))
 }
@@ -575,7 +646,9 @@ func runHashTest(t *testing.T, c *Curve) {
 	r := c.HashToZr(bytes)
 	gr := c.GenG1.Mul(r)
 
-	r.InvModP(c.GroupOrder)
+	err := r.InvModP(c.GroupOrder)
+	assert.NoError(t, err)
+
 	one := gr.Mul(r)
 	assert.True(t, c.GenG1.Equals(one))
 }
@@ -680,7 +753,9 @@ func runMulTest(t *testing.T, c *Curve) {
 
 	r := c.NewRandomZr(rng)
 	rInv := r.Copy()
-	rInv.InvModP(c.GroupOrder)
+	err = rInv.InvModP(c.GroupOrder)
+	assert.NoError(t, err)
+
 	assert.True(t, r.Mul(rInv).Equals(c.NewZrFromInt(1)))
 
 	rr := r.Mul(r)   // r^2

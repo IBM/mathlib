@@ -53,7 +53,7 @@ type Zr interface {
 	Mul(Zr) Zr
 	Mod(Zr)
 	PowMod(Zr) Zr
-	InvModP(Zr)
+	InvModP(Zr) error
 	Bytes() []byte
 	Equals(Zr) bool
 	Copy() Zr

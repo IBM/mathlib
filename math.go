@@ -201,8 +201,8 @@ func (z *Zr) PowMod(a *Zr) *Zr {
 	return &Zr{zr: z.zr.PowMod(a.zr), curveID: z.curveID}
 }
 
-func (z *Zr) InvModP(a *Zr) {
-	z.zr.InvModP(a.zr)
+func (z *Zr) InvModP(a *Zr) error {
+	return z.zr.InvModP(a.zr)
 }
 
 func (z *Zr) Bytes() []byte {

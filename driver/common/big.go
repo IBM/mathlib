@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package common
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/IBM/mathlib/driver"
@@ -71,8 +72,12 @@ func (b *BaseZr) Mod(a driver.Zr) {
 	b.Int.Mod(&b.Int, &a.(*BaseZr).Int)
 }
 
-func (b *BaseZr) InvModP(p driver.Zr) {
-	b.Int.ModInverse(&b.Int, &p.(*BaseZr).Int)
+func (b *BaseZr) InvModP(p driver.Zr) error {
+	if b.Int.ModInverse(&b.Int, &p.(*BaseZr).Int) == nil {
+		return fmt.Errorf("multiplicate inverse does not exist")
+	}
+
+	return nil
 }
 
 func (b *BaseZr) Bytes() []byte {
