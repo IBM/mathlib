@@ -22,6 +22,49 @@ import (
 
 var seed = time.Now().Unix()
 
+func FuzzCompressed(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Compressed())
+	f.Add(curve1.GenG1.Mul(curve1.NewZrFromInt(0)).Compressed())
+	f.Add(curve1.GenG1.Mul(curve1.NewZrFromInt(1)).Compressed())
+	f.Add(curve1.GenG1.Mul(curve1.NewZrFromInt(-1)).Compressed())
+	f.Add(curve1.GenG1.Mul(curve1.GroupOrder).Compressed())
+	p := curve1.GenG1.Copy()
+	p.Sub(curve1.GenG1)
+	f.Add(p.Compressed())
+
+	pb := curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Compressed()
+	pb = append(pb, 0x0, 0x0)
+
+	f.Add(pb)
+
+	f.Fuzz(func(t *testing.T, b []byte) {
+		p1, err1 := curve1.NewG1FromCompressed(b)
+		p2, err2 := curve2.NewG1FromCompressed(b)
+
+		if err1 != nil || err2 != nil {
+			if err1 == nil || err2 == nil {
+				t.Error("err1 and err2 have not both occurred")
+			}
+			return
+		}
+
+		bytes1 := p1.Compressed()
+		bytes2 := p2.Compressed()
+
+		if !bytes.Equal(b, bytes1) {
+			t.Error("b and bytes1 are not equal")
+		}
+
+		if !bytes.Equal(b, bytes2) {
+			t.Error("b and bytes2 are not equal")
+		}
+	})
+
+}
+
 func FuzzPointMultiplication(f *testing.F) {
 	curve1 := Curves[BLS12_381]
 	curve2 := Curves[BLS12_381_GURVY]
