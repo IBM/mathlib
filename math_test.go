@@ -22,6 +22,68 @@ import (
 
 var seed = time.Now().Unix()
 
+func sliceFilledWithString(size int, str byte) []byte {
+	data := make([]byte, size)
+	for i := 0; i < size; i++ {
+		data[i] = str
+	}
+	return data
+}
+
+func FuzzToBytes(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	f.Add(curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.NewZrFromInt(0)).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.NewZrFromInt(1)).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.NewZrFromInt(-1)).Bytes())
+	f.Add(curve1.GenG1.Mul(curve1.GroupOrder).Bytes())
+	p := curve1.GenG1.Copy()
+	p.Sub(curve1.GenG1)
+	f.Add(p.Bytes())
+
+	pb := curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes()
+	pb = append(pb, 0x0, 0x0)
+
+	f.Add(pb)
+
+	f.Add(sliceFilledWithString(96, 0x0)) // this breaks kilic
+	f.Add(sliceFilledWithString(96, 0x1))
+	f.Add([]byte("\x97\xf1ӧ1\x97ה&\x95c\x8cO\xa9\xac\x0f\xc3h\x8cO\x97t\xb9\x05\xa1N:?\x17\x1b\xacXlU\xe8?\xf9z\x1a\xef\xfb:\xf0\n\xdb\"ƻ000000000000000000000000000000000000000000000000"))
+
+	f.Fuzz(func(t *testing.T, b []byte) {
+		if bytes.Equal(b, sliceFilledWithString(96, 0x0)) {
+			return
+		}
+
+		p1, err1 := curve1.NewG1FromBytes(b)
+		p2, err2 := curve2.NewG1FromBytes(b)
+
+		if err1 != nil || err2 != nil {
+			if err1 == nil || err2 == nil {
+				t.Error("err1 and err2 have not both occurred")
+			}
+			return
+		}
+
+		bytes1 := p1.Bytes()
+		bytes2 := p2.Bytes()
+
+		if !bytes.Equal(b, bytes1) {
+			t.Error("b and bytes1 are not equal")
+		}
+
+		if !bytes.Equal(b, bytes2) {
+			t.Error("b and bytes2 are not equal")
+		}
+
+		r := curve1.NewRandomZr(cr.Reader)
+		p1.Mul(r)
+		p2.Mul(r)
+	})
+}
+
 func FuzzCompressed(f *testing.F) {
 	curve1 := Curves[BLS12_381]
 	curve2 := Curves[BLS12_381_GURVY]
@@ -39,6 +101,9 @@ func FuzzCompressed(f *testing.F) {
 	pb = append(pb, 0x0, 0x0)
 
 	f.Add(pb)
+
+	f.Add(sliceFilledWithString(48, 0x0))
+	f.Add(sliceFilledWithString(48, 0x1))
 
 	f.Fuzz(func(t *testing.T, b []byte) {
 		p1, err1 := curve1.NewG1FromCompressed(b)
@@ -62,7 +127,6 @@ func FuzzCompressed(f *testing.F) {
 			t.Error("b and bytes2 are not equal")
 		}
 	})
-
 }
 
 func FuzzPointMultiplication(f *testing.F) {
