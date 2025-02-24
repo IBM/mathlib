@@ -352,6 +352,10 @@ func (c *Bls12_381) NewG1FromCompressed(b []byte) driver.G1 {
 }
 
 func (c *Bls12_381) NewG2FromCompressed(b []byte) driver.G2 {
+	if len(b) != 96 {
+		panic("input string length must be equal to 96 bytes")
+	}
+
 	v := &bls12381G2{}
 	_, err := v.SetBytes(b)
 	if err != nil {
