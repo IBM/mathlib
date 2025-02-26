@@ -328,6 +328,14 @@ func (c *Bls12_381) NewG1FromBytes(b []byte) driver.G1 {
 }
 
 func (c *Bls12_381) NewG2FromBytes(b []byte) driver.G2 {
+	if len(b) != 192 {
+		panic("input string length must be equal to 192 bytes")
+	}
+
+	if b[0]&(1<<7) != 0 {
+		panic("compression flag must be zero")
+	}
+
 	v := &bls12381G2{}
 	_, err := v.SetBytes(b)
 	if err != nil {

@@ -14,6 +14,7 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,6 +29,61 @@ func sliceFilledWithString(size int, str byte) []byte {
 		data[i] = str
 	}
 	return data
+}
+
+func FuzzG2ToBytes(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	f.Add(curve1.GenG2.Mul(curve1.NewRandomZr(cr.Reader)).Bytes())
+	f.Add(curve1.GenG2.Mul(curve1.NewZrFromInt(0)).Bytes())
+	f.Add(curve1.GenG2.Mul(curve1.NewZrFromInt(1)).Bytes())
+	f.Add(curve1.GenG2.Mul(curve1.NewZrFromInt(-1)).Bytes())
+	f.Add(curve1.GenG2.Mul(curve1.GroupOrder).Bytes())
+	p := curve1.GenG2.Copy()
+	p.Sub(curve1.GenG2)
+	f.Add(p.Bytes())
+
+	pb := curve1.GenG2.Mul(curve1.NewRandomZr(cr.Reader)).Bytes()
+	pb = append(pb, 0x0, 0x0)
+
+	f.Add(pb)
+
+	f.Add(sliceFilledWithString(192, 0x0)) // this breaks gnark-crypto
+	f.Add(sliceFilledWithString(192, 0x1))
+
+	f.Add([]byte("\x99\x88U\xbbN\x7f@\xa2\xac\xb93v)\xf8\x11\x05\\(\x16e\xcf\x15\x80S\x12,\xe2:\xebb\x9c\x15z7\xab\xa5)\xb4\xebN\xbdޣ\xf7\x8a\x17\xee\n\x110ա\x90\xcfoP|\xd5\xf4\xa6\xb4\xebPh\xbe\x19\x86\x00E\x04\v\xd4lKU\xa1x;\xcbq֗\\\x902\rؔ\xa2\xff?\xf0\x8a\x9f\xae4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"))
+
+	f.Fuzz(func(t *testing.T, b []byte) {
+		p1, err1 := curve1.NewG2FromBytes(b)
+		p2, err2 := curve2.NewG2FromBytes(b)
+
+		if err1 != nil || err2 != nil {
+			if err1 == nil || err2 == nil {
+				if strings.Contains(err1.Error(), "point is not on curve") {
+					return
+				}
+
+				t.Error("err1 and err2 have not both occurred")
+			}
+			return
+		}
+
+		bytes1 := p1.Bytes()
+		bytes2 := p2.Bytes()
+
+		if !bytes.Equal(b, bytes1) {
+			t.Error("b and bytes1 are not equal")
+		}
+
+		if !bytes.Equal(b, bytes2) {
+			t.Error("b and bytes2 are not equal")
+		}
+
+		r := curve1.NewRandomZr(cr.Reader)
+		p1.Mul(r)
+		p2.Mul(r)
+	})
 }
 
 func FuzzToBytes(f *testing.F) {
