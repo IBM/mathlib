@@ -31,6 +31,116 @@ func sliceFilledWithString(size int, str byte) []byte {
 	return data
 }
 
+func FuzzPairing(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	f.Add(
+		curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.GenG2.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.NewRandomZr(cr.Reader).Bytes(),
+	)
+
+	r := curve1.NewRandomZr(cr.Reader)
+	rinv := r.Copy()
+	rinv.InvModP(curve1.GroupOrder)
+
+	f.Add(
+		curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.GenG2.Mul(r).Bytes(),
+		rinv.Bytes(),
+	)
+
+	f.Add(
+		curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.GenG2.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.NewZrFromInt(0).Bytes(),
+	)
+
+	f.Add(
+		curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.GenG2.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.NewZrFromInt(1).Bytes(),
+	)
+
+	f.Add(
+		curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.GenG2.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.NewZrFromInt(-1).Bytes(),
+	)
+
+	f.Add(
+		curve1.GenG1.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.GenG2.Mul(curve1.NewRandomZr(cr.Reader)).Bytes(),
+		curve1.GroupOrder.Bytes(),
+	)
+
+	f.Fuzz(func(t *testing.T, b1, b2, b3 []byte) {
+		p11, err11 := curve1.NewG1FromBytes(b1)
+		p21, err21 := curve1.NewG2FromBytes(b2)
+		p12, err12 := curve2.NewG1FromBytes(b1)
+		p22, err22 := curve2.NewG2FromBytes(b2)
+		r1 := curve1.NewZrFromBytes(b3)
+		r2 := curve2.NewZrFromBytes(b3)
+
+		if err11 != nil || err12 != nil {
+			if err11 == nil || err12 == nil {
+				if strings.Contains(err11.Error(), "point is not on curve") {
+					return
+				}
+				t.Error("err11 and err12 have not both occurred")
+			}
+			return
+		}
+
+		if err21 != nil || err22 != nil {
+			if err21 == nil || err22 == nil {
+				if strings.Contains(err21.Error(), "point is not on curve") {
+					return
+				}
+				t.Error("err21 and err22 have not both occurred")
+			}
+			return
+		}
+
+		t11 := curve1.FExp(curve1.Pairing(p21, p11)).Bytes()
+		t12 := curve2.FExp(curve2.Pairing(p22, p12)).Bytes()
+
+		if !bytes.Equal(t11, t12) {
+			t.Error("t11 and t12 are not equal")
+		}
+
+		t21 := curve1.FExp(curve1.Pairing(p21.Mul(r1), p11)).Bytes()
+		t22 := curve2.FExp(curve2.Pairing(p22.Mul(r2), p12)).Bytes()
+
+		if !bytes.Equal(t21, t22) {
+			t.Error("t21 and t22 are not equal")
+		}
+
+		t31 := curve1.FExp(curve1.Pairing(p21, p11.Mul(r1))).Bytes()
+		t32 := curve2.FExp(curve2.Pairing(p22, p12.Mul(r2))).Bytes()
+
+		if !bytes.Equal(t31, t32) {
+			t.Error("t31 and t32 are not equal")
+		}
+
+		if !bytes.Equal(t21, t31) {
+			t.Error("t21 and t31 are not equal")
+		}
+
+		t41 := curve1.FExp(curve1.Pairing(p21, p11)).Exp(r1).Bytes()
+		t42 := curve2.FExp(curve2.Pairing(p22, p12)).Exp(r1).Bytes()
+
+		if !bytes.Equal(t41, t42) {
+			t.Error("t41 and t42 are not equal")
+		}
+
+		if !bytes.Equal(t41, t31) {
+			t.Error("t41 and t31 are not equal")
+		}
+	})
+}
+
 func FuzzG2ToBytes(f *testing.F) {
 	curve1 := Curves[BLS12_381]
 	curve2 := Curves[BLS12_381_GURVY]
