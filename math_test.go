@@ -86,6 +86,62 @@ func FuzzG2ToBytes(f *testing.F) {
 	})
 }
 
+func FuzzGtToBytes(f *testing.F) {
+	curve1 := Curves[BLS12_381]
+	curve2 := Curves[BLS12_381_GURVY]
+
+	f.Add(curve1.GenGt.Exp(curve1.NewRandomZr(cr.Reader)).Bytes())
+	f.Add(curve1.GenGt.Exp(curve1.NewZrFromInt(0)).Bytes())
+	f.Add(curve1.GenGt.Exp(curve1.NewZrFromInt(1)).Bytes())
+	f.Add(curve1.GenGt.Exp(curve1.NewZrFromInt(-1)).Bytes())
+	f.Add(curve1.GenGt.Exp(curve1.GroupOrder).Bytes())
+	p := curve1.GenGt.Exp(curve1.NewZrFromInt(1))
+	pinv := curve1.GenGt.Exp(curve1.NewZrFromInt(1))
+	pinv.Inverse()
+	p.Mul(pinv)
+	f.Add(p.Bytes())
+
+	pb := curve1.GenGt.Exp(curve1.NewRandomZr(cr.Reader)).Bytes()
+	pb = append(pb, 0x0, 0x0)
+
+	f.Add(pb)
+
+	f.Add(sliceFilledWithString(576, 0x0)) // this breaks gnark-crypto
+	f.Add(sliceFilledWithString(576, 0x1))
+	f.Add(sliceFilledWithString(576, 0xff))
+
+	f.Fuzz(func(t *testing.T, b []byte) {
+		p1, err1 := curve1.NewGtFromBytes(b)
+		p2, err2 := curve2.NewGtFromBytes(b)
+
+		if err1 != nil || err2 != nil {
+			if err1 == nil || err2 == nil {
+				if strings.Contains(err1.Error(), "invalid element") {
+					return
+				}
+
+				t.Error("err1 and err2 have not both occurred")
+			}
+			return
+		}
+
+		bytes1 := p1.Bytes()
+		bytes2 := p2.Bytes()
+
+		if !bytes.Equal(b, bytes1) {
+			t.Error("b and bytes1 are not equal")
+		}
+
+		if !bytes.Equal(b, bytes2) {
+			t.Error("b and bytes2 are not equal")
+		}
+
+		r := curve1.NewRandomZr(cr.Reader)
+		p1.Exp(r)
+		p2.Exp(r)
+	})
+}
+
 func FuzzToBytes(f *testing.F) {
 	curve1 := Curves[BLS12_381]
 	curve2 := Curves[BLS12_381_GURVY]
