@@ -55,6 +55,29 @@ func CurveIDToString(id CurveID) string {
 	}
 }
 
+func CurveNameToCurveID(name string) CurveID {
+	switch name {
+	case "FP256BN_AMCL":
+		return FP256BN_AMCL
+	case "BN254":
+		return BN254
+	case "FP256BN_AMCL_MIRACL":
+		return FP256BN_AMCL_MIRACL
+	case "BLS12_381":
+		return BLS12_381
+	case "BLS12_377_GURVY":
+		return BLS12_377_GURVY
+	case "BLS12_381_GURVY":
+		return BLS12_381_GURVY
+	case "BLS12_381_BBS":
+		return BLS12_381_BBS
+	case "BLS12_381_BBS_GURVY":
+		return BLS12_381_BBS_GURVY
+	default:
+		panic(fmt.Sprintf("unknown curve %s", name))
+	}
+}
+
 var Curves []*Curve = []*Curve{
 	{
 		c:                    amcl.NewFp256bn(),
@@ -229,8 +252,10 @@ func (z *Zr) Neg() {
 	z.zr.Neg()
 }
 
-var zerobytes = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-var onebytes = []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+var (
+	zerobytes = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	onebytes  = []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+)
 
 func (z *Zr) Uint() (uint64, error) {
 	b := z.Bytes()
