@@ -3,7 +3,7 @@ module github.com/IBM/mathlib
 go 1.23.0
 
 require (
-	github.com/consensys/gnark-crypto v0.18.0
+	github.com/consensys/gnark-crypto v0.19.0
 	github.com/hyperledger/fabric-amcl v0.0.0-20230602173724-9e02669dceb2
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
