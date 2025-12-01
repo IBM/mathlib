@@ -55,6 +55,8 @@ func CurveIDToString(id CurveID) string {
 	}
 }
 
+// Curves defines the default available curves.
+// They are instantiated either via the NewCurve function or directly.
 var Curves []*Curve = []*Curve{
 	NewCurve(
 		amcl.NewFp256bn(),
