@@ -21,6 +21,14 @@ import (
 )
 
 var g1StrRegexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\)$`)
+var g1Bytes12_381 [48]byte
+var g2Bytes12_381 [96]byte
+
+func init() {
+	_, _, g1, g2 := bls12381.Generators()
+	g1Bytes12_381 = g1.Bytes()
+	g2Bytes12_381 = g2.Bytes()
+}
 
 /*********************************************************************/
 
@@ -217,20 +225,12 @@ func (g *bls12381Gt) Bytes() []byte {
 
 /*********************************************************************/
 
-func NewBls12_381() *Bls12_381 {
-	return &Bls12_381{common.CurveBase{Modulus: *fr.Modulus()}}
-}
-
-func NewBls12_381BBS() *Bls12_381BBS {
-	return &Bls12_381BBS{*NewBls12_381()}
-}
-
 type Bls12_381 struct {
 	common.CurveBase
 }
 
-type Bls12_381BBS struct {
-	Bls12_381
+func NewBls12_381() *Bls12_381 {
+	return &Bls12_381{common.CurveBase{Modulus: *fr.Modulus()}}
 }
 
 func (c *Bls12_381) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {
@@ -253,15 +253,6 @@ func (c *Bls12_381) Pairing2(p2a, p2b driver.G2, p1a, p1b driver.G1) driver.Gt {
 
 func (c *Bls12_381) FExp(a driver.Gt) driver.Gt {
 	return &bls12381Gt{bls12381.FinalExponentiation(&a.(*bls12381Gt).GT)}
-}
-
-var g1Bytes12_381 [48]byte
-var g2Bytes12_381 [96]byte
-
-func init() {
-	_, _, g1, g2 := bls12381.Generators()
-	g1Bytes12_381 = g1.Bytes()
-	g2Bytes12_381 = g2.Bytes()
 }
 
 func (c *Bls12_381) GenG1() driver.G1 {
@@ -408,6 +399,14 @@ func (p *Bls12_381) HashToG2WithDomain(data, domain []byte) driver.G2 {
 	}
 
 	return &bls12381G2{g2}
+}
+
+type Bls12_381BBS struct {
+	Bls12_381
+}
+
+func NewBls12_381BBS() *Bls12_381BBS {
+	return &Bls12_381BBS{*NewBls12_381()}
 }
 
 func (c *Bls12_381BBS) HashToG1(data []byte) driver.G1 {
