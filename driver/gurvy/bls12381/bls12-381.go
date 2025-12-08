@@ -67,17 +67,7 @@ func (g *bls12381G1) Mul(a driver.Zr) driver.G1 {
 func (g *bls12381G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	first := G1Jacs.Get()
 	defer G1Jacs.Put(first)
-	first.FromAffine(&g.G1Affine)
-
-	second := G1Jacs.Get()
-	defer G1Jacs.Put(second)
-	second.FromAffine(&Q.(*bls12381G1).G1Affine)
-
-	first.ScalarMultiplication(first, &e.(*common.BaseZr).Int)
-	second.ScalarMultiplication(second, &f.(*common.BaseZr).Int)
-
-	first.AddAssign(second)
-
+	first.JointScalarMultiplication(&g.G1Affine, &Q.(*bls12381G1).G1Affine, &e.(*common.BaseZr).Int, &f.(*common.BaseZr).Int)
 	gc := &bls12381G1{}
 	gc.G1Affine.FromJacobian(first)
 	return gc
