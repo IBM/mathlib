@@ -4,19 +4,23 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package gurvy
+package bls12381
 
 import (
 	"fmt"
 	"hash"
+	"regexp"
 	"strings"
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
+	"github.com/IBM/mathlib/driver/gurvy"
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"golang.org/x/crypto/blake2b"
 )
+
+var g1StrRegexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\)$`)
 
 /*********************************************************************/
 
@@ -53,11 +57,22 @@ func (g *bls12381G1) Mul(a driver.Zr) driver.G1 {
 }
 
 func (g *bls12381G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
-	a := g.Mul(e)
-	b := Q.Mul(f)
-	a.Add(b)
+	first := G1Jacs.Get()
+	defer G1Jacs.Put(first)
+	first.FromAffine(&g.G1Affine)
 
-	return a
+	second := G1Jacs.Get()
+	defer G1Jacs.Put(second)
+	second.FromAffine(&Q.(*bls12381G1).G1Affine)
+
+	first.ScalarMultiplication(first, &e.(*common.BaseZr).Int)
+	second.ScalarMultiplication(second, &f.(*common.BaseZr).Int)
+
+	first.AddAssign(second)
+
+	gc := &bls12381G1{}
+	gc.G1Affine.FromJacobian(first)
+	return gc
 }
 
 func (g *bls12381G1) Equals(a driver.G1) bool {
@@ -402,7 +417,7 @@ func (c *Bls12_381BBS) HashToG1(data []byte) driver.G1 {
 		return h
 	}
 
-	g1, err := HashToG1GenericBESwu(data, []byte{}, hashFunc)
+	g1, err := gurvy.HashToG1GenericBESwu(data, []byte{}, hashFunc)
 	if err != nil {
 		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
 	}
@@ -426,7 +441,7 @@ func (p *Bls12_381BBS) HashToG1WithDomain(data, domain []byte) driver.G1 {
 		return h
 	}
 
-	g1, err := HashToG1GenericBESwu(data, domain, hashFunc)
+	g1, err := gurvy.HashToG1GenericBESwu(data, domain, hashFunc)
 	if err != nil {
 		panic(fmt.Sprintf("HashToG1 failed [%s]", err.Error()))
 	}

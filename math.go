@@ -15,6 +15,7 @@ import (
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/amcl"
 	"github.com/IBM/mathlib/driver/gurvy"
+	"github.com/IBM/mathlib/driver/gurvy/bls12381"
 	"github.com/IBM/mathlib/driver/kilic"
 	"github.com/pkg/errors"
 )
@@ -129,17 +130,17 @@ var Curves []*Curve = []*Curve{
 		curveID:              BLS12_377_GURVY,
 	},
 	{
-		c:                    gurvy.NewBls12_381(),
-		GenG1:                NewG1((&gurvy.Bls12_381{}).GenG1(), BLS12_381_GURVY),
-		GenG2:                NewG2((&gurvy.Bls12_381{}).GenG2(), BLS12_381_GURVY),
-		GenGt:                NewGt((&gurvy.Bls12_381{}).GenGt(), BLS12_381_GURVY),
-		GroupOrder:           NewZr(gurvy.NewBls12_381().GroupOrder(), BLS12_381_GURVY),
-		CoordByteSize:        (&gurvy.Bls12_381{}).CoordinateByteSize(),
-		G1ByteSize:           (&gurvy.Bls12_381{}).G1ByteSize(),
-		CompressedG1ByteSize: (&gurvy.Bls12_381{}).CompressedG1ByteSize(),
-		G2ByteSize:           (&gurvy.Bls12_381{}).G2ByteSize(),
-		CompressedG2ByteSize: (&gurvy.Bls12_381{}).CompressedG2ByteSize(),
-		ScalarByteSize:       (&gurvy.Bls12_381{}).ScalarByteSize(),
+		c:                    bls12381.NewBls12_381(),
+		GenG1:                NewG1((&bls12381.Bls12_381{}).GenG1(), BLS12_381_GURVY),
+		GenG2:                NewG2((&bls12381.Bls12_381{}).GenG2(), BLS12_381_GURVY),
+		GenGt:                NewGt((&bls12381.Bls12_381{}).GenGt(), BLS12_381_GURVY),
+		GroupOrder:           NewZr(bls12381.NewBls12_381().GroupOrder(), BLS12_381_GURVY),
+		CoordByteSize:        (&bls12381.Bls12_381{}).CoordinateByteSize(),
+		G1ByteSize:           (&bls12381.Bls12_381{}).G1ByteSize(),
+		CompressedG1ByteSize: (&bls12381.Bls12_381{}).CompressedG1ByteSize(),
+		G2ByteSize:           (&bls12381.Bls12_381{}).G2ByteSize(),
+		CompressedG2ByteSize: (&bls12381.Bls12_381{}).CompressedG2ByteSize(),
+		ScalarByteSize:       (&bls12381.Bls12_381{}).ScalarByteSize(),
 		curveID:              BLS12_381_GURVY,
 	},
 	{
@@ -157,17 +158,17 @@ var Curves []*Curve = []*Curve{
 		curveID:              BLS12_381_BBS,
 	},
 	{
-		c:                    gurvy.NewBls12_381BBS(),
-		GenG1:                NewG1(gurvy.NewBls12_381BBS().GenG1(), BLS12_381_BBS_GURVY),
-		GenG2:                NewG2(gurvy.NewBls12_381BBS().GenG2(), BLS12_381_BBS_GURVY),
-		GenGt:                NewGt(gurvy.NewBls12_381BBS().GenGt(), BLS12_381_BBS_GURVY),
-		GroupOrder:           NewZr(gurvy.NewBls12_381().GroupOrder(), BLS12_381_BBS_GURVY),
-		CoordByteSize:        gurvy.NewBls12_381BBS().CoordinateByteSize(),
-		G1ByteSize:           gurvy.NewBls12_381BBS().G1ByteSize(),
-		CompressedG1ByteSize: gurvy.NewBls12_381BBS().CompressedG1ByteSize(),
-		G2ByteSize:           gurvy.NewBls12_381BBS().G2ByteSize(),
-		CompressedG2ByteSize: gurvy.NewBls12_381BBS().CompressedG2ByteSize(),
-		ScalarByteSize:       gurvy.NewBls12_381BBS().ScalarByteSize(),
+		c:                    bls12381.NewBls12_381BBS(),
+		GenG1:                NewG1(bls12381.NewBls12_381BBS().GenG1(), BLS12_381_BBS_GURVY),
+		GenG2:                NewG2(bls12381.NewBls12_381BBS().GenG2(), BLS12_381_BBS_GURVY),
+		GenGt:                NewGt(bls12381.NewBls12_381BBS().GenGt(), BLS12_381_BBS_GURVY),
+		GroupOrder:           NewZr(bls12381.NewBls12_381().GroupOrder(), BLS12_381_BBS_GURVY),
+		CoordByteSize:        bls12381.NewBls12_381BBS().CoordinateByteSize(),
+		G1ByteSize:           bls12381.NewBls12_381BBS().G1ByteSize(),
+		CompressedG1ByteSize: bls12381.NewBls12_381BBS().CompressedG1ByteSize(),
+		G2ByteSize:           bls12381.NewBls12_381BBS().G2ByteSize(),
+		CompressedG2ByteSize: bls12381.NewBls12_381BBS().CompressedG2ByteSize(),
+		ScalarByteSize:       bls12381.NewBls12_381BBS().ScalarByteSize(),
 		curveID:              BLS12_381_BBS_GURVY,
 	},
 }
