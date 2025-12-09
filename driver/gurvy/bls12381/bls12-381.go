@@ -9,6 +9,7 @@ package bls12381
 import (
 	"fmt"
 	"hash"
+	"math/big"
 	"regexp"
 	"strings"
 
@@ -24,10 +25,15 @@ var g1StrRegexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\)$`)
 var g1Bytes12_381 [48]byte
 var g2Bytes12_381 [96]byte
 
+// point at infinity
+var g1Infinity bls12381.G1Jac
+
 func init() {
 	_, _, g1, g2 := bls12381.Generators()
 	g1Bytes12_381 = g1.Bytes()
 	g2Bytes12_381 = g2.Bytes()
+	g1Infinity.X.SetOne()
+	g1Infinity.Y.SetOne()
 }
 
 /*********************************************************************/
@@ -67,7 +73,7 @@ func (g *bls12381G1) Mul(a driver.Zr) driver.G1 {
 func (g *bls12381G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	first := G1Jacs.Get()
 	defer G1Jacs.Put(first)
-	first.JointScalarMultiplication(&g.G1Affine, &Q.(*bls12381G1).G1Affine, &e.(*common.BaseZr).Int, &f.(*common.BaseZr).Int)
+	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*bls12381G1).G1Affine, &e.(*common.BaseZr).Int, &f.(*common.BaseZr).Int)
 	gc := &bls12381G1{}
 	gc.G1Affine.FromJacobian(first)
 	return gc
@@ -391,6 +397,38 @@ func (p *Bls12_381) HashToG2WithDomain(data, domain []byte) driver.G2 {
 	return &bls12381G2{g2}
 }
 
+func (c *Bls12_381) ModMul(a1, b1, m driver.Zr) driver.Zr {
+	a1Fr := FrElements.Get()
+	defer FrElements.Put(a1Fr)
+	a1Fr.SetBigInt(&a1.(*common.BaseZr).Int)
+
+	a2Fr := FrElements.Get()
+	defer FrElements.Put(a2Fr)
+	a2Fr.SetBigInt(&b1.(*common.BaseZr).Int)
+
+	a1Fr.Mul(a1Fr, a2Fr)
+
+	res := &common.BaseZr{Modulus: c.Modulus}
+	a1Fr.BigInt(&res.Int)
+	return res
+}
+
+func (c *Bls12_381) ModAdd(a1, b1, m driver.Zr) driver.Zr {
+	a1Fr := FrElements.Get()
+	defer FrElements.Put(a1Fr)
+	a1Fr.SetBigInt(&a1.(*common.BaseZr).Int)
+
+	a2Fr := FrElements.Get()
+	defer FrElements.Put(a2Fr)
+	a2Fr.SetBigInt(&b1.(*common.BaseZr).Int)
+
+	a1Fr.Add(a1Fr, a2Fr)
+
+	res := &common.BaseZr{Modulus: c.Modulus}
+	a1Fr.BigInt(&res.Int)
+	return res
+}
+
 type Bls12_381BBS struct {
 	Bls12_381
 }
@@ -445,4 +483,74 @@ func (p *Bls12_381BBS) HashToG2WithDomain(data, domain []byte) driver.G2 {
 	}
 
 	return &bls12381G2{g2}
+}
+
+// JointScalarMultiplication computes [s1]a1+[s2]a2 using Strauss-Shamir technique
+// where a1 and a2 are affine points.
+func JointScalarMultiplication(p *bls12381.G1Jac, a1, a2 *bls12381.G1Affine, s1, s2 *big.Int) *bls12381.G1Jac {
+	var res, p1, p2 bls12381.G1Jac
+	res.Set(&g1Infinity)
+	p1.FromAffine(a1)
+	p2.FromAffine(a2)
+
+	var table [15]bls12381.G1Jac
+
+	var k1, k2 big.Int
+	if s1.Sign() == -1 {
+		k1.Neg(s1)
+		table[0].Neg(&p1)
+	} else {
+		k1 = *s1
+		table[0].Set(&p1)
+	}
+	if s2.Sign() == -1 {
+		k2.Neg(s2)
+		table[3].Neg(&p2)
+	} else {
+		k2 = *s2
+		table[3].Set(&p2)
+	}
+
+	// precompute table (2 bits sliding window)
+	table[1].Double(&table[0])
+	table[2].Set(&table[1]).AddAssign(&table[0])
+	table[4].Set(&table[3]).AddAssign(&table[0])
+	table[5].Set(&table[3]).AddAssign(&table[1])
+	table[6].Set(&table[3]).AddAssign(&table[2])
+	table[7].Double(&table[3])
+	table[8].Set(&table[7]).AddAssign(&table[0])
+	table[9].Set(&table[7]).AddAssign(&table[1])
+	table[10].Set(&table[7]).AddAssign(&table[2])
+	table[11].Set(&table[7]).AddAssign(&table[3])
+	table[12].Set(&table[11]).AddAssign(&table[0])
+	table[13].Set(&table[11]).AddAssign(&table[1])
+	table[14].Set(&table[11]).AddAssign(&table[2])
+
+	var s [2]fr.Element
+	s[0] = s[0].SetBigInt(&k1).Bits()
+	s[1] = s[1].SetBigInt(&k2).Bits()
+
+	maxBit := k1.BitLen()
+	if k2.BitLen() > maxBit {
+		maxBit = k2.BitLen()
+	}
+	hiWordIndex := (maxBit - 1) / 64
+
+	for i := hiWordIndex; i >= 0; i-- {
+		mask := uint64(3) << 62
+		for j := 0; j < 32; j++ {
+			res.Double(&res).Double(&res)
+			b1 := (s[0][i] & mask) >> (62 - 2*j)
+			b2 := (s[1][i] & mask) >> (62 - 2*j)
+			if b1|b2 != 0 {
+				s := (b2<<2 | b1)
+				res.AddAssign(&table[s-1])
+			}
+			mask = mask >> 2
+		}
+	}
+
+	p.Set(&res)
+	return p
+
 }
