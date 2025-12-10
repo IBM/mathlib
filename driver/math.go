@@ -45,6 +45,8 @@ type Curve interface {
 	HashToG2WithDomain(data, domain []byte) G2
 	NewRandomZr(rng io.Reader) Zr
 	Rand() (io.Reader, error)
+	ModAddMul(driver []Zr, driver2 []Zr, zr Zr) Zr
+	ModAddMul2(a1 Zr, c1 Zr, b1 Zr, c2 Zr, m Zr) Zr
 }
 
 type Zr interface {
@@ -68,6 +70,7 @@ type G1 interface {
 	Add(G1)
 	Mul(Zr) G1
 	Mul2(e Zr, Q G1, f Zr) G1
+	Mul2InPlace(e Zr, Q G1, f Zr)
 	Equals(G1) bool
 	Bytes() []byte
 	Compressed() []byte

@@ -88,3 +88,11 @@ func (c *CurveBase) HashToZr(data []byte) driver.Zr {
 func (p *CurveBase) Rand() (io.Reader, error) {
 	return rand.Reader, nil
 }
+
+func (p *CurveBase) ModAddMul(driver []driver.Zr, driver2 []driver.Zr, zr driver.Zr) driver.Zr {
+	panic("not implemented")
+}
+
+func (p *CurveBase) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
+	panic("not implemented")
+}

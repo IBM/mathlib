@@ -185,6 +185,10 @@ func NewZr(zr driver.Zr, curveID CurveID) *Zr {
 	return &Zr{zr: zr, curveID: curveID}
 }
 
+func (z *Zr) Get() driver.Zr {
+	return z.zr
+}
+
 func (z *Zr) CurveID() CurveID {
 	return z.curveID
 }
@@ -292,6 +296,10 @@ func (g *G1) Mul(a *Zr) *G1 {
 
 func (g *G1) Mul2(e *Zr, Q *G1, f *Zr) *G1 {
 	return &G1{g1: g.g1.Mul2(e.zr, Q.g1, f.zr), curveID: g.curveID}
+}
+
+func (g *G1) Mul2InPlace(e *Zr, Q *G1, f *Zr) {
+	g.g1.Mul2InPlace(e.zr, Q.g1, f.zr)
 }
 
 func (g *G1) Equals(a *G1) bool {
@@ -604,4 +612,18 @@ func (c *Curve) ModMul(a1, b1, m *Zr) *Zr {
 
 func (c *Curve) ModNeg(a1, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModNeg(a1.zr, m.zr), curveID: c.curveID}
+}
+
+func (c *Curve) ModAddMul(a1, b1 []*Zr, m *Zr) *Zr {
+	a1Driver := make([]driver.Zr, len(a1))
+	b1Driver := make([]driver.Zr, len(b1))
+	for i := 0; i < len(a1); i++ {
+		a1Driver[i] = a1[i].zr
+		b1Driver[i] = b1[i].zr
+	}
+	return &Zr{zr: c.c.ModAddMul(a1Driver, b1Driver, m.zr), curveID: c.curveID}
+}
+
+func (c *Curve) ModAddMul2(a, b, cc, d *Zr, m *Zr) *Zr {
+	return &Zr{zr: c.c.ModAddMul2(a.zr, b.zr, cc.zr, d.zr, m.zr), curveID: c.curveID}
 }

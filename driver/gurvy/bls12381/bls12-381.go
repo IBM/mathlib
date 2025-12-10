@@ -57,10 +57,11 @@ func (e *bls12381G1) Copy() driver.G1 {
 }
 
 func (g *bls12381G1) Add(a driver.G1) {
-	j := bls12381.G1Jac{}
+	j := G1Jacs.Get()
+	defer G1Jacs.Put(j)
 	j.FromAffine(&g.G1Affine)
-	j.AddMixed((*bls12381.G1Affine)(&a.(*bls12381G1).G1Affine))
-	g.G1Affine.FromJacobian(&j)
+	j.AddMixed(&a.(*bls12381G1).G1Affine)
+	g.G1Affine.FromJacobian(j)
 }
 
 func (g *bls12381G1) Mul(a driver.Zr) driver.G1 {
@@ -77,6 +78,13 @@ func (g *bls12381G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	gc := &bls12381G1{}
 	gc.G1Affine.FromJacobian(first)
 	return gc
+}
+
+func (g *bls12381G1) Mul2InPlace(e driver.Zr, Q driver.G1, f driver.Zr) {
+	first := G1Jacs.Get()
+	defer G1Jacs.Put(first)
+	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*bls12381G1).G1Affine, &e.(*common.BaseZr).Int, &f.(*common.BaseZr).Int)
+	g.G1Affine.FromJacobian(first)
 }
 
 func (g *bls12381G1) Equals(a driver.G1) bool {
@@ -410,6 +418,52 @@ func (c *Bls12_381) ModMul(a1, b1, m driver.Zr) driver.Zr {
 
 	res := &common.BaseZr{Modulus: c.Modulus}
 	a1Fr.BigInt(&res.Int)
+	return res
+}
+
+func (c *Bls12_381) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
+	a1Fr := FrElements.Get()
+	defer FrElements.Put(a1Fr)
+	b1Fr := FrElements.Get()
+	defer FrElements.Put(b1Fr)
+	sum := FrElements.Get()
+	defer FrElements.Put(sum)
+
+	sum.SetZero()
+	for i := 0; i < len(a1); i++ {
+		a1Fr.SetBigInt(&a1[i].(*common.BaseZr).Int)
+		b1Fr.SetBigInt(&b1[i].(*common.BaseZr).Int)
+		a1Fr.Mul(a1Fr, b1Fr)
+		sum.Add(sum, a1Fr)
+	}
+
+	res := &common.BaseZr{Modulus: c.Modulus}
+	sum.BigInt(&res.Int)
+	return res
+}
+
+func (c *Bls12_381) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
+	aFr := FrElements.Get()
+	defer FrElements.Put(aFr)
+	cFr := FrElements.Get()
+	defer FrElements.Put(cFr)
+
+	sum := FrElements.Get()
+	defer FrElements.Put(sum)
+
+	sum.SetZero()
+	aFr.SetBigInt(&a1.(*common.BaseZr).Int)
+	cFr.SetBigInt(&c1.(*common.BaseZr).Int)
+	aFr.Mul(aFr, cFr)
+	sum.Add(sum, aFr)
+
+	aFr.SetBigInt(&b1.(*common.BaseZr).Int)
+	cFr.SetBigInt(&c2.(*common.BaseZr).Int)
+	aFr.Mul(aFr, cFr)
+	sum.Add(sum, aFr)
+
+	res := &common.BaseZr{Modulus: c.Modulus}
+	sum.BigInt(&res.Int)
 	return res
 }
 

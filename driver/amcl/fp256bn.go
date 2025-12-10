@@ -202,6 +202,11 @@ func (e *fp256bnG1) Mul2(ee driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	return &fp256bnG1{*e.ECP.Mul2(bigToMiraclBIGCore(&ee.(*common.BaseZr).Int), &Q.(*fp256bnG1).ECP, bigToMiraclBIGCore(&f.(*common.BaseZr).Int))}
 }
 
+func (e *fp256bnG1) Mul2InPlace(ee driver.Zr, Q driver.G1, f driver.Zr) {
+	v := e.ECP.Mul2(bigToMiraclBIGCore(&ee.(*common.BaseZr).Int), &Q.(*fp256bnG1).ECP, bigToMiraclBIGCore(&f.(*common.BaseZr).Int))
+	e.ECP = *v
+}
+
 func (e *fp256bnG1) Equals(a driver.G1) bool {
 	return e.ECP.Equals(&a.(*fp256bnG1).ECP)
 }
