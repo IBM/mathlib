@@ -62,6 +62,7 @@ type Zr interface {
 	Clone(a Zr)
 	String() string
 	Neg()
+	InvModOrder()
 }
 
 type G1 interface {

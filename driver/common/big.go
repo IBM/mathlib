@@ -75,6 +75,10 @@ func (b *BaseZr) InvModP(p driver.Zr) {
 	b.Int.ModInverse(&b.Int, &p.(*BaseZr).Int)
 }
 
+func (b *BaseZr) InvModOrder() {
+	b.Int.ModInverse(&b.Int, &b.Modulus)
+}
+
 func (b *BaseZr) Bytes() []byte {
 	target := b.Int
 
