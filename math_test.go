@@ -662,6 +662,18 @@ func testModAdd(t *testing.T, c *Curve) {
 	assert.True(t, g1.Equals(g2), fmt.Sprintf("failed with curve %T", c.c))
 }
 
+func testModAdd2(t *testing.T, c *Curve) {
+	i1 := c.NewZrFromInt(math.MaxInt64)
+	i2 := c.NewZrFromInt(math.MaxInt64)
+	g1 := c.GenG1.Mul2(i1, c.GenG1, i2)
+
+	g2 := c.NewG1()
+	g2 = c.GenG1.Copy()
+	g2.Mul2InPlace(i1, c.GenG1, i2)
+
+	assert.True(t, g1.Equals(g2), fmt.Sprintf("failed with curve %T", c.c))
+}
+
 func testNotZeroAfterAdd(t *testing.T, c *Curve) {
 	i1 := c.NewZrFromInt(math.MaxInt64)
 	i2 := c.NewZrFromInt(math.MaxInt64)
@@ -743,6 +755,7 @@ func TestCurves(t *testing.T) {
 	for _, curve := range Curves {
 		testNotZeroAfterAdd(t, curve)
 		testModAdd(t, curve)
+		testModAdd2(t, curve)
 		runZrTest(t, curve)
 		runG1Test(t, curve)
 		runG2Test(t, curve)

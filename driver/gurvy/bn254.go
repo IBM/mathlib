@@ -59,6 +59,14 @@ func (g *bn254G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	return a
 }
 
+func (g *bn254G1) Mul2InPlace(e driver.Zr, Q driver.G1, f driver.Zr) {
+	a := g.Mul(e)
+	b := Q.Mul(f)
+	a.Add(b)
+
+	g.Set(&a.(*bn254G1).G1Affine)
+}
+
 func (g *bn254G1) Equals(a driver.G1) bool {
 	return g.G1Affine.Equal(&a.(*bn254G1).G1Affine)
 }
