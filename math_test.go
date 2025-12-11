@@ -540,6 +540,18 @@ func runModAddSubNegTest(t *testing.T, c *Curve) {
 	apb := c.ModAdd(a, b, c.GroupOrder)
 	bagain := c.ModSub(apb, a, c.GroupOrder)
 	assert.True(t, bagain.Equals(b))
+
+	a2 := c.NewRandomZr(rng)
+	b2 := c.NewRandomZr(rng)
+
+	v := c.ModAddMul2(a, b, a2, b2, c.GroupOrder)
+	atb := c.ModMul(a, b, c.GroupOrder)
+	a2tb2 := c.ModMul(a2, b2, c.GroupOrder)
+	v2 := c.ModAdd(atb, a2tb2, c.GroupOrder)
+	assert.True(t, v.Equals(v2))
+
+	v3 := c.ModAddMul([]*Zr{a, a2}, []*Zr{b, b2}, c.GroupOrder)
+	assert.True(t, v.Equals(v3))
 }
 
 func runMulTest(t *testing.T, c *Curve) {
