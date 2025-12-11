@@ -51,6 +51,15 @@ func (c *CurveBase) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 	return res
 }
 
+func (c *CurveBase) ModAdd2(a1, b1, c1, m driver.Zr) {
+	res := &BaseZr{Modulus: c.Modulus}
+	res.Int.Add(&a1.(*BaseZr).Int, &b1.(*BaseZr).Int)
+	res.Int.Add(&res.Int, &c1.(*BaseZr).Int)
+	res.Int.Mod(&res.Int, &m.(*BaseZr).Int)
+
+	(&a1.(*BaseZr).Int).Set(&res.Int)
+}
+
 func (c *CurveBase) GroupOrder() driver.Zr {
 	return &BaseZr{Int: c.Modulus, Modulus: c.Modulus}
 }
@@ -94,6 +103,7 @@ func (p *CurveBase) ModAddMul(a1 []driver.Zr, b1 []driver.Zr, modulo driver.Zr) 
 	for i := 0; i < len(a1); i++ {
 		sum.Plus(a1[i].Mul(b1[i]))
 	}
+	sum.Mod(modulo)
 	return sum
 }
 
@@ -101,5 +111,6 @@ func (p *CurveBase) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driv
 	sum := p.NewZrFromInt64(0)
 	sum.Plus(a1.Mul(c1))
 	sum.Plus(b1.Mul(c2))
+	sum.Mod(m)
 	return sum
 }

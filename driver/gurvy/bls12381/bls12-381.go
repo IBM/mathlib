@@ -64,6 +64,12 @@ func (b *Zr) Mul(a driver.Zr) driver.Zr {
 }
 
 func (b *Zr) PowMod(x driver.Zr) driver.Zr {
+	fr := FrElements.Get()
+	defer FrElements.Put(fr)
+	fr.SetBigInt(&b.Int)
+	fr.Exp(*fr, &x.(*Zr).Int)
+	fr.BigInt(&b.Int)
+
 	rv := &Zr{Modulus: b.Modulus}
 	rv.Exp(&b.Int, &x.(*Zr).Int, &b.Modulus)
 	return rv
@@ -464,10 +470,18 @@ func (c *Curve) ModNeg(a1, m driver.Zr) driver.Zr {
 }
 
 func (c *Curve) ModSub(a1, b1, m driver.Zr) driver.Zr {
-	res := &Zr{Modulus: c.Modulus}
-	res.Int.Sub(&a1.(*Zr).Int, &b1.(*Zr).Int)
-	res.Int.Mod(&res.Int, &m.(*Zr).Int)
+	a1Fr := FrElements.Get()
+	defer FrElements.Put(a1Fr)
+	a1Fr.SetBigInt(&a1.(*Zr).Int)
 
+	a2Fr := FrElements.Get()
+	defer FrElements.Put(a2Fr)
+	a2Fr.SetBigInt(&b1.(*Zr).Int)
+
+	a1Fr.Sub(a1Fr, a2Fr)
+
+	res := &Zr{Modulus: c.Modulus}
+	a1Fr.BigInt(&res.Int)
 	return res
 }
 
@@ -621,6 +635,23 @@ func (c *Curve) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 	res := &Zr{Modulus: c.Modulus}
 	a1Fr.BigInt(&res.Int)
 	return res
+}
+
+func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
+	a1Fr := FrElements.Get()
+	defer FrElements.Put(a1Fr)
+	a1Fr.SetBigInt(&a1.(*Zr).Int)
+
+	tmp := FrElements.Get()
+	defer FrElements.Put(tmp)
+	tmp.SetBigInt(&b1.(*Zr).Int)
+
+	a1Fr.Add(a1Fr, tmp)
+
+	tmp.SetBigInt(&c1.(*Zr).Int)
+	a1Fr.Add(a1Fr, tmp)
+
+	a1Fr.BigInt(&a1.(*Zr).Int)
 }
 
 type BBSCurve struct {
