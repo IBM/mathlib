@@ -101,16 +101,11 @@ func (p *CurveBase) Rand() (io.Reader, error) {
 func (p *CurveBase) ModAddMul(a1 []driver.Zr, b1 []driver.Zr, modulo driver.Zr) driver.Zr {
 	sum := p.NewZrFromInt64(0)
 	for i := 0; i < len(a1); i++ {
-		sum.Plus(a1[i].Mul(b1[i]))
+		p.ModAdd(sum, p.ModMul(a1[i], b1[i], modulo), modulo)
 	}
-	sum.Mod(modulo)
 	return sum
 }
 
 func (p *CurveBase) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
-	sum := p.NewZrFromInt64(0)
-	sum.Plus(a1.Mul(c1))
-	sum.Plus(b1.Mul(c2))
-	sum.Mod(m)
-	return sum
+	return p.ModAdd(p.ModMul(a1, c1, m), p.ModMul(b1, c2, m), m)
 }
