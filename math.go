@@ -610,6 +610,10 @@ func (c *Curve) ModAdd(a, b, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModAdd(a.zr, b.zr, m.zr), curveID: c.curveID}
 }
 
+func (c *Curve) ModAdd2(a1, b1, c1, m *Zr) {
+	c.c.ModAdd2(a1.zr, b1.zr, c1.zr, m.zr)
+}
+
 func (c *Curve) ModMul(a1, b1, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModMul(a1.zr, b1.zr, m.zr), curveID: c.curveID}
 }
