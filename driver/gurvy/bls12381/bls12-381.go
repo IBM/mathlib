@@ -66,12 +66,12 @@ func (b *Zr) Mul(a driver.Zr) driver.Zr {
 func (b *Zr) PowMod(x driver.Zr) driver.Zr {
 	fr := FrElements.Get()
 	defer FrElements.Put(fr)
+
 	fr.SetBigInt(&b.Int)
 	fr.Exp(*fr, &x.(*Zr).Int)
-	fr.BigInt(&b.Int)
 
 	rv := &Zr{Modulus: b.Modulus}
-	rv.Exp(&b.Int, &x.(*Zr).Int, &b.Modulus)
+	fr.BigInt(&rv.Int)
 	return rv
 }
 
