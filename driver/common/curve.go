@@ -51,6 +51,15 @@ func (c *CurveBase) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 	return res
 }
 
+func (c *CurveBase) ModAdd2(a1, b1, c1, m driver.Zr) {
+	res := &BaseZr{Modulus: c.Modulus}
+	res.Int.Add(&a1.(*BaseZr).Int, &b1.(*BaseZr).Int)
+	res.Int.Add(&res.Int, &c1.(*BaseZr).Int)
+	res.Int.Mod(&res.Int, &m.(*BaseZr).Int)
+
+	(&a1.(*BaseZr).Int).Set(&res.Int)
+}
+
 func (c *CurveBase) GroupOrder() driver.Zr {
 	return &BaseZr{Int: c.Modulus, Modulus: c.Modulus}
 }
@@ -93,6 +102,14 @@ func (p *CurveBase) ModAddMul(a1 []driver.Zr, b1 []driver.Zr, modulo driver.Zr) 
 	sum := p.NewZrFromInt64(0)
 	for i := 0; i < len(a1); i++ {
 		sum = p.ModAdd(sum, p.ModMul(a1[i], b1[i], modulo), modulo)
+	}
+	return sum
+}
+
+func (p *CurveBase) AddPairsOfProducts(left []driver.Zr, right []driver.Zr, leftgen []driver.G1, rightgen []driver.G1) driver.G1 {
+	sum := leftgen[0].Mul2(left[0], rightgen[0], right[0])
+	for i := 1; i < len(left); i++ {
+		sum.Add(leftgen[i].Mul2(left[i], rightgen[i], right[i]))
 	}
 	return sum
 }
