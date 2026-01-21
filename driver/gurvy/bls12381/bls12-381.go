@@ -597,11 +597,6 @@ func (c *Curve) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
 }
 
 func (p *Curve) AddPairsOfProducts(left []driver.Zr, right []driver.Zr, leftgen []driver.G1, rightgen []driver.G1) driver.G1 {
-	// sum := leftgen[0].Mul2(left[0], rightgen[0], right[0])
-	// for i := 1; i < len(left); i++ {
-	// 	sum.Add(leftgen[i].Mul2(left[i], rightgen[i], right[i]))
-	// }
-	// return sum
 	tmpJac := G1Jacs.Get()
 	defer G1Jacs.Put(tmpJac)
 	sum := &G1{}

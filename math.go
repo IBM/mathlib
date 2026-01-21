@@ -185,10 +185,6 @@ func NewZr(zr driver.Zr, curveID CurveID) *Zr {
 	return &Zr{zr: zr, curveID: curveID}
 }
 
-func (z *Zr) Get() driver.Zr {
-	return z.zr
-}
-
 func (z *Zr) CurveID() CurveID {
 	return z.curveID
 }
