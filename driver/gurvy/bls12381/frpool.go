@@ -12,8 +12,8 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 )
 
-// FrElements is a shared *bls12381.FrElement{} memory pool
-var FrElements frElementPool
+// frElements is a shared *bls12381.FrElement{} memory pool
+var frElements frElementPool
 
 var _frElementPool = sync.Pool{
 	New: func() interface{} {
