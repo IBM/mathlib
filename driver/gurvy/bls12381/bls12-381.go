@@ -64,8 +64,8 @@ func (b *Zr) Mul(a driver.Zr) driver.Zr {
 }
 
 func (b *Zr) PowMod(x driver.Zr) driver.Zr {
-	fr := FrElements.Get()
-	defer FrElements.Put(fr)
+	fr := frElements.Get()
+	defer frElements.Put(fr)
 
 	fr.SetBigInt(&b.Int)
 	fr.Exp(*fr, &x.(*Zr).Int)
@@ -84,8 +84,8 @@ func (b *Zr) InvModP(p driver.Zr) {
 }
 
 func (b *Zr) InvModOrder() {
-	fr := FrElements.Get()
-	defer FrElements.Put(fr)
+	fr := frElements.Get()
+	defer frElements.Put(fr)
 	fr.SetBigInt(&b.Int)
 	fr.Inverse(fr)
 	fr.BigInt(&b.Int)
@@ -470,12 +470,12 @@ func (c *Curve) ModNeg(a1, m driver.Zr) driver.Zr {
 }
 
 func (c *Curve) ModSub(a1, b1, m driver.Zr) driver.Zr {
-	a1Fr := FrElements.Get()
-	defer FrElements.Put(a1Fr)
+	a1Fr := frElements.Get()
+	defer frElements.Put(a1Fr)
 	a1Fr.SetBigInt(&a1.(*Zr).Int)
 
-	a2Fr := FrElements.Get()
-	defer FrElements.Put(a2Fr)
+	a2Fr := frElements.Get()
+	defer frElements.Put(a2Fr)
 	a2Fr.SetBigInt(&b1.(*Zr).Int)
 
 	a1Fr.Sub(a1Fr, a2Fr)
@@ -560,12 +560,12 @@ func (c *Curve) HashToG2WithDomain(data, domain []byte) driver.G2 {
 }
 
 func (c *Curve) ModMul(a1, b1, m driver.Zr) driver.Zr {
-	a1Fr := FrElements.Get()
-	defer FrElements.Put(a1Fr)
+	a1Fr := frElements.Get()
+	defer frElements.Put(a1Fr)
 	a1Fr.SetBigInt(&a1.(*Zr).Int)
 
-	a2Fr := FrElements.Get()
-	defer FrElements.Put(a2Fr)
+	a2Fr := frElements.Get()
+	defer frElements.Put(a2Fr)
 	a2Fr.SetBigInt(&b1.(*Zr).Int)
 
 	a1Fr.Mul(a1Fr, a2Fr)
@@ -576,12 +576,12 @@ func (c *Curve) ModMul(a1, b1, m driver.Zr) driver.Zr {
 }
 
 func (c *Curve) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
-	a1Fr := FrElements.Get()
-	defer FrElements.Put(a1Fr)
-	b1Fr := FrElements.Get()
-	defer FrElements.Put(b1Fr)
-	sum := FrElements.Get()
-	defer FrElements.Put(sum)
+	a1Fr := frElements.Get()
+	defer frElements.Put(a1Fr)
+	b1Fr := frElements.Get()
+	defer frElements.Put(b1Fr)
+	sum := frElements.Get()
+	defer frElements.Put(sum)
 
 	sum.SetZero()
 	for i := 0; i < len(a1); i++ {
@@ -597,13 +597,13 @@ func (c *Curve) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
 }
 
 func (c *Curve) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
-	aFr := FrElements.Get()
-	defer FrElements.Put(aFr)
-	cFr := FrElements.Get()
-	defer FrElements.Put(cFr)
+	aFr := frElements.Get()
+	defer frElements.Put(aFr)
+	cFr := frElements.Get()
+	defer frElements.Put(cFr)
 
-	sum := FrElements.Get()
-	defer FrElements.Put(sum)
+	sum := frElements.Get()
+	defer frElements.Put(sum)
 
 	sum.SetZero()
 	aFr.SetBigInt(&a1.(*Zr).Int)
@@ -622,12 +622,12 @@ func (c *Curve) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Z
 }
 
 func (c *Curve) ModAdd(a1, b1, m driver.Zr) driver.Zr {
-	a1Fr := FrElements.Get()
-	defer FrElements.Put(a1Fr)
+	a1Fr := frElements.Get()
+	defer frElements.Put(a1Fr)
 	a1Fr.SetBigInt(&a1.(*Zr).Int)
 
-	a2Fr := FrElements.Get()
-	defer FrElements.Put(a2Fr)
+	a2Fr := frElements.Get()
+	defer frElements.Put(a2Fr)
 	a2Fr.SetBigInt(&b1.(*Zr).Int)
 
 	a1Fr.Add(a1Fr, a2Fr)
@@ -638,12 +638,12 @@ func (c *Curve) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 }
 
 func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
-	a1Fr := FrElements.Get()
-	defer FrElements.Put(a1Fr)
+	a1Fr := frElements.Get()
+	defer frElements.Put(a1Fr)
 	a1Fr.SetBigInt(&a1.(*Zr).Int)
 
-	tmp := FrElements.Get()
-	defer FrElements.Put(tmp)
+	tmp := frElements.Get()
+	defer frElements.Put(tmp)
 	tmp.SetBigInt(&b1.(*Zr).Int)
 
 	a1Fr.Add(a1Fr, tmp)
