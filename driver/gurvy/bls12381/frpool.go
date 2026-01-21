@@ -31,5 +31,7 @@ func (frElementPool) Put(v *fr.Element) {
 	if v == nil {
 		panic("put called with nil value")
 	}
+	// reset v before putting it back
+	v.SetZero()
 	_frElementPool.Put(v)
 }
