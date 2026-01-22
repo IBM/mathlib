@@ -302,10 +302,6 @@ func (g *G1) Mul2InPlace(e *Zr, Q *G1, f *Zr) {
 	g.g1.Mul2InPlace(e.zr, Q.g1, f.zr)
 }
 
-func (g *G1) AddTwoProductsInPlace(leftG *G1, leftZ *Zr, rightG *G1, rightZ *Zr) {
-	g.g1.Add(leftG.g1.Mul2(leftZ.zr, rightG.g1, rightZ.zr))
-}
-
 func (g *G1) Equals(a *G1) bool {
 	return g.g1.Equals(a.g1)
 }
@@ -608,10 +604,6 @@ func (c *Curve) ModSub(a, b, m *Zr) *Zr {
 
 func (c *Curve) ModAdd(a, b, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModAdd(a.zr, b.zr, m.zr), curveID: c.curveID}
-}
-
-func (c *Curve) ModAdd2(a1, b1, c1, m *Zr) {
-	c.c.ModAdd2(a1.zr, b1.zr, c1.zr, m.zr)
 }
 
 func (c *Curve) ModMul(a1, b1, m *Zr) *Zr {

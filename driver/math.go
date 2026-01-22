@@ -47,7 +47,6 @@ type Curve interface {
 	Rand() (io.Reader, error)
 	ModAddMul(driver []Zr, driver2 []Zr, zr Zr) Zr
 	ModAddMul2(a1 Zr, c1 Zr, b1 Zr, c2 Zr, m Zr) Zr
-	ModAdd2(zr Zr, zr2 Zr, zr3 Zr, zr4 Zr)
 	AddPairsOfProducts(left []Zr, right []Zr, leftgen []G1, rightgen []G1) G1
 }
 
