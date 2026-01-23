@@ -31,5 +31,9 @@ func (g1JacPool) Put(v *bls12381.G1Jac) {
 	if v == nil {
 		panic("put called with nil value")
 	}
+	// reset v before putting it back
+	v.X.SetZero()
+	v.Y.SetZero()
+	v.Z.SetZero()
 	_g1JacPool.Put(v)
 }
