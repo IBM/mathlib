@@ -425,6 +425,18 @@ func runGtTest(t *testing.T, c *Curve) {
 	assert.True(t, gengt.Equals(c.GenGt))
 }
 
+func runInvModOrderTest(t *testing.T, c *Curve) {
+	rng, err := c.Rand()
+	assert.NoError(t, err)
+	r := c.NewRandomZr(rng)
+	r1 := c.NewZrFromUint64(0)
+	r1.Clone(r)
+
+	r.InvModP(c.GroupOrder)
+	r1.InvModOrder()
+	assert.True(t, r.Equals(r1))
+}
+
 func runRndTest(t *testing.T, c *Curve) {
 	rng, err := c.Rand()
 	assert.NoError(t, err)
@@ -774,6 +786,7 @@ func TestCurves(t *testing.T) {
 		runPairingTest(t, curve)
 		runGtTest(t, curve)
 		runRndTest(t, curve)
+		runInvModOrderTest(t, curve)
 		runHashTest(t, curve)
 		runToFroBytesTest(t, curve)
 		runToFroCompressedTest(t, curve)
