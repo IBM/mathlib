@@ -325,6 +325,11 @@ type Curve struct {
 	common.CurveBase
 }
 
+func (c *Curve) MultiScalarMult(a []G1, b []Zr) driver.G1 {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewCurve() *Curve {
 	return &Curve{common.CurveBase{Modulus: *fr.Modulus()}}
 }
@@ -656,6 +661,11 @@ func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
 
 type BBSCurve struct {
 	Curve
+}
+
+func (c *BBSCurve) MultiScalarMult(a []G1, b []Zr) driver.G1 {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewBBSCurve() *BBSCurve {

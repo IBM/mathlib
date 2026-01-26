@@ -12,6 +12,7 @@ import (
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
+	"github.com/consensys/gnark-crypto/ecc"
 	bls12377 "github.com/consensys/gnark-crypto/ecc/bls12-377"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
 )
@@ -214,6 +215,20 @@ func NewBls12_377() *Bls12_377 {
 
 type Bls12_377 struct {
 	common.CurveBase
+}
+
+func (c *Bls12_377) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
+	var result bls12377.G1Affine
+	affinePoints := make([]bls12377.G1Affine, len(a))
+	scalars := make([]fr.Element, len(b))
+
+	for i := range len(a) {
+		affinePoints[i] = a[i].(*bls12377G1).G1Affine
+		scalars[i].SetBigInt(&b[i].(*common.BaseZr).Int)
+	}
+
+	_, _ = result.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
+	return &bls12377G1{result}
 }
 
 func (c *Bls12_377) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {
