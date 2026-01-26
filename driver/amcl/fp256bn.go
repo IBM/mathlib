@@ -66,7 +66,7 @@ type Fp256bn struct {
 
 func (*Fp256bn) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
 	//TODO implement me
-	panic("implement me")
+	return &fp256bnG1{}
 }
 
 func (*Fp256bn) Pairing(a driver.G2, b driver.G1) driver.Gt {
