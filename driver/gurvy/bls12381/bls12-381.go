@@ -656,17 +656,24 @@ func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
 }
 
 func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
-	var result bls12381.G1Affine
 	affinePoints := make([]bls12381.G1Affine, len(a))
-	scalars := make([]fr.Element, len(b))
+	scalars := make([]fr.Element, 0, len(b))
 
 	for i := range len(a) {
 		affinePoints[i] = a[i].(*G1).G1Affine
-		scalars[i].SetBigInt(&b[i].(*Zr).Int)
+
+		s := *frElements.Get()
+		s.SetBigInt(&b[i].(*Zr).Int)
+		scalars = append(scalars, s)
 	}
 
-	_, _ = result.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
-	return &G1{G1Affine: result}
+	first := G1Jacs.Get()
+	defer G1Jacs.Put(first)
+	_, _ = first.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
+
+	gc := &G1{}
+	gc.G1Affine.FromJacobian(first)
+	return gc
 }
 
 type BBSCurve struct {
