@@ -70,7 +70,7 @@ type Fp256Miraclbn struct {
 
 func (*Fp256Miraclbn) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
 	//TODO implement me
-	return &fp256bnG1{}
+	panic("implement me")
 }
 
 func (*Fp256Miraclbn) Pairing(a driver.G2, b driver.G1) driver.Gt {

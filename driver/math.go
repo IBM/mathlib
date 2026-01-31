@@ -47,7 +47,7 @@ type Curve interface {
 	Rand() (io.Reader, error)
 	ModAddMul(driver []Zr, driver2 []Zr, zr Zr) Zr
 	ModAddMul2(a1 Zr, c1 Zr, b1 Zr, c2 Zr, m Zr) Zr
-	MultiScalarMult(a []G1, b []Zr) G1
+	//MultiScalarMult(a []G1, b []Zr) G1
 }
 
 type Zr interface {
