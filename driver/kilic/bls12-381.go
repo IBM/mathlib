@@ -235,17 +235,8 @@ type Bls12_381 struct {
 	common.CurveBase
 }
 
-func (c *Bls12_381) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
-	panic("Not implemented")
-}
-
 type Bls12_381BBS struct {
 	Bls12_381
-}
-
-func (c *Bls12_381BBS) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (c *Bls12_381) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {

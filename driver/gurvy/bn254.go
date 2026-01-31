@@ -13,7 +13,6 @@ import (
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
-	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254"
 	"github.com/consensys/gnark-crypto/ecc/bn254/fr"
 )
@@ -218,20 +217,6 @@ func NewBn254() *Bn254 {
 
 type Bn254 struct {
 	common.CurveBase
-}
-
-func (c *Bn254) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
-	var result bn254.G1Affine
-	affinePoints := make([]bn254.G1Affine, len(a))
-	scalars := make([]fr.Element, len(b))
-
-	for i := range len(a) {
-		affinePoints[i] = a[i].(*bn254G1).G1Affine
-		scalars[i].SetBigInt(&b[i].(*common.BaseZr).Int)
-	}
-
-	_, _ = result.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
-	return &bn254G1{result}
 }
 
 func (c *Bn254) Pairing(p2 driver.G2, p1 driver.G1) driver.Gt {
