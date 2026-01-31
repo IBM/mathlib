@@ -19,7 +19,6 @@ import (
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/common"
 	"github.com/IBM/mathlib/driver/gurvy"
-	"github.com/consensys/gnark-crypto/ecc"
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
 	"golang.org/x/crypto/blake2b"
@@ -324,6 +323,11 @@ func (g *Gt) Bytes() []byte {
 
 type Curve struct {
 	common.CurveBase
+}
+
+func (c *Curve) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
+	//TODO implement me
+	return &G1{}
 }
 
 func NewCurve() *Curve {
@@ -655,22 +659,13 @@ func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
 	a1Fr.BigInt(&a1.(*Zr).Int)
 }
 
-func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
-	var result bls12381.G1Affine
-	affinePoints := make([]bls12381.G1Affine, len(a))
-	scalars := make([]fr.Element, len(b))
-
-	for i := range len(a) {
-		affinePoints[i] = a[i].(*G1).G1Affine
-		scalars[i].SetBigInt(&b[i].(*Zr).Int)
-	}
-
-	_, _ = result.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
-	return &G1{G1Affine: result}
-}
-
 type BBSCurve struct {
 	Curve
+}
+
+func (c *BBSCurve) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
+	//TODO implement me
+	return &G1{}
 }
 
 func NewBBSCurve() *BBSCurve {

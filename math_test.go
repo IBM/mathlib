@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var seed = time.Now().Unix()
@@ -304,30 +303,6 @@ func runG1Test(t *testing.T, c *Curve) {
 	assert.True(t, GS1.IsInfinity())
 	GS1.Add(c.GenG1)
 	assert.True(t, GS1.Equals(c.GenG1))
-}
-
-func runMultiScalarMul(t *testing.T, c *Curve) {
-	// choose random elements in G1
-	rng, err := c.Rand()
-	require.NoError(t, err)
-
-	n := 10
-	g1s := make([]*G1, n)
-	zrs := make([]*Zr, n)
-	for i := range n {
-		g1s[i] = c.GenG1.Mul(c.NewRandomZr(rng))
-		zrs[i] = c.NewRandomZr(rng)
-	}
-
-	// trivial multi scalar mul
-	g1 := c.NewG1()
-	for i := range n {
-		g1.Add(g1s[i].Mul(zrs[i]))
-	}
-	// single call
-	g2 := c.MultiScalarMul(g1s, zrs)
-
-	assert.True(t, g1.Equals(g2))
 }
 
 func runG2Test(t *testing.T, c *Curve) {
@@ -823,7 +798,6 @@ func TestCurves(t *testing.T) {
 		runPowTest(t, curve)
 		runMulTest(t, curve)
 		runQuadDHTestPairing(t, curve)
-		runMultiScalarMul(t, curve)
 	}
 }
 

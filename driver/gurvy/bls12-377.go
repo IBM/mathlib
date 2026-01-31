@@ -217,7 +217,7 @@ type Bls12_377 struct {
 	common.CurveBase
 }
 
-func (c *Bls12_377) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
+func (c *Bls12_377) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
 	var result bls12377.G1Affine
 	affinePoints := make([]bls12377.G1Affine, len(a))
 	scalars := make([]fr.Element, len(b))

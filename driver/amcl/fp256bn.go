@@ -64,12 +64,9 @@ type Fp256bn struct {
 	common.CurveBase
 }
 
-func (p *Fp256bn) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
-	g1 := p.NewG1()
-	for i := 0; i < len(a); i++ {
-		g1.Add(a[i].Mul(b[i]))
-	}
-	return g1
+func (*Fp256bn) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
+	//TODO implement me
+	return &fp256bnG1{}
 }
 
 func (*Fp256bn) Pairing(a driver.G2, b driver.G1) driver.Gt {

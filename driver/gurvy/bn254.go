@@ -220,7 +220,7 @@ type Bn254 struct {
 	common.CurveBase
 }
 
-func (c *Bn254) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
+func (c *Bn254) MultiScalarMult(a []driver.G1, b []driver.Zr) driver.G1 {
 	var result bn254.G1Affine
 	affinePoints := make([]bn254.G1Affine, len(a))
 	scalars := make([]fr.Element, len(b))
