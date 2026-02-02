@@ -57,10 +57,18 @@ func (b *Zr) Minus(a driver.Zr) driver.Zr {
 	return rv
 }
 
-func (b *Zr) Mul(a driver.Zr) driver.Zr {
+func (b *Zr) Mul(x driver.Zr) driver.Zr {
+	fr := frElements.Get()
+	defer frElements.Put(fr)
+	frX := frElements.Get()
+	defer frElements.Put(frX)
+
+	fr.SetBigInt(&b.Int)
+	frX.SetBigInt(&x.(*Zr).Int)
+	fr.Mul(fr, frX)
+
 	rv := &Zr{Modulus: b.Modulus}
-	rv.Int.Mul(&b.Int, &a.(*Zr).Int)
-	rv.Int.Mod(&rv.Int, &b.Modulus)
+	fr.BigInt(&rv.Int)
 	return rv
 }
 
@@ -505,12 +513,16 @@ func (c *Curve) NewZrFromUint64(i uint64) driver.Zr {
 }
 
 func (c *Curve) NewRandomZr(rng io.Reader) driver.Zr {
-	bi, err := rand.Int(rng, &c.Modulus)
+	e := frElements.Get()
+	defer frElements.Put(e)
+	e, err := e.SetRandom()
 	if err != nil {
 		panic(err)
 	}
 
-	return &Zr{Int: *bi, Modulus: c.Modulus}
+	res := &Zr{Modulus: c.Modulus}
+	e.BigInt(&res.Int)
+	return res
 }
 
 func (c *Curve) HashToZr(data []byte) driver.Zr {
@@ -657,14 +669,11 @@ func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
 
 func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	affinePoints := make([]bls12381.G1Affine, len(a))
-	scalars := make([]fr.Element, 0, len(b))
+	scalars := make([]fr.Element, len(b))
 
 	for i := range len(a) {
 		affinePoints[i] = a[i].(*G1).G1Affine
-
-		s := *frElements.Get()
-		s.SetBigInt(&b[i].(*Zr).Int)
-		scalars = append(scalars, s)
+		scalars[i].SetBigInt(&b[i].(*Zr).Int)
 	}
 
 	first := G1Jacs.Get()
