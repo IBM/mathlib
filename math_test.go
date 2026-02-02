@@ -45,10 +45,10 @@ func TestCurveId(t *testing.T) {
 func runCurveIdTest(t *testing.T, c *Curve, rng io.Reader) {
 	r := c.NewRandomZr(rng)
 
-	assert.Equal(t, r.CurveID(), c.curveID)
-	assert.Equal(t, c.GenG1.Mul(r).CurveID(), c.curveID)
-	assert.Equal(t, c.GenG2.Mul(r).CurveID(), c.curveID)
-	assert.Equal(t, c.GenGt.Exp(r).CurveID(), c.curveID)
+	assert.Equal(t, r.CurveID(), c.ID())
+	assert.Equal(t, c.GenG1.Mul(r).CurveID(), c.ID())
+	assert.Equal(t, c.GenG2.Mul(r).CurveID(), c.ID())
+	assert.Equal(t, c.GenGt.Exp(r).CurveID(), c.ID())
 }
 
 var r *Zr
@@ -257,9 +257,9 @@ var expectedModuli = []string{
 }
 
 func runG1Test(t *testing.T, c *Curve) {
-	assert.Equal(t, expectedG1Gens[c.curveID], c.GenG1.String())
+	assert.Equal(t, expectedG1Gens[c.ID()], c.GenG1.String())
 
-	assert.Equal(t, expectedModuli[c.curveID], c.GroupOrder.String(), fmt.Sprintf("failed with curve %T", c.c))
+	assert.Equal(t, expectedModuli[c.ID()], c.GroupOrder.String(), fmt.Sprintf("failed with curve %T", c.c))
 
 	g1copy := c.NewG1()
 	g1copy.Clone(c.GenG1)
@@ -362,7 +362,7 @@ func runG2Test(t *testing.T, c *Curve) {
 	assert.Len(t, p.Bytes(), c.G2ByteSize)
 	assert.Len(t, p.Compressed(), c.CompressedG2ByteSize)
 
-	if c.curveID != FP256BN_AMCL && c.curveID != FP256BN_AMCL_MIRACL {
+	if c.ID() != FP256BN_AMCL && c.ID() != FP256BN_AMCL_MIRACL {
 		GS := c.HashToG2([]byte("Amazing Grace (how sweet the sound)"))
 		assert.Len(t, GS.Bytes(), c.G2ByteSize)
 
