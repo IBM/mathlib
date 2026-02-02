@@ -637,3 +637,17 @@ func (c *Curve) MultiScalarMul(a []*G1, b []*Zr) *G1 {
 	}
 	return &G1{g1: c.c.MultiScalarMul(aDriver, bDriver), curveID: c.curveID}
 }
+
+func (c *Curve) AddPairsOfProducts(left []*Zr, right []*Zr, leftgen []*G1, rightgen []*G1, m *Zr) *G1 {
+	leftDriver := make([]driver.Zr, len(left))
+	rightDriver := make([]driver.Zr, len(right))
+	leftgenDriver := make([]driver.G1, len(leftgen))
+	rightgenDriver := make([]driver.G1, len(rightgen))
+	for i := 0; i < len(left); i++ {
+		leftDriver[i] = left[i].zr
+		rightDriver[i] = right[i].zr
+		leftgenDriver[i] = leftgen[i].g1
+		rightgenDriver[i] = rightgen[i].g1
+	}
+	return &G1{g1: c.c.AddPairsOfProducts(leftDriver, rightDriver, leftgenDriver, rightgenDriver), curveID: c.curveID}
+}

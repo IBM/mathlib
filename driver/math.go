@@ -48,6 +48,7 @@ type Curve interface {
 	ModAddMul(driver []Zr, driver2 []Zr, zr Zr) Zr
 	ModAddMul2(a1 Zr, c1 Zr, b1 Zr, c2 Zr, m Zr) Zr
 	MultiScalarMul(a []G1, b []Zr) G1
+	AddPairsOfProducts(left []Zr, right []Zr, leftgen []G1, rightgen []G1) G1
 }
 
 type Zr interface {
