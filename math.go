@@ -478,6 +478,10 @@ func NewCurve(
 	}
 }
 
+func (c *Curve) ID() CurveID {
+	return c.curveID
+}
+
 func (c *Curve) Rand() (io.Reader, error) {
 	return c.c.Rand()
 }
