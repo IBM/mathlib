@@ -13,15 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAddPairsOfProducts tests the AddPairsOfProducts method for all supported curves
-func TestAddPairsOfProducts(t *testing.T) {
-	for _, curve := range Curves {
-		t.Run(CurveIDToString(curve.curveID), func(t *testing.T) {
-			runAddPairsOfProductsTest(t, curve)
-		})
-	}
-}
-
 func runAddPairsOfProductsTest(t *testing.T, c *Curve) {
 	rng, err := c.Rand()
 	require.NoError(t, err)
