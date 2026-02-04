@@ -604,7 +604,7 @@ func (p *Curve) AddPairsOfProducts(left []driver.Zr, right []driver.Zr, leftgen 
 	defer G1Jacs.Put(sum)
 	result := &G1{}
 
-	for i := 0; i < len(left); i++ {
+	for i := range left {
 		tmpJac = JointScalarMultiplication(tmpJac, &leftgen[i].(*G1).G1Affine, &rightgen[i].(*G1).G1Affine, &left[i].(*Zr).Int, &right[i].(*Zr).Int)
 
 		if i == 0 {
