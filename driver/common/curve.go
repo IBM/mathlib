@@ -100,3 +100,11 @@ func (p *CurveBase) ModAddMul(a1 []driver.Zr, b1 []driver.Zr, modulo driver.Zr) 
 func (p *CurveBase) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
 	return p.ModAdd(p.ModMul(a1, c1, m), p.ModMul(b1, c2, m), m)
 }
+
+func (p *CurveBase) AddPairsOfProducts(left []driver.Zr, right []driver.Zr, leftgen []driver.G1, rightgen []driver.G1) driver.G1 {
+	sum := leftgen[0].Mul2(left[0], rightgen[0], right[0])
+	for i := 1; i < len(left); i++ {
+		sum.Add(leftgen[i].Mul2(left[i], rightgen[i], right[i]))
+	}
+	return sum
+}

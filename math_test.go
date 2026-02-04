@@ -824,6 +824,7 @@ func TestCurves(t *testing.T) {
 		runMulTest(t, curve)
 		runQuadDHTestPairing(t, curve)
 		runMultiScalarMul(t, curve)
+		runAddPairsOfProductsTest(t, curve)
 	}
 }
 
