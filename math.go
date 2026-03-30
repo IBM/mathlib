@@ -194,6 +194,10 @@ func (z *Zr) IsOne() bool {
 	return z.zr.IsOne()
 }
 
+func (z *Zr) BigInt() *big.Int {
+	return z.zr.BigInt()
+}
+
 func (z *Zr) CurveID() CurveID {
 	return z.curveID
 }

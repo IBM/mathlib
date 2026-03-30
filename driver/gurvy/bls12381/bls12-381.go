@@ -55,6 +55,10 @@ func (b *Zr) IsZero() bool {
 	return b.Int.BitLen() == 0
 }
 
+func (b *Zr) BigInt() *big.Int {
+	return &b.Int
+}
+
 func (b *Zr) IsOne() bool {
 	bits := b.Int.Bits()
 	return len(bits) == 1 && bits[0] == 1 && b.Int.Sign() > 0
