@@ -55,6 +55,7 @@ type Curve interface {
 type Zr interface {
 	IsZero() bool
 	IsOne() bool
+	BigInt() *big.Int
 	Plus(Zr) Zr
 	Minus(Zr) Zr
 	Mul(Zr) Zr

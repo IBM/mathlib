@@ -51,6 +51,10 @@ func (b *BaseZr) IsOne() bool {
 	return len(bits) == 1 && bits[0] == 1 && b.Int.Sign() > 0
 }
 
+func (b *BaseZr) BigInt() *big.Int {
+	return &b.Int
+}
+
 func (b *BaseZr) Plus(a driver.Zr) driver.Zr {
 	rv := &BaseZr{Modulus: b.Modulus}
 	rv.Add(&b.Int, &a.(*BaseZr).Int)
