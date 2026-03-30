@@ -18,7 +18,6 @@ import (
 	"github.com/IBM/mathlib/driver/gurvy"
 	"github.com/IBM/mathlib/driver/gurvy/bls12381"
 	"github.com/IBM/mathlib/driver/kilic"
-	"github.com/pkg/errors"
 )
 
 type CurveID int
@@ -510,7 +509,7 @@ func (c *Curve) NewZrFromBytes(b []byte) *Zr {
 func (c *Curve) NewG1FromBytes(b []byte) (p *G1, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.Errorf("failure [%s]", r)
+			err = fmt.Errorf("failure [%s]", r)
 			p = nil
 		}
 	}()
@@ -522,7 +521,7 @@ func (c *Curve) NewG1FromBytes(b []byte) (p *G1, err error) {
 func (c *Curve) NewG2FromBytes(b []byte) (p *G2, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.Errorf("failure [%s]", r)
+			err = fmt.Errorf("failure [%s]", r)
 			p = nil
 		}
 	}()
@@ -534,7 +533,7 @@ func (c *Curve) NewG2FromBytes(b []byte) (p *G2, err error) {
 func (c *Curve) NewG1FromCompressed(b []byte) (p *G1, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.Errorf("failure [%s]", r)
+			err = fmt.Errorf("failure [%s]", r)
 			p = nil
 		}
 	}()
@@ -546,7 +545,7 @@ func (c *Curve) NewG1FromCompressed(b []byte) (p *G1, err error) {
 func (c *Curve) NewG2FromCompressed(b []byte) (p *G2, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.Errorf("failure [%s]", r)
+			err = fmt.Errorf("failure [%s]", r)
 			p = nil
 		}
 	}()
@@ -558,7 +557,7 @@ func (c *Curve) NewG2FromCompressed(b []byte) (p *G2, err error) {
 func (c *Curve) NewGtFromBytes(b []byte) (p *Gt, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = errors.Errorf("failure [%s]", r)
+			err = fmt.Errorf("failure [%s]", r)
 			p = nil
 		}
 	}()
@@ -649,10 +648,7 @@ func (c *Curve) ModAddMul2(a, b, cc, d *Zr, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModAddMul2(a.zr, b.zr, cc.zr, d.zr, m.zr), curveID: c.curveID}
 }
 
-func (c *Curve) ModAddMul3(
-	a1, a2, b1, b2, c1, c2 *Zr,
-	m *Zr,
-) *Zr {
+func (c *Curve) ModAddMul3(a1, a2, b1, b2, c1, c2 *Zr, m *Zr) *Zr {
 	return &Zr{
 		zr:      c.c.ModAddMul3(a1.zr, a2.zr, b1.zr, b2.zr, c1.zr, c2.zr, m.zr),
 		curveID: c.curveID,

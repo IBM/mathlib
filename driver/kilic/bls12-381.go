@@ -76,7 +76,7 @@ func (g *bls12_381G1) Bytes() []byte {
 }
 
 func (g *bls12_381G1) Compressed() []byte {
-	raw := g.G1.ToCompressed(&g.PointG1)
+	raw := g.ToCompressed(&g.PointG1)
 	return raw[:]
 }
 
@@ -85,7 +85,7 @@ func (g *bls12_381G1) Sub(a driver.G1) {
 }
 
 func (g *bls12_381G1) IsInfinity() bool {
-	return g.G1.IsZero(&g.PointG1)
+	return g.IsZero(&g.PointG1)
 }
 
 func (g *bls12_381G1) String() string {
@@ -187,7 +187,7 @@ func (g *bls12_381Gt) Exp(x driver.Zr) driver.Gt {
 }
 
 func (g *bls12_381Gt) Equals(a driver.Gt) bool {
-	return a.(*bls12_381Gt).E.Equal(&g.E)
+	return g.Equal(&a.(*bls12_381Gt).E)
 }
 
 func (g *bls12_381Gt) Inverse() {
@@ -205,7 +205,7 @@ func (g *bls12_381Gt) Mul(a driver.Gt) {
 }
 
 func (g *bls12_381Gt) IsUnity() bool {
-	return g.E.IsOne()
+	return g.IsOne()
 }
 
 func (g *bls12_381Gt) ToString() string {
@@ -217,7 +217,7 @@ func (g *bls12_381Gt) Bytes() []byte {
 	if !g.GTInitialised {
 		g.GT = *bls12381.NewGT()
 	}
-	raw := g.GT.ToBytes(&g.E)
+	raw := g.ToBytes(&g.E)
 	return raw[:]
 }
 

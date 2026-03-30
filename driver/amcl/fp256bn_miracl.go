@@ -29,7 +29,7 @@ type fp256bnMiraclGt struct {
 }
 
 func (a *fp256bnMiraclGt) Exp(x driver.Zr) driver.Gt {
-	return &fp256bnMiraclGt{*a.FP12.Pow(bigToMiraclBIG(&x.(*common.BaseZr).Int))}
+	return &fp256bnMiraclGt{*a.Pow(bigToMiraclBIG(&x.(*common.BaseZr).Int))}
 }
 
 func (a *fp256bnMiraclGt) Equals(b driver.Gt) bool {
@@ -37,7 +37,7 @@ func (a *fp256bnMiraclGt) Equals(b driver.Gt) bool {
 }
 
 func (a *fp256bnMiraclGt) IsUnity() bool {
-	return a.FP12.Isunity()
+	return a.Isunity()
 }
 
 func (a *fp256bnMiraclGt) Inverse() {
@@ -54,7 +54,7 @@ func (b *fp256bnMiraclGt) ToString() string {
 
 func (b *fp256bnMiraclGt) Bytes() []byte {
 	bytes := make([]byte, 12*int(FP256BN.MODBYTES))
-	b.FP12.ToBytes(bytes)
+	b.ToBytes(bytes)
 	return bytes
 }
 
@@ -221,18 +221,18 @@ func (e *fp256bnMiraclG1) Equals(a driver.G1) bool {
 }
 
 func (e *fp256bnMiraclG1) IsInfinity() bool {
-	return e.ECP.Is_infinity()
+	return e.Is_infinity()
 }
 
 func (e *fp256bnMiraclG1) Bytes() []byte {
 	b := make([]byte, 2*int(FP256BN.MODBYTES)+1)
-	e.ECP.ToBytes(b, false)
+	e.ToBytes(b, false)
 	return b
 }
 
 func (e *fp256bnMiraclG1) Compressed() []byte {
 	b := make([]byte, int(FP256BN.MODBYTES)+1)
-	e.ECP.ToBytes(b, true)
+	e.ToBytes(b, true)
 	return b
 }
 
@@ -241,7 +241,7 @@ func (e *fp256bnMiraclG1) Sub(a driver.G1) {
 }
 
 func (b *fp256bnMiraclG1) String() string {
-	rawstr := b.ECP.ToString()
+	rawstr := b.ToString()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
@@ -288,16 +288,16 @@ func (e *fp256bnMiraclG2) Affine() {
 
 func (e *fp256bnMiraclG2) Bytes() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES)+1)
-	e.ECP2.ToBytes(b, false)
+	e.ToBytes(b, false)
 	return b
 }
 
 func (e *fp256bnMiraclG2) Compressed() []byte {
 	b := make([]byte, 2*int(FP256BN.MODBYTES)+1)
-	e.ECP2.ToBytes(b, true)
+	e.ToBytes(b, true)
 	return b
 }
 
 func (b *fp256bnMiraclG2) String() string {
-	return b.ECP2.ToString()
+	return b.ToString()
 }

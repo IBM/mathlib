@@ -43,12 +43,12 @@ type BaseZr struct {
 }
 
 func (b *BaseZr) IsZero() bool {
-	return b.Int.BitLen() == 0
+	return b.BitLen() == 0
 }
 
 func (b *BaseZr) IsOne() bool {
-	bits := b.Int.Bits()
-	return len(bits) == 1 && bits[0] == 1 && b.Int.Sign() > 0
+	bits := b.Bits()
+	return len(bits) == 1 && bits[0] == 1 && b.Sign() > 0
 }
 
 func (b *BaseZr) BigInt() *big.Int {
@@ -85,17 +85,17 @@ func (b *BaseZr) Mod(a driver.Zr) {
 }
 
 func (b *BaseZr) InvModP(p driver.Zr) {
-	b.Int.ModInverse(&b.Int, &p.(*BaseZr).Int)
+	b.ModInverse(&b.Int, &p.(*BaseZr).Int)
 }
 
 func (b *BaseZr) InvModOrder() {
-	b.Int.ModInverse(&b.Int, &b.Modulus)
+	b.ModInverse(&b.Int, &b.Modulus)
 }
 
 func (b *BaseZr) Bytes() []byte {
 	target := b.Int
 
-	if b.Int.Sign() < 0 || b.Int.Cmp(&b.Modulus) > 0 {
+	if b.Sign() < 0 || b.Cmp(&b.Modulus) > 0 {
 		target = *new(big.Int).Set(&b.Int)
 		target = *target.Mod(&target, &b.Modulus)
 		if target.Sign() < 0 {
@@ -107,7 +107,7 @@ func (b *BaseZr) Bytes() []byte {
 }
 
 func (b *BaseZr) Equals(p driver.Zr) bool {
-	return b.Int.Cmp(&p.(*BaseZr).Int) == 0
+	return b.Cmp(&p.(*BaseZr).Int) == 0
 }
 
 func (b *BaseZr) Copy() driver.Zr {
@@ -118,11 +118,11 @@ func (b *BaseZr) Copy() driver.Zr {
 
 func (b *BaseZr) Clone(a driver.Zr) {
 	raw := a.(*BaseZr).Int.Bytes()
-	b.Int.SetBytes(raw)
+	b.SetBytes(raw)
 }
 
 func (b *BaseZr) String() string {
-	return b.Int.Text(16)
+	return b.Text(16)
 }
 
 func (b *BaseZr) Neg() {
