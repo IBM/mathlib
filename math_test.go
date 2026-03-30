@@ -7,11 +7,12 @@ SPDX-License-Identifier: Apache-2.0
 package math
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math"
-	"math/rand"
+	mathrand "math/rand"
 	"testing"
 	"time"
 
@@ -144,12 +145,13 @@ func runZrTest(t *testing.T, c *Curve) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(math.MaxUint64), u64)
 
-	a, b := rand.Int63(), rand.Int63()
+	testRng := mathrand.New(mathrand.NewSource(seed))
+	a, b := testRng.Int63(), testRng.Int63()
 	cr, err := c.NewZrFromInt(a).Plus(c.NewZrFromInt(b)).Int()
 	assert.NoError(t, err)
 	assert.Equal(t, a+b, cr)
 
-	au, bu := uint64(rand.Int63()), uint64(rand.Int63())
+	au, bu := uint64(testRng.Int63()), uint64(testRng.Int63())
 	cru, err := c.NewZrFromUint64(au).Plus(c.NewZrFromUint64(bu)).Uint()
 	assert.NoError(t, err)
 	assert.Equal(t, au+bu, cru)
@@ -176,13 +178,11 @@ func runZrTest(t *testing.T, c *Curve) {
 	assert.True(t, i.Equals(c.NewZrFromInt(4)))
 	assert.Equal(t, c.NewZrFromInt(35).String(), "23")
 
-	rand.Seed(seed)
-
-	i64 = rand.Int63()
+	i64 = testRng.Int63()
 	i = c.NewZrFromInt(i64)
-	i64_, err := i.Int()
+	i64Result, err := i.Int()
 	assert.NoError(t, err)
-	assert.Equal(t, i64, i64_)
+	assert.Equal(t, i64, i64Result)
 
 	i1 := c.NewZrFromInt(i64)
 	i64 = 0 - i64
@@ -475,7 +475,8 @@ func runRndTest(t *testing.T, c *Curve) {
 
 func runHashTest(t *testing.T, c *Curve) {
 	bytes := make([]byte, 128)
-	rand.Read(bytes)
+	_, err := rand.Read(bytes)
+	assert.NoError(t, err)
 
 	r := c.HashToZr(bytes)
 	gr := c.GenG1.Mul(r)
@@ -716,8 +717,7 @@ func testModAdd2(t *testing.T, c *Curve) {
 	i2 := c.NewZrFromInt(math.MaxInt64)
 	g1 := c.GenG1.Mul2(i1, c.GenG1, i2)
 
-	g2 := c.NewG1()
-	g2 = c.GenG1.Copy()
+	g2 := c.GenG1.Copy()
 	g2.Mul2InPlace(i1, c.GenG1, i2)
 
 	assert.True(t, g1.Equals(g2), fmt.Sprintf("failed with curve %T", c.c))

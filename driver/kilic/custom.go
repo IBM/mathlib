@@ -249,10 +249,10 @@ func hashToFpXMD(f func() hash.Hash, msg []byte, domain []byte, count int) ([]*F
 
 func expandMsgXMD(f func() hash.Hash, msg []byte, domain []byte, outLen int) ([]byte, error) {
 	h := f()
-	domainLen := uint8(len(domain))
-	if domainLen > 255 {
+	if len(domain) > 255 {
 		return nil, errors.New("invalid domain length")
 	}
+	domainLen := uint8(len(domain))
 
 	// DST_prime = DST || I2OSP(len(DST), 1)
 	// b_0 = H(Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime)

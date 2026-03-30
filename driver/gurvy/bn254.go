@@ -42,12 +42,12 @@ func (g *bn254G1) Add(a driver.G1) {
 	j := bn254.G1Jac{}
 	j.FromAffine(&g.G1Affine)
 	j.AddMixed((*bn254.G1Affine)(&a.(*bn254G1).G1Affine))
-	g.G1Affine.FromJacobian(&j)
+	g.FromJacobian(&j)
 }
 
 func (g *bn254G1) Mul(a driver.Zr) driver.G1 {
 	res := &bn254G1{}
-	res.G1Affine.ScalarMultiplication(&g.G1Affine, &a.(*common.BaseZr).Int)
+	res.ScalarMultiplication(&g.G1Affine, &a.(*common.BaseZr).Int)
 
 	return res
 }
@@ -69,11 +69,11 @@ func (g *bn254G1) Mul2InPlace(e driver.Zr, Q driver.G1, f driver.Zr) {
 }
 
 func (g *bn254G1) Equals(a driver.G1) bool {
-	return g.G1Affine.Equal(&a.(*bn254G1).G1Affine)
+	return g.Equal(&a.(*bn254G1).G1Affine)
 }
 
 func (g *bn254G1) Bytes() []byte {
-	raw := g.G1Affine.RawBytes()
+	raw := g.RawBytes()
 	return raw[:]
 }
 
@@ -87,7 +87,7 @@ func (g *bn254G1) Sub(a driver.G1) {
 	j.FromAffine(&g.G1Affine)
 	k.FromAffine(&a.(*bn254G1).G1Affine)
 	j.SubAssign(&k)
-	g.G1Affine.FromJacobian(&j)
+	g.FromJacobian(&j)
 }
 
 func (g *bn254G1) IsInfinity() bool {
@@ -128,7 +128,7 @@ func (e *bn254G2) Copy() driver.G2 {
 
 func (g *bn254G2) Mul(a driver.Zr) driver.G2 {
 	gc := &bn254G2{}
-	gc.G2Affine.ScalarMultiplication(&g.G2Affine, &a.(*common.BaseZr).Int)
+	gc.ScalarMultiplication(&g.G2Affine, &a.(*common.BaseZr).Int)
 
 	return gc
 }
@@ -137,7 +137,7 @@ func (g *bn254G2) Add(a driver.G2) {
 	j := bn254.G2Jac{}
 	j.FromAffine(&g.G2Affine)
 	j.AddMixed((*bn254.G2Affine)(&a.(*bn254G2).G2Affine))
-	g.G2Affine.FromJacobian(&j)
+	g.FromJacobian(&j)
 }
 
 func (g *bn254G2) Sub(a driver.G2) {
@@ -146,7 +146,7 @@ func (g *bn254G2) Sub(a driver.G2) {
 	aJac := bn254.G2Jac{}
 	aJac.FromAffine((*bn254.G2Affine)(&a.(*bn254G2).G2Affine))
 	j.SubAssign(&aJac)
-	g.G2Affine.FromJacobian(&j)
+	g.FromJacobian(&j)
 }
 
 func (g *bn254G2) Affine() {
@@ -154,7 +154,7 @@ func (g *bn254G2) Affine() {
 }
 
 func (g *bn254G2) Bytes() []byte {
-	raw := g.G2Affine.RawBytes()
+	raw := g.RawBytes()
 	return raw[:]
 }
 
@@ -168,7 +168,7 @@ func (g *bn254G2) String() string {
 }
 
 func (g *bn254G2) Equals(a driver.G2) bool {
-	return g.G2Affine.Equal(&a.(*bn254G2).G2Affine)
+	return g.Equal(&a.(*bn254G2).G2Affine)
 }
 
 /*********************************************************************/
@@ -183,7 +183,7 @@ func (g *bn254Gt) Exp(x driver.Zr) driver.Gt {
 }
 
 func (g *bn254Gt) Equals(a driver.Gt) bool {
-	return g.GT.Equal(&a.(*bn254Gt).GT)
+	return g.Equal(&a.(*bn254Gt).GT)
 }
 
 func (g *bn254Gt) Inverse() {
@@ -202,7 +202,7 @@ func (g *bn254Gt) IsUnity() bool {
 }
 
 func (g *bn254Gt) ToString() string {
-	return g.GT.String()
+	return g.String()
 }
 
 func (g *bn254Gt) Bytes() []byte {

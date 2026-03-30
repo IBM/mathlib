@@ -21,7 +21,7 @@ type CurveBase struct {
 
 func (c *CurveBase) ModNeg(a1, m driver.Zr) driver.Zr {
 	res := &BaseZr{Modulus: c.Modulus}
-	res.Int.Sub(&m.(*BaseZr).Int, &a1.(*BaseZr).Int)
+	res.Sub(&m.(*BaseZr).Int, &a1.(*BaseZr).Int)
 	res.Int.Mod(&res.Int, &m.(*BaseZr).Int)
 
 	return res
@@ -37,7 +37,7 @@ func (c *CurveBase) ModMul(a1, b1, m driver.Zr) driver.Zr {
 
 func (c *CurveBase) ModSub(a1, b1, m driver.Zr) driver.Zr {
 	res := &BaseZr{Modulus: c.Modulus}
-	res.Int.Sub(&a1.(*BaseZr).Int, &b1.(*BaseZr).Int)
+	res.Sub(&a1.(*BaseZr).Int, &b1.(*BaseZr).Int)
 	res.Int.Mod(&res.Int, &m.(*BaseZr).Int)
 
 	return res
@@ -45,7 +45,7 @@ func (c *CurveBase) ModSub(a1, b1, m driver.Zr) driver.Zr {
 
 func (c *CurveBase) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 	res := &BaseZr{Modulus: c.Modulus}
-	res.Int.Add(&a1.(*BaseZr).Int, &b1.(*BaseZr).Int)
+	res.Add(&a1.(*BaseZr).Int, &b1.(*BaseZr).Int)
 	res.Int.Mod(&res.Int, &m.(*BaseZr).Int)
 
 	return res
@@ -57,7 +57,7 @@ func (c *CurveBase) GroupOrder() driver.Zr {
 
 func (c *CurveBase) NewZrFromBytes(b []byte) driver.Zr {
 	res := &BaseZr{Modulus: c.Modulus}
-	res.Int.SetBytes(b)
+	res.SetBytes(b)
 	return res
 }
 
@@ -105,15 +105,7 @@ func (p *CurveBase) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driv
 	return p.ModAdd(p.ModMul(a1, c1, m), p.ModMul(b1, c2, m), m)
 }
 
-func (p *CurveBase) ModAddMul3(
-	a1 driver.Zr,
-	a2 driver.Zr,
-	b1 driver.Zr,
-	b2 driver.Zr,
-	c1 driver.Zr,
-	c2 driver.Zr,
-	m driver.Zr,
-) driver.Zr {
+func (p *CurveBase) ModAddMul3(a1 driver.Zr, a2 driver.Zr, b1 driver.Zr, b2 driver.Zr, c1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
 	return p.ModAdd(
 		p.ModMul(c1, c2, m),
 		p.ModAdd(

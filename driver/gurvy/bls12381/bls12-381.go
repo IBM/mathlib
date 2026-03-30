@@ -52,7 +52,7 @@ func (b *Zr) Plus(a driver.Zr) driver.Zr {
 }
 
 func (b *Zr) IsZero() bool {
-	return b.Int.BitLen() == 0
+	return b.BitLen() == 0
 }
 
 func (b *Zr) BigInt() *big.Int {
@@ -60,8 +60,8 @@ func (b *Zr) BigInt() *big.Int {
 }
 
 func (b *Zr) IsOne() bool {
-	bits := b.Int.Bits()
-	return len(bits) == 1 && bits[0] == 1 && b.Int.Sign() > 0
+	bits := b.Bits()
+	return len(bits) == 1 && bits[0] == 1 && b.Sign() > 0
 }
 
 func (b *Zr) Minus(a driver.Zr) driver.Zr {
@@ -102,7 +102,7 @@ func (b *Zr) Mod(a driver.Zr) {
 }
 
 func (b *Zr) InvModP(p driver.Zr) {
-	b.Int.ModInverse(&b.Int, &p.(*Zr).Int)
+	b.ModInverse(&b.Int, &p.(*Zr).Int)
 }
 
 func (b *Zr) InvModOrder() {
@@ -116,7 +116,7 @@ func (b *Zr) InvModOrder() {
 func (b *Zr) Bytes() []byte {
 	target := b.Int
 
-	if b.Int.Sign() < 0 || b.Int.Cmp(&b.Modulus) > 0 {
+	if b.Sign() < 0 || b.Cmp(&b.Modulus) > 0 {
 		target = *new(big.Int).Set(&b.Int)
 		target = *target.Mod(&target, &b.Modulus)
 		if target.Sign() < 0 {
@@ -128,7 +128,7 @@ func (b *Zr) Bytes() []byte {
 }
 
 func (b *Zr) Equals(p driver.Zr) bool {
-	return b.Int.Cmp(&p.(*Zr).Int) == 0
+	return b.Cmp(&p.(*Zr).Int) == 0
 }
 
 func (b *Zr) Copy() driver.Zr {
@@ -139,11 +139,11 @@ func (b *Zr) Copy() driver.Zr {
 
 func (b *Zr) Clone(a driver.Zr) {
 	raw := a.(*Zr).Int.Bytes()
-	b.Int.SetBytes(raw)
+	b.SetBytes(raw)
 }
 
 func (b *Zr) String() string {
-	return b.Int.Text(16)
+	return b.Text(16)
 }
 
 func (b *Zr) Neg() {
@@ -175,12 +175,12 @@ func (g *G1) Add(a driver.G1) {
 	defer G1Jacs.Put(j)
 	j.FromAffine(&g.G1Affine)
 	j.AddMixed(&a.(*G1).G1Affine)
-	g.G1Affine.FromJacobian(j)
+	g.FromJacobian(j)
 }
 
 func (g *G1) Mul(a driver.Zr) driver.G1 {
 	gc := &G1{}
-	gc.G1Affine.ScalarMultiplication(&g.G1Affine, &a.(*Zr).Int)
+	gc.ScalarMultiplication(&g.G1Affine, &a.(*Zr).Int)
 
 	return gc
 }
@@ -190,7 +190,7 @@ func (g *G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	defer G1Jacs.Put(first)
 	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*G1).G1Affine, &e.(*Zr).Int, &f.(*Zr).Int)
 	gc := &G1{}
-	gc.G1Affine.FromJacobian(first)
+	gc.FromJacobian(first)
 	return gc
 }
 
@@ -198,15 +198,15 @@ func (g *G1) Mul2InPlace(e driver.Zr, Q driver.G1, f driver.Zr) {
 	first := G1Jacs.Get()
 	defer G1Jacs.Put(first)
 	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*G1).G1Affine, &e.(*Zr).Int, &f.(*Zr).Int)
-	g.G1Affine.FromJacobian(first)
+	g.FromJacobian(first)
 }
 
 func (g *G1) Equals(a driver.G1) bool {
-	return g.G1Affine.Equal(&a.(*G1).G1Affine)
+	return g.Equal(&a.(*G1).G1Affine)
 }
 
 func (g *G1) Bytes() []byte {
-	raw := g.G1Affine.RawBytes()
+	raw := g.RawBytes()
 	return raw[:]
 }
 
@@ -220,7 +220,7 @@ func (g *G1) Sub(a driver.G1) {
 	j.FromAffine(&g.G1Affine)
 	k.FromAffine(&a.(*G1).G1Affine)
 	j.SubAssign(&k)
-	g.G1Affine.FromJacobian(&j)
+	g.FromJacobian(&j)
 }
 
 func (g *G1) IsInfinity() bool {
@@ -259,7 +259,7 @@ func (e *G2) Copy() driver.G2 {
 
 func (g *G2) Mul(a driver.Zr) driver.G2 {
 	gc := &G2{}
-	gc.G2Affine.ScalarMultiplication(&g.G2Affine, &a.(*Zr).Int)
+	gc.ScalarMultiplication(&g.G2Affine, &a.(*Zr).Int)
 
 	return gc
 }
@@ -268,7 +268,7 @@ func (g *G2) Add(a driver.G2) {
 	j := bls12381.G2Jac{}
 	j.FromAffine(&g.G2Affine)
 	j.AddMixed((*bls12381.G2Affine)(&a.(*G2).G2Affine))
-	g.G2Affine.FromJacobian(&j)
+	g.FromJacobian(&j)
 }
 
 func (g *G2) Sub(a driver.G2) {
@@ -277,7 +277,7 @@ func (g *G2) Sub(a driver.G2) {
 	aJac := bls12381.G2Jac{}
 	aJac.FromAffine((*bls12381.G2Affine)(&a.(*G2).G2Affine))
 	j.SubAssign(&aJac)
-	g.G2Affine.FromJacobian(&j)
+	g.FromJacobian(&j)
 }
 
 func (g *G2) Affine() {
@@ -285,7 +285,7 @@ func (g *G2) Affine() {
 }
 
 func (g *G2) Bytes() []byte {
-	raw := g.G2Affine.RawBytes()
+	raw := g.RawBytes()
 	return raw[:]
 }
 
@@ -299,7 +299,7 @@ func (g *G2) String() string {
 }
 
 func (g *G2) Equals(a driver.G2) bool {
-	return g.G2Affine.Equal(&a.(*G2).G2Affine)
+	return g.Equal(&a.(*G2).G2Affine)
 }
 
 /*********************************************************************/
@@ -314,7 +314,7 @@ func (g *Gt) Exp(x driver.Zr) driver.Gt {
 }
 
 func (g *Gt) Equals(a driver.Gt) bool {
-	return g.GT.Equal(&a.(*Gt).GT)
+	return g.Equal(&a.(*Gt).GT)
 }
 
 func (g *Gt) Inverse() {
@@ -333,7 +333,7 @@ func (g *Gt) IsUnity() bool {
 }
 
 func (g *Gt) ToString() string {
-	return g.GT.String()
+	return g.String()
 }
 
 func (g *Gt) Bytes() []byte {
@@ -435,7 +435,7 @@ func (c *Curve) NewG2() driver.G2 {
 
 func (c *Curve) NewG1FromBytes(b []byte) driver.G1 {
 	v := &G1{}
-	_, err := v.G1Affine.SetBytes(b)
+	_, err := v.SetBytes(b)
 	if err != nil {
 		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
 	}
@@ -485,7 +485,7 @@ func (c *Curve) NewGtFromBytes(b []byte) driver.Gt {
 
 func (c *Curve) ModNeg(a1, m driver.Zr) driver.Zr {
 	res := &Zr{Modulus: c.Modulus}
-	res.Int.Sub(&m.(*Zr).Int, &a1.(*Zr).Int)
+	res.Sub(&m.(*Zr).Int, &a1.(*Zr).Int)
 	res.Int.Mod(&res.Int, &m.(*Zr).Int)
 
 	return res
@@ -513,7 +513,7 @@ func (c *Curve) GroupOrder() driver.Zr {
 
 func (c *Curve) NewZrFromBytes(b []byte) driver.Zr {
 	res := &Zr{Modulus: c.Modulus}
-	res.Int.SetBytes(b)
+	res.SetBytes(b)
 	return res
 }
 
@@ -736,7 +736,7 @@ func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	_, _ = first.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
 
 	gc := &G1{}
-	gc.G1Affine.FromJacobian(first)
+	gc.FromJacobian(first)
 	return gc
 }
 
