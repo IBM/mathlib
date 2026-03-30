@@ -51,6 +51,15 @@ func (b *Zr) Plus(a driver.Zr) driver.Zr {
 	return rv
 }
 
+func (b *Zr) IsZero() bool {
+	return b.Int.BitLen() == 0
+}
+
+func (b *Zr) IsOne() bool {
+	bits := b.Int.Bits()
+	return len(bits) == 1 && bits[0] == 1 && b.Int.Sign() > 0
+}
+
 func (b *Zr) Minus(a driver.Zr) driver.Zr {
 	rv := &Zr{Modulus: b.Modulus}
 	rv.Sub(&b.Int, &a.(*Zr).Int)
@@ -510,6 +519,10 @@ func (c *Curve) NewZrFromInt64(i int64) driver.Zr {
 
 func (c *Curve) NewZrFromUint64(i uint64) driver.Zr {
 	return &Zr{Int: *new(big.Int).SetUint64(i), Modulus: c.Modulus}
+}
+
+func (c *Curve) NewZrFromBigInt(i *big.Int) driver.Zr {
+	return &Zr{Int: *i, Modulus: c.Modulus}
 }
 
 func (c *Curve) NewRandomZr(rng io.Reader) driver.Zr {

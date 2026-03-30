@@ -42,6 +42,15 @@ type BaseZr struct {
 	Modulus big.Int
 }
 
+func (b *BaseZr) IsZero() bool {
+	return b.Int.BitLen() == 0
+}
+
+func (b *BaseZr) IsOne() bool {
+	bits := b.Int.Bits()
+	return len(bits) == 1 && bits[0] == 1 && b.Int.Sign() > 0
+}
+
 func (b *BaseZr) Plus(a driver.Zr) driver.Zr {
 	rv := &BaseZr{Modulus: b.Modulus}
 	rv.Add(&b.Int, &a.(*BaseZr).Int)

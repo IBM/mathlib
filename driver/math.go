@@ -8,6 +8,7 @@ package driver
 
 import (
 	"io"
+	"math/big"
 )
 
 type Curve interface {
@@ -31,6 +32,7 @@ type Curve interface {
 	NewZrFromBytes(b []byte) Zr
 	NewZrFromInt64(i int64) Zr
 	NewZrFromUint64(i uint64) Zr
+	NewZrFromBigInt(i *big.Int) Zr
 	NewG1FromBytes(b []byte) G1
 	NewG1FromCompressed(b []byte) G1
 	NewG2FromBytes(b []byte) G2
@@ -51,6 +53,8 @@ type Curve interface {
 }
 
 type Zr interface {
+	IsZero() bool
+	IsOne() bool
 	Plus(Zr) Zr
 	Minus(Zr) Zr
 	Mul(Zr) Zr
