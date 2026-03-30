@@ -104,3 +104,23 @@ func (p *CurveBase) ModAddMul(a1 []driver.Zr, b1 []driver.Zr, modulo driver.Zr) 
 func (p *CurveBase) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
 	return p.ModAdd(p.ModMul(a1, c1, m), p.ModMul(b1, c2, m), m)
 }
+
+func (p *CurveBase) ModAddMul3(
+	a1 driver.Zr,
+	a2 driver.Zr,
+	b1 driver.Zr,
+	b2 driver.Zr,
+	c1 driver.Zr,
+	c2 driver.Zr,
+	m driver.Zr,
+) driver.Zr {
+	return p.ModAdd(
+		p.ModMul(c1, c2, m),
+		p.ModAdd(
+			p.ModMul(a1, a2, m),
+			p.ModMul(b1, b2, m),
+			m,
+		),
+		m,
+	)
+}

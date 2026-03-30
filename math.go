@@ -649,6 +649,16 @@ func (c *Curve) ModAddMul2(a, b, cc, d *Zr, m *Zr) *Zr {
 	return &Zr{zr: c.c.ModAddMul2(a.zr, b.zr, cc.zr, d.zr, m.zr), curveID: c.curveID}
 }
 
+func (c *Curve) ModAddMul3(
+	a1, a2, b1, b2, c1, c2 *Zr,
+	m *Zr,
+) *Zr {
+	return &Zr{
+		zr:      c.c.ModAddMul3(a1.zr, a2.zr, b1.zr, b2.zr, c1.zr, c2.zr, m.zr),
+		curveID: c.curveID,
+	}
+}
+
 func (c *Curve) MultiScalarMul(a []*G1, b []*Zr) *G1 {
 	aDriver := make([]driver.G1, len(a))
 	bDriver := make([]driver.Zr, len(b))

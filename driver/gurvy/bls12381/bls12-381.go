@@ -651,6 +651,44 @@ func (c *Curve) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Z
 	return res
 }
 
+func (c *Curve) ModAddMul3(
+	a1 driver.Zr,
+	a2 driver.Zr,
+	b1 driver.Zr,
+	b2 driver.Zr,
+	d1 driver.Zr,
+	d2 driver.Zr,
+	m driver.Zr,
+) driver.Zr {
+	tmp1 := frElements.Get()
+	defer frElements.Put(tmp1)
+	tmp2 := frElements.Get()
+	defer frElements.Put(tmp2)
+
+	sum := frElements.Get()
+	defer frElements.Put(sum)
+
+	sum.SetZero()
+	tmp1.SetBigInt(&a1.(*Zr).Int)
+	tmp2.SetBigInt(&a2.(*Zr).Int)
+	tmp1.Mul(tmp1, tmp2)
+	sum.Add(sum, tmp1)
+
+	tmp1.SetBigInt(&b1.(*Zr).Int)
+	tmp2.SetBigInt(&b2.(*Zr).Int)
+	tmp1.Mul(tmp1, tmp2)
+	sum.Add(sum, tmp1)
+
+	tmp1.SetBigInt(&d1.(*Zr).Int)
+	tmp2.SetBigInt(&d2.(*Zr).Int)
+	tmp1.Mul(tmp1, tmp2)
+	sum.Add(sum, tmp1)
+
+	res := &Zr{Modulus: c.Modulus}
+	sum.BigInt(&res.Int)
+	return res
+}
+
 func (c *Curve) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 	a1Fr := frElements.Get()
 	defer frElements.Put(a1Fr)
