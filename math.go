@@ -186,6 +186,14 @@ func NewZr(zr driver.Zr, curveID CurveID) *Zr {
 	return &Zr{zr: zr, curveID: curveID}
 }
 
+func (z *Zr) IsZero() bool {
+	return z.zr.IsZero()
+}
+
+func (z *Zr) IsOne() bool {
+	return z.zr.IsOne()
+}
+
 func (z *Zr) CurveID() CurveID {
 	return z.curveID
 }
