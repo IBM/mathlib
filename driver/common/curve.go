@@ -69,6 +69,10 @@ func (c *CurveBase) NewZrFromUint64(i uint64) driver.Zr {
 	return &BaseZr{Int: *new(big.Int).SetUint64(i), Modulus: c.Modulus}
 }
 
+func (c *CurveBase) NewZrFromBigInt(i *big.Int) driver.Zr {
+	return &BaseZr{Int: *i, Modulus: c.Modulus}
+}
+
 func (c *CurveBase) NewRandomZr(rng io.Reader) driver.Zr {
 	bi, err := rand.Int(rng, &c.Modulus)
 	if err != nil {

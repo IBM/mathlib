@@ -11,6 +11,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/IBM/mathlib/driver"
 	"github.com/IBM/mathlib/driver/amcl"
@@ -560,6 +561,10 @@ func (c *Curve) NewZrFromInt(i int64) *Zr {
 
 func (c *Curve) NewZrFromUint64(i uint64) *Zr {
 	return &Zr{zr: c.c.NewZrFromUint64(i), curveID: c.curveID}
+}
+
+func (c *Curve) NewZrFromBigInt(i *big.Int) *Zr {
+	return &Zr{zr: c.c.NewZrFromBigInt(i), curveID: c.curveID}
 }
 
 func (c *Curve) NewG2() *G2 {
