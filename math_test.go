@@ -13,6 +13,7 @@ import (
 	"io"
 	"math"
 	mathrand "math/rand"
+	"strconv"
 	"testing"
 	"time"
 
@@ -157,7 +158,7 @@ func runZrTest(t *testing.T, c *Curve) {
 	assert.Equal(t, au+bu, cru)
 
 	assert.Equal(t, fmt.Sprintf("%x", math.MaxInt64), maxint64.String())
-	assert.Equal(t, fmt.Sprintf("%x", uint64(math.MaxUint64)), maxuint64.String())
+	assert.Equal(t, strconv.FormatUint(uint64(math.MaxUint64), 16), maxuint64.String())
 
 	// serialising and deserialising negative numbers
 	rr := c.NewRandomZr(rng)
@@ -166,7 +167,7 @@ func runZrTest(t *testing.T, c *Curve) {
 	rr1b := rr1.Bytes()
 	rr11 := c.NewZrFromBytes(rr1b)
 	res := c.ModAdd(rr, rr11, c.GroupOrder)
-	assert.True(t, res.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, res.Equals(c.NewZrFromInt(0)), "failed with curve %T", c.c)
 
 	assert.True(t, c.NewZrFromInt(35).Plus(c.NewZrFromInt(1)).Equals(c.NewZrFromInt(36)))
 	assert.True(t, c.NewZrFromInt(36).Copy().Equals(c.NewZrFromInt(36)))
@@ -176,7 +177,7 @@ func runZrTest(t *testing.T, c *Curve) {
 	i = c.NewZrFromInt(3)
 	i.InvModP(c.NewZrFromInt(11))
 	assert.True(t, i.Equals(c.NewZrFromInt(4)))
-	assert.Equal(t, c.NewZrFromInt(35).String(), "23")
+	assert.Equal(t, "23", c.NewZrFromInt(35).String())
 
 	i64 = testRng.Int63()
 	i = c.NewZrFromInt(i64)
@@ -210,7 +211,7 @@ func runZrTest(t *testing.T, c *Curve) {
 	i2 = c.ModNeg(i2, c.GroupOrder)
 	i3 = i1.Plus(i2)
 	i3.Mod(c.GroupOrder)
-	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)), "failed with curve %T", c.c)
 
 	// large negative numbers with neg
 	i1 = c.NewRandomZr(rng)
@@ -218,17 +219,17 @@ func runZrTest(t *testing.T, c *Curve) {
 	i2.Neg()
 	i3 = i1.Plus(i2)
 	i3.Mod(c.GroupOrder)
-	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)), "failed with curve %T", c.c)
 
 	// large negative numbers with minus
 	i1 = c.NewRandomZr(rng)
 	i2 = i1.Copy()
 	i3 = i1.Minus(i2)
 	i3.Mod(c.GroupOrder)
-	assert.True(t, i3.Equals(c.NewZrFromInt(0)), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, i3.Equals(c.NewZrFromInt(0)), "failed with curve %T", c.c)
 
 	// Euler's totient
-	assert.True(t, r1.PowMod(c.GroupOrder.Plus(c.NewZrFromInt(-1))).Equals(c.NewZrFromInt(1)), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, r1.PowMod(c.GroupOrder.Plus(c.NewZrFromInt(-1))).Equals(c.NewZrFromInt(1)), "failed with curve %T", c.c)
 
 	// byte size
 	assert.Len(t, r1.Bytes(), c.ScalarByteSize)
@@ -259,7 +260,7 @@ var expectedModuli = []string{
 func runG1Test(t *testing.T, c *Curve) {
 	assert.Equal(t, expectedG1Gens[c.ID()], c.GenG1.String())
 
-	assert.Equal(t, expectedModuli[c.ID()], c.GroupOrder.String(), fmt.Sprintf("failed with curve %T", c.c))
+	assert.Equal(t, expectedModuli[c.ID()], c.GroupOrder.String(), "failed with curve %T", c.c)
 
 	g1copy := c.NewG1()
 	g1copy.Clone(c.GenG1)
@@ -342,7 +343,7 @@ func runG2Test(t *testing.T, c *Curve) {
 	assert.True(t, g1.Equals(g3))
 	assert.True(t, g2.Equals(c.GenG2.Mul(c.NewZrFromInt(23))))
 	g1.Sub(g2)
-	assert.True(t, g1.Equals(c.GenG2.Mul(c.NewZrFromInt(35))), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, g1.Equals(c.GenG2.Mul(c.NewZrFromInt(35))), "failed with curve %T", c.c)
 
 	g4 := c.GenG2.Mul(c.NewZrFromInt(35))
 	g5 := c.GenG2.Mul(c.NewZrFromInt(23))
@@ -501,8 +502,8 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 	g1rback, err := c.NewG1FromBytes(g1rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
-	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
-	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, "failed with curve %T", c.c)
+	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, "failed with curve %T", c.c)
 
 	g2r := c.GenG2.Mul(r)
 	g2rbytes := g2r.Bytes()
@@ -510,8 +511,8 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 	g2rback, err := c.NewG2FromBytes(g2rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g2r.Equals(g2rback))
-	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
-	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, "failed with curve %T", c.c)
+	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, "failed with curve %T", c.c)
 
 	g2r = c.GenG2.Mul(r)
 	a := c.Pairing(g2r, c.GenG1)
@@ -544,8 +545,8 @@ func runToFroCompressedTest(t *testing.T, c *Curve) {
 	g1rback, err := c.NewG1FromCompressed(g1rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
-	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
-	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, "failed with curve %T", c.c)
+	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, "failed with curve %T", c.c)
 
 	g2r := c.GenG2.Mul(r)
 	g2rbytes := g2r.Compressed()
@@ -553,8 +554,8 @@ func runToFroCompressedTest(t *testing.T, c *Curve) {
 	g2rback, err := c.NewG2FromCompressed(g2rbytes)
 	assert.NoError(t, err)
 	assert.True(t, g2r.Equals(g2rback))
-	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
-	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, fmt.Sprintf("failed with curve %T", c.c))
+	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, "failed with curve %T", c.c)
+	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, "failed with curve %T", c.c)
 
 	g1rback, err = c.NewG1FromCompressed(nil)
 	assert.Nil(t, g1rback)
@@ -709,7 +710,7 @@ func testModAdd(t *testing.T, c *Curve) {
 	i3 := c.ModAdd(i1, i2, c.GroupOrder)
 	g2 := c.GenG1.Mul(i3)
 
-	assert.True(t, g1.Equals(g2), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, g1.Equals(g2), "failed with curve %T", c.c)
 }
 
 func testModAdd2(t *testing.T, c *Curve) {
@@ -720,7 +721,7 @@ func testModAdd2(t *testing.T, c *Curve) {
 	g2 := c.GenG1.Copy()
 	g2.Mul2InPlace(i1, c.GenG1, i2)
 
-	assert.True(t, g1.Equals(g2), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, g1.Equals(g2), "failed with curve %T", c.c)
 }
 
 func testNotZeroAfterAdd(t *testing.T, c *Curve) {
@@ -732,7 +733,7 @@ func testNotZeroAfterAdd(t *testing.T, c *Curve) {
 
 	zero := c.NewZrFromInt(0)
 
-	assert.False(t, zero.Equals(i4), fmt.Sprintf("failed with curve %T", c.c))
+	assert.False(t, zero.Equals(i4), "failed with curve %T", c.c)
 }
 
 type testJsonStruct struct {
@@ -765,10 +766,10 @@ func runJsonMarshaler(t *testing.T, c *Curve) {
 	err = json.Unmarshal(bytes, testStruct)
 	assert.NoError(t, err)
 
-	assert.True(t, testStruct.Zr.Equals(zr), fmt.Sprintf("failed with curve %T", c.c))
-	assert.True(t, testStruct.G1.Equals(g1), fmt.Sprintf("failed with curve %T", c.c))
-	assert.True(t, testStruct.G2.Equals(g2), fmt.Sprintf("failed with curve %T", c.c))
-	assert.True(t, testStruct.Gt.Equals(gt), fmt.Sprintf("failed with curve %T", c.c))
+	assert.True(t, testStruct.Zr.Equals(zr), "failed with curve %T", c.c)
+	assert.True(t, testStruct.G1.Equals(g1), "failed with curve %T", c.c)
+	assert.True(t, testStruct.G2.Equals(g2), "failed with curve %T", c.c)
+	assert.True(t, testStruct.Gt.Equals(gt), "failed with curve %T", c.c)
 }
 
 func TestJSONMarshalerFails(t *testing.T) {

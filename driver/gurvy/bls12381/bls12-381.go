@@ -48,6 +48,7 @@ type Zr struct {
 func (b *Zr) Plus(a driver.Zr) driver.Zr {
 	rv := &Zr{Modulus: b.Modulus}
 	rv.Add(&b.Int, &a.(*Zr).Int)
+
 	return rv
 }
 
@@ -61,12 +62,14 @@ func (b *Zr) BigInt() *big.Int {
 
 func (b *Zr) IsOne() bool {
 	bits := b.Bits()
+
 	return len(bits) == 1 && bits[0] == 1 && b.Sign() > 0
 }
 
 func (b *Zr) Minus(a driver.Zr) driver.Zr {
 	rv := &Zr{Modulus: b.Modulus}
 	rv.Sub(&b.Int, &a.(*Zr).Int)
+
 	return rv
 }
 
@@ -82,6 +85,7 @@ func (b *Zr) Mul(x driver.Zr) driver.Zr {
 
 	rv := &Zr{Modulus: b.Modulus}
 	fr.BigInt(&rv.Int)
+
 	return rv
 }
 
@@ -94,6 +98,7 @@ func (b *Zr) PowMod(x driver.Zr) driver.Zr {
 
 	rv := &Zr{Modulus: b.Modulus}
 	fr.BigInt(&rv.Int)
+
 	return rv
 }
 
@@ -134,6 +139,7 @@ func (b *Zr) Equals(p driver.Zr) bool {
 func (b *Zr) Copy() driver.Zr {
 	rv := &Zr{Modulus: b.Modulus}
 	rv.Set(&b.Int)
+
 	return rv
 }
 
@@ -167,6 +173,7 @@ func (g *G1) Clone(a driver.G1) {
 func (e *G1) Copy() driver.G1 {
 	c := &G1{}
 	c.Set(&e.G1Affine)
+
 	return c
 }
 
@@ -191,6 +198,7 @@ func (g *G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*G1).G1Affine, &e.(*Zr).Int, &f.(*Zr).Int)
 	gc := &G1{}
 	gc.FromJacobian(first)
+
 	return gc
 }
 
@@ -207,11 +215,13 @@ func (g *G1) Equals(a driver.G1) bool {
 
 func (g *G1) Bytes() []byte {
 	raw := g.RawBytes()
+
 	return raw[:]
 }
 
 func (g *G1) Compressed() []byte {
 	raw := g.G1Affine.Bytes()
+
 	return raw[:]
 }
 
@@ -230,6 +240,7 @@ func (g *G1) IsInfinity() bool {
 func (g *G1) String() string {
 	rawstr := g.G1Affine.String()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
@@ -254,6 +265,7 @@ func (g *G2) Clone(a driver.G2) {
 func (e *G2) Copy() driver.G2 {
 	c := &G2{}
 	c.Set(&e.G2Affine)
+
 	return c
 }
 
@@ -286,11 +298,13 @@ func (g *G2) Affine() {
 
 func (g *G2) Bytes() []byte {
 	raw := g.RawBytes()
+
 	return raw[:]
 }
 
 func (g *G2) Compressed() []byte {
 	raw := g.G2Affine.Bytes()
+
 	return raw[:]
 }
 
@@ -310,6 +324,7 @@ type Gt struct {
 
 func (g *Gt) Exp(x driver.Zr) driver.Gt {
 	c := bls12381.GT{}
+
 	return &Gt{*c.Exp(g.GT, &x.(*Zr).Int)}
 }
 
@@ -338,6 +353,7 @@ func (g *Gt) ToString() string {
 
 func (g *Gt) Bytes() []byte {
 	raw := g.GT.Bytes()
+
 	return raw[:]
 }
 
@@ -398,6 +414,7 @@ func (c *Curve) GenGt() driver.Gt {
 	g2 := c.GenG2()
 	gengt := c.Pairing(g2, g1)
 	gengt = c.FExp(gengt)
+
 	return gengt
 }
 
@@ -504,6 +521,7 @@ func (c *Curve) ModSub(a1, b1, m driver.Zr) driver.Zr {
 
 	res := &Zr{Modulus: c.Modulus}
 	a1Fr.BigInt(&res.Int)
+
 	return res
 }
 
@@ -514,6 +532,7 @@ func (c *Curve) GroupOrder() driver.Zr {
 func (c *Curve) NewZrFromBytes(b []byte) driver.Zr {
 	res := &Zr{Modulus: c.Modulus}
 	res.SetBytes(b)
+
 	return res
 }
 
@@ -539,6 +558,7 @@ func (c *Curve) NewRandomZr(rng io.Reader) driver.Zr {
 
 	res := &Zr{Modulus: c.Modulus}
 	e.BigInt(&res.Int)
+
 	return res
 }
 
@@ -546,6 +566,7 @@ func (c *Curve) HashToZr(data []byte) driver.Zr {
 	digest := sha256.Sum256(data)
 	digestBig := new(big.Int).SetBytes(digest[:])
 	digestBig.Mod(digestBig, &c.Modulus)
+
 	return &Zr{Int: *digestBig, Modulus: c.Modulus}
 }
 
@@ -602,6 +623,7 @@ func (c *Curve) ModMul(a1, b1, m driver.Zr) driver.Zr {
 
 	res := &Zr{Modulus: c.Modulus}
 	a1Fr.BigInt(&res.Int)
+
 	return res
 }
 
@@ -614,7 +636,7 @@ func (c *Curve) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
 	defer frElements.Put(sum)
 
 	sum.SetZero()
-	for i := 0; i < len(a1); i++ {
+	for i := range a1 {
 		a1Fr.SetBigInt(&a1[i].(*Zr).Int)
 		b1Fr.SetBigInt(&b1[i].(*Zr).Int)
 		a1Fr.Mul(a1Fr, b1Fr)
@@ -623,6 +645,7 @@ func (c *Curve) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
 
 	res := &Zr{Modulus: c.Modulus}
 	sum.BigInt(&res.Int)
+
 	return res
 }
 
@@ -648,6 +671,7 @@ func (c *Curve) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Z
 
 	res := &Zr{Modulus: c.Modulus}
 	sum.BigInt(&res.Int)
+
 	return res
 }
 
@@ -686,6 +710,7 @@ func (c *Curve) ModAddMul3(
 
 	res := &Zr{Modulus: c.Modulus}
 	sum.BigInt(&res.Int)
+
 	return res
 }
 
@@ -702,6 +727,7 @@ func (c *Curve) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 
 	res := &Zr{Modulus: c.Modulus}
 	a1Fr.BigInt(&res.Int)
+
 	return res
 }
 
@@ -726,7 +752,7 @@ func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	affinePoints := make([]bls12381.G1Affine, len(a))
 	scalars := make([]fr.Element, len(b))
 
-	for i := range len(a) {
+	for i := range a {
 		affinePoints[i] = a[i].(*G1).G1Affine
 		scalars[i].SetBigInt(&b[i].(*Zr).Int)
 	}
@@ -737,6 +763,7 @@ func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 
 	gc := &G1{}
 	gc.FromJacobian(first)
+
 	return gc
 }
 
@@ -751,7 +778,8 @@ func NewBBSCurve() *BBSCurve {
 func (c *BBSCurve) HashToG1(data []byte) driver.G1 {
 	hashFunc := func() hash.Hash {
 		// We pass a null key so error is impossible here.
-		h, _ := blake2b.New512(nil) //nolint:errcheck
+		h, _ := blake2b.New512(nil)
+
 		return h
 	}
 
@@ -775,7 +803,8 @@ func (c *BBSCurve) HashToG2(data []byte) driver.G2 {
 func (c *BBSCurve) HashToG1WithDomain(data, domain []byte) driver.G1 {
 	hashFunc := func() hash.Hash {
 		// We pass a null key so error is impossible here.
-		h, _ := blake2b.New512(nil) //nolint:errcheck
+		h, _ := blake2b.New512(nil)
+
 		return h
 	}
 
@@ -849,7 +878,7 @@ func JointScalarMultiplication(p *bls12381.G1Jac, a1, a2 *bls12381.G1Affine, s1,
 
 	for i := hiWordIndex; i >= 0; i-- {
 		mask := uint64(3) << 62
-		for j := 0; j < 32; j++ {
+		for j := range 32 {
 			res.Double(&res).Double(&res)
 			b1 := (s[0][i] & mask) >> (62 - 2*j)
 			b2 := (s[1][i] & mask) >> (62 - 2*j)
@@ -862,6 +891,6 @@ func JointScalarMultiplication(p *bls12381.G1Jac, a1, a2 *bls12381.G1Affine, s1,
 	}
 
 	p.Set(&res)
-	return p
 
+	return p
 }

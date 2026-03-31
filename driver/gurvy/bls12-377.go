@@ -34,6 +34,7 @@ func (g *bls12377G1) Clone(a driver.G1) {
 func (e *bls12377G1) Copy() driver.G1 {
 	c := &bls12377G1{}
 	c.Set(&e.G1Affine)
+
 	return c
 }
 
@@ -73,11 +74,13 @@ func (g *bls12377G1) Equals(a driver.G1) bool {
 
 func (g *bls12377G1) Bytes() []byte {
 	raw := g.RawBytes()
+
 	return raw[:]
 }
 
 func (g *bls12377G1) Compressed() []byte {
 	raw := g.G1Affine.Bytes()
+
 	return raw[:]
 }
 
@@ -96,6 +99,7 @@ func (g *bls12377G1) IsInfinity() bool {
 func (g *bls12377G1) String() string {
 	rawstr := g.G1Affine.String()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
@@ -120,6 +124,7 @@ func (g *bls12377G2) Clone(a driver.G2) {
 func (e *bls12377G2) Copy() driver.G2 {
 	c := &bls12377G2{}
 	c.Set(&e.G2Affine)
+
 	return c
 }
 
@@ -152,11 +157,13 @@ func (g *bls12377G2) Affine() {
 
 func (g *bls12377G2) Bytes() []byte {
 	raw := g.RawBytes()
+
 	return raw[:]
 }
 
 func (g *bls12377G2) Compressed() []byte {
 	raw := g.G2Affine.Bytes()
+
 	return raw[:]
 }
 
@@ -176,6 +183,7 @@ type bls12377Gt struct {
 
 func (g *bls12377Gt) Exp(x driver.Zr) driver.Gt {
 	copy := bls12377.GT{}
+
 	return &bls12377Gt{*copy.Exp(g.GT, &x.(*common.BaseZr).Int)}
 }
 
@@ -204,6 +212,7 @@ func (g *bls12377Gt) ToString() string {
 
 func (g *bls12377Gt) Bytes() []byte {
 	raw := g.GT.Bytes()
+
 	return raw[:]
 }
 
@@ -222,12 +231,13 @@ func (c *Bls12_377) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	affinePoints := make([]bls12377.G1Affine, len(a))
 	scalars := make([]fr.Element, len(b))
 
-	for i := range len(a) {
+	for i := range a {
 		affinePoints[i] = a[i].(*bls12377G1).G1Affine
 		scalars[i].SetBigInt(&b[i].(*common.BaseZr).Int)
 	}
 
 	_, _ = result.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
+
 	return &bls12377G1{result}
 }
 
@@ -287,6 +297,7 @@ func (c *Bls12_377) GenGt() driver.Gt {
 	g2 := c.GenG2()
 	gengt := c.Pairing(g2, g1)
 	gengt = c.FExp(gengt)
+
 	return gengt
 }
 

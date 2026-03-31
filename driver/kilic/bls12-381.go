@@ -29,6 +29,7 @@ func (g *bls12_381G1) Clone(a driver.G1) {
 func (e *bls12_381G1) Copy() driver.G1 {
 	c := &bls12_381G1{G1: *bls12381.NewG1()}
 	c.Set(&e.PointG1)
+
 	return c
 }
 
@@ -66,17 +67,20 @@ func (g *bls12_381G1) Mul2InPlace(e driver.Zr, Q driver.G1, f driver.Zr) {
 
 func (g *bls12_381G1) Equals(a driver.G1) bool {
 	g1 := bls12381.NewG1()
+
 	return g1.Equal(&a.(*bls12_381G1).PointG1, &g.PointG1)
 }
 
 func (g *bls12_381G1) Bytes() []byte {
 	g1 := bls12381.NewG1()
 	raw := g1.ToUncompressed(&g.PointG1)
+
 	return raw[:]
 }
 
 func (g *bls12_381G1) Compressed() []byte {
 	raw := g.ToCompressed(&g.PointG1)
+
 	return raw[:]
 }
 
@@ -116,6 +120,7 @@ func (e *bls12_381G2) Copy() driver.G2 {
 		G2: *bls12381.NewG2(),
 	}
 	c.Set(&e.PointG2)
+
 	return c
 }
 
@@ -147,12 +152,14 @@ func (g *bls12_381G2) Affine() {
 func (g *bls12_381G2) Bytes() []byte {
 	g2 := bls12381.NewG2()
 	raw := g2.ToUncompressed(&g.PointG2)
+
 	return raw[:]
 }
 
 func (g *bls12_381G2) Compressed() []byte {
 	g2 := bls12381.NewG2()
 	raw := g2.ToCompressed(&g.PointG2)
+
 	return raw[:]
 }
 
@@ -163,6 +170,7 @@ func (g *bls12_381G2) String() string {
 
 func (g *bls12_381G2) Equals(a driver.G2) bool {
 	g2 := bls12381.NewG2()
+
 	return g2.Equal(&a.(*bls12_381G2).PointG2, &g.PointG2)
 }
 
@@ -218,6 +226,7 @@ func (g *bls12_381Gt) Bytes() []byte {
 		g.GT = *bls12381.NewGT()
 	}
 	raw := g.ToBytes(&g.E)
+
 	return raw[:]
 }
 
@@ -237,9 +246,10 @@ type Bls12_381 struct {
 
 func (c *Bls12_381) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	g1 := c.NewG1()
-	for i := 0; i < len(a); i++ {
+	for i := range a {
 		g1.Add(a[i].Mul(b[i]))
 	}
+
 	return g1
 }
 
@@ -273,6 +283,7 @@ func (c *Bls12_381) FExp(a driver.Gt) driver.Gt {
 func (c *Bls12_381) GenG1() driver.G1 {
 	g := bls12381.NewG1()
 	g1 := g.One()
+
 	return &bls12_381G1{
 		G1:      *g,
 		PointG1: *g1,
@@ -282,6 +293,7 @@ func (c *Bls12_381) GenG1() driver.G1 {
 func (c *Bls12_381) GenG2() driver.G2 {
 	g := bls12381.NewG2()
 	g2 := g.One()
+
 	return &bls12_381G2{
 		G2:      *g,
 		PointG2: *g2,
@@ -293,6 +305,7 @@ func (c *Bls12_381) GenGt() driver.Gt {
 	g2 := c.GenG2()
 	gengt := c.Pairing(g2, g1)
 	gengt = c.FExp(gengt)
+
 	return gengt
 }
 

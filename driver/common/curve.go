@@ -58,6 +58,7 @@ func (c *CurveBase) GroupOrder() driver.Zr {
 func (c *CurveBase) NewZrFromBytes(b []byte) driver.Zr {
 	res := &BaseZr{Modulus: c.Modulus}
 	res.SetBytes(b)
+
 	return res
 }
 
@@ -86,6 +87,7 @@ func (c *CurveBase) HashToZr(data []byte) driver.Zr {
 	digest := sha256.Sum256(data)
 	digestBig := new(big.Int).SetBytes(digest[:])
 	digestBig.Mod(digestBig, &c.Modulus)
+
 	return &BaseZr{Int: *digestBig, Modulus: c.Modulus}
 }
 
@@ -95,9 +97,10 @@ func (p *CurveBase) Rand() (io.Reader, error) {
 
 func (p *CurveBase) ModAddMul(a1 []driver.Zr, b1 []driver.Zr, modulo driver.Zr) driver.Zr {
 	sum := p.NewZrFromInt64(0)
-	for i := 0; i < len(a1); i++ {
+	for i := range a1 {
 		sum = p.ModAdd(sum, p.ModMul(a1[i], b1[i], modulo), modulo)
 	}
+
 	return sum
 }
 

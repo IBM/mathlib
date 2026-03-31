@@ -43,6 +43,7 @@ func min(a, b int) int {
 	if a < b {
 		return a
 	}
+
 	return b
 }
 
@@ -124,6 +125,7 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 		b1 = h.Sum(nil)
 		copy(res[h.Size()*(i-1):min(h.Size()*i, len(res))], b1)
 	}
+
 	return res, nil
 }
 
@@ -145,7 +147,7 @@ func Hash(msg, dst []byte, count int, hashFunc func() hash.Hash) ([]fp.Element, 
 	vv := pool.BigInt.Get()
 
 	res := make([]fp.Element, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		vv.SetBytes(pseudoRandomBytes[i*L : (i+1)*L])
 		res[i].SetBigInt(vv)
 	}
@@ -185,5 +187,6 @@ func HashToG1GenericBESwu(msg, dst []byte, hashFunc func() hash.Hash) (bls12381.
 
 	toGurvyAffine(&Q1).FromJacobian(&_Q1)
 	res := toGurvyAffine(&Q1)
+
 	return *res, nil
 }

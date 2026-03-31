@@ -50,13 +50,14 @@ func (fe *Fe) setBytes(in []byte) *Fe {
 	padded := make([]byte, fpByteSize)
 	copy(padded[fpByteSize-l:], in[:])
 	var a int
-	for i := 0; i < fpNumberOfLimbs; i++ {
+	for i := range fpNumberOfLimbs {
 		a = fpByteSize - i*8
 		fe[i] = uint64(padded[a-1]) | uint64(padded[a-2])<<8 |
 			uint64(padded[a-3])<<16 | uint64(padded[a-4])<<24 |
 			uint64(padded[a-5])<<32 | uint64(padded[a-6])<<40 |
 			uint64(padded[a-7])<<48 | uint64(padded[a-8])<<56
 	}
+
 	return fe
 }
 
@@ -72,6 +73,7 @@ func (fe *Fe) cmp(fe2 *Fe) int {
 			return -1
 		}
 	}
+
 	return 0
 }
 
@@ -90,6 +92,7 @@ func (fe *Fe) set(fe2 *Fe) *Fe {
 	fe[3] = fe2[3]
 	fe[4] = fe2[4]
 	fe[5] = fe2[5]
+
 	return fe
 }
 
@@ -97,6 +100,7 @@ func (e *Fe) signBE() bool {
 	negZ, z := new(Fe), new(Fe)
 	fromMont(z, e)
 	neg(negZ, z)
+
 	return negZ.cmp(z) > -1
 }
 
@@ -130,7 +134,7 @@ func isogenyMapG1(x, y *Fe)
 func swuMapG1Pre(u *Fe) (*Fe, *Fe, *Fe) {
 	var params = swuParamsForG1
 	var tv [4]*Fe
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		tv[i] = new(Fe)
 	}
 	square(tv[0], u)
@@ -181,6 +185,7 @@ func SwuMapG1BE(u *Fe) (*Fe, *Fe) {
 	if y.signBE() != u.signBE() {
 		neg(y, y)
 	}
+
 	return x, y
 }
 
@@ -197,7 +202,8 @@ func feAtPos(pos int, p *bls12381.PointG1) *Fe {
 func HashToG1GenericBESwu(data, domain []byte) (*bls12381.PointG1, error) {
 	hashFunc := func() hash.Hash {
 		// We pass a null key so error is impossible here.
-		h, _ := blake2b.New512(nil) //nolint:errcheck
+		h, _ := blake2b.New512(nil)
+
 		return h
 	}
 
@@ -226,6 +232,7 @@ func HashToCurveGenericBESwu(msg, domain []byte, hashFunc func() hash.Hash) (*bl
 	g.Affine(p0)
 	isogenyMapG1(feAtPos(0, p0), feAtPos(1, p0))
 	g.ClearCofactor(p0)
+
 	return g.Affine(p0), nil
 }
 
@@ -236,7 +243,7 @@ func hashToFpXMD(f func() hash.Hash, msg []byte, domain []byte, count int) ([]*F
 	}
 
 	els := make([]*Fe, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		var err error
 
 		els[i], err = from64Bytes(randBytes[i*64 : (i+1)*64])
@@ -244,6 +251,7 @@ func hashToFpXMD(f func() hash.Hash, msg []byte, domain []byte, count int) ([]*F
 			return nil, err
 		}
 	}
+
 	return els, nil
 }
 
@@ -326,6 +334,7 @@ func from64Bytes(in []byte) (*Fe, error) {
 
 	mul(e0, e0, &F)
 	add(e1, e1, e0)
+
 	return e1, nil
 }
 
@@ -339,5 +348,6 @@ func fromBytes(in []byte) (*Fe, error) {
 		return nil, errors.New("must be less than modulus")
 	}
 	toMont(fe, fe)
+
 	return fe, nil
 }
