@@ -103,9 +103,9 @@ const (
 )
 
 func CurveIDToString(id CurveID) string {
-// CurveIDToString converts a CurveID to its string representation.
-// Returns a human-readable name for the curve, useful for logging and debugging.
-// Panics if the curve ID is unknown.
+	// CurveIDToString converts a CurveID to its string representation.
+	// Returns a human-readable name for the curve, useful for logging and debugging.
+	// Panics if the curve ID is unknown.
 
 	switch id {
 	case FP256BN_AMCL:
@@ -675,16 +675,16 @@ func (g *Gt) Bytes() []byte {
 //	signature := curve.HashToG1(message).Mul(secretKey)
 type Curve struct {
 	c                    driver.Curve
-	GenG1                *G1  // Generator point for the G1 group
-	GenG2                *G2  // Generator point for the G2 group
-	GenGt                *Gt  // Generator (identity) element for the Gt group
-	GroupOrder           *Zr  // Order of the curve groups
-	CoordByteSize        int  // Size of a single coordinate in bytes
-	G1ByteSize           int  // Size of uncompressed G1 point in bytes
-	CompressedG1ByteSize int  // Size of compressed G1 point in bytes
-	G2ByteSize           int  // Size of uncompressed G2 point in bytes
-	CompressedG2ByteSize int  // Size of compressed G2 point in bytes
-	ScalarByteSize       int  // Size of scalar (Zr) in bytes
+	GenG1                *G1 // Generator point for the G1 group
+	GenG2                *G2 // Generator point for the G2 group
+	GenGt                *Gt // Generator (identity) element for the Gt group
+	GroupOrder           *Zr // Order of the curve groups
+	CoordByteSize        int // Size of a single coordinate in bytes
+	G1ByteSize           int // Size of uncompressed G1 point in bytes
+	CompressedG1ByteSize int // Size of compressed G1 point in bytes
+	G2ByteSize           int // Size of uncompressed G2 point in bytes
+	CompressedG2ByteSize int // Size of compressed G2 point in bytes
+	ScalarByteSize       int // Size of scalar (Zr) in bytes
 	curveID              CurveID
 }
 
