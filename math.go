@@ -9,6 +9,7 @@ package math
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -259,7 +260,7 @@ var onebytes = []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 func (z *Zr) Uint() (uint64, error) {
 	b := z.Bytes()
 	if !bytes.Equal(zerobytes, b[:32-8]) && !bytes.Equal(onebytes, b[:32-8]) {
-		return 0, fmt.Errorf("out of range")
+		return 0, errors.New("out of range")
 	}
 
 	return uint64(binary.BigEndian.Uint64(b[32-8:])), nil
@@ -268,7 +269,7 @@ func (z *Zr) Uint() (uint64, error) {
 func (z *Zr) Int() (int64, error) {
 	b := z.Bytes()
 	if !bytes.Equal(zerobytes, b[:32-8]) && !bytes.Equal(onebytes, b[:32-8]) {
-		return 0, fmt.Errorf("out of range")
+		return 0, errors.New("out of range")
 	}
 
 	return int64(binary.BigEndian.Uint64(b[32-8:])), nil
@@ -515,6 +516,7 @@ func (c *Curve) NewG1FromBytes(b []byte) (p *G1, err error) {
 	}()
 
 	p = &G1{g1: c.c.NewG1FromBytes(b), curveID: c.curveID}
+
 	return
 }
 
@@ -527,6 +529,7 @@ func (c *Curve) NewG2FromBytes(b []byte) (p *G2, err error) {
 	}()
 
 	p = &G2{g2: c.c.NewG2FromBytes(b), curveID: c.curveID}
+
 	return
 }
 
@@ -539,6 +542,7 @@ func (c *Curve) NewG1FromCompressed(b []byte) (p *G1, err error) {
 	}()
 
 	p = &G1{g1: c.c.NewG1FromCompressed(b), curveID: c.curveID}
+
 	return
 }
 
@@ -551,6 +555,7 @@ func (c *Curve) NewG2FromCompressed(b []byte) (p *G2, err error) {
 	}()
 
 	p = &G2{g2: c.c.NewG2FromCompressed(b), curveID: c.curveID}
+
 	return
 }
 
@@ -563,6 +568,7 @@ func (c *Curve) NewGtFromBytes(b []byte) (p *Gt, err error) {
 	}()
 
 	p = &Gt{gt: c.c.NewGtFromBytes(b), curveID: c.curveID}
+
 	return
 }
 
@@ -637,10 +643,11 @@ func (c *Curve) ModNeg(a1, m *Zr) *Zr {
 func (c *Curve) ModAddMul(a1, b1 []*Zr, m *Zr) *Zr {
 	a1Driver := make([]driver.Zr, len(a1))
 	b1Driver := make([]driver.Zr, len(b1))
-	for i := 0; i < len(a1); i++ {
+	for i := range a1 {
 		a1Driver[i] = a1[i].zr
 		b1Driver[i] = b1[i].zr
 	}
+
 	return &Zr{zr: c.c.ModAddMul(a1Driver, b1Driver, m.zr), curveID: c.curveID}
 }
 
@@ -658,9 +665,10 @@ func (c *Curve) ModAddMul3(a1, a2, b1, b2, c1, c2 *Zr, m *Zr) *Zr {
 func (c *Curve) MultiScalarMul(a []*G1, b []*Zr) *G1 {
 	aDriver := make([]driver.G1, len(a))
 	bDriver := make([]driver.Zr, len(b))
-	for i := 0; i < len(a); i++ {
+	for i := range a {
 		aDriver[i] = a[i].g1
 		bDriver[i] = b[i].zr
 	}
+
 	return &G1{g1: c.c.MultiScalarMul(aDriver, bDriver), curveID: c.curveID}
 }

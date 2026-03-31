@@ -34,6 +34,7 @@ func BigToBytes(bi *big.Int) []byte {
 	twoscomp = twoscomp.Sub(twoscomp, pos)
 	twoscomp = twoscomp.Add(twoscomp, big.NewInt(1))
 	b = twoscomp.Bytes()
+
 	return append(onebytes[:ScalarByteSize-len(b)], b...)
 }
 
@@ -48,6 +49,7 @@ func (b *BaseZr) IsZero() bool {
 
 func (b *BaseZr) IsOne() bool {
 	bits := b.Bits()
+
 	return len(bits) == 1 && bits[0] == 1 && b.Sign() > 0
 }
 
@@ -58,12 +60,14 @@ func (b *BaseZr) BigInt() *big.Int {
 func (b *BaseZr) Plus(a driver.Zr) driver.Zr {
 	rv := &BaseZr{Modulus: b.Modulus}
 	rv.Add(&b.Int, &a.(*BaseZr).Int)
+
 	return rv
 }
 
 func (b *BaseZr) Minus(a driver.Zr) driver.Zr {
 	rv := &BaseZr{Modulus: b.Modulus}
 	rv.Sub(&b.Int, &a.(*BaseZr).Int)
+
 	return rv
 }
 
@@ -71,12 +75,14 @@ func (b *BaseZr) Mul(a driver.Zr) driver.Zr {
 	rv := &BaseZr{Modulus: b.Modulus}
 	rv.Int.Mul(&b.Int, &a.(*BaseZr).Int)
 	rv.Int.Mod(&rv.Int, &b.Modulus)
+
 	return rv
 }
 
 func (b *BaseZr) PowMod(x driver.Zr) driver.Zr {
 	rv := &BaseZr{Modulus: b.Modulus}
 	rv.Exp(&b.Int, &x.(*BaseZr).Int, &b.Modulus)
+
 	return rv
 }
 
@@ -113,6 +119,7 @@ func (b *BaseZr) Equals(p driver.Zr) bool {
 func (b *BaseZr) Copy() driver.Zr {
 	rv := &BaseZr{Modulus: b.Modulus}
 	rv.Set(&b.Int)
+
 	return rv
 }
 

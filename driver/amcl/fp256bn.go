@@ -51,6 +51,7 @@ func (b *fp256bnGt) ToString() string {
 func (b *fp256bnGt) Bytes() []byte {
 	bytes := make([]byte, 12*int(FP256BN.MODBYTES))
 	b.ToBytes(bytes)
+
 	return bytes
 }
 
@@ -66,9 +67,10 @@ type Fp256bn struct {
 
 func (p *Fp256bn) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	g1 := p.NewG1()
-	for i := 0; i < len(a); i++ {
+	for i := range a {
 		g1.Add(a[i].Mul(b[i]))
 	}
+
 	return g1
 }
 
@@ -171,6 +173,7 @@ func (p *Fp256bn) HashToG1(data []byte) driver.G1 {
 func (p *Fp256bn) HashToG1WithDomain(data, domain []byte) driver.G1 {
 	mac := hmac.New(sha256.New, domain)
 	mac.Write(data)
+
 	return &fp256bnG1{*FP256BN.Bls_hash(string(mac.Sum(nil)))}
 }
 
@@ -195,6 +198,7 @@ func (e *fp256bnG1) Clone(a driver.G1) {
 func (e *fp256bnG1) Copy() driver.G1 {
 	c := FP256BN.NewECP()
 	c.Copy(&e.ECP)
+
 	return &fp256bnG1{*c}
 }
 
@@ -226,12 +230,14 @@ func (e *fp256bnG1) IsInfinity() bool {
 func (e *fp256bnG1) Bytes() []byte {
 	b := make([]byte, 2*int(FP256BN.MODBYTES)+1)
 	e.ToBytes(b, false)
+
 	return b
 }
 
 func (e *fp256bnG1) Compressed() []byte {
 	b := make([]byte, int(FP256BN.MODBYTES)+1)
 	e.ToBytes(b, true)
+
 	return b
 }
 
@@ -244,6 +250,7 @@ var g1StrRegexp *regexp.Regexp = regexp.MustCompile(`^\(([0-9a-f]+),([0-9a-f]+)\
 func (b *fp256bnG1) String() string {
 	rawstr := b.ToString()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
@@ -269,6 +276,7 @@ func (e *fp256bnG2) Clone(a driver.G2) {
 func (e *fp256bnG2) Copy() driver.G2 {
 	c := FP256BN.NewECP2()
 	c.Copy(&e.ECP2)
+
 	return &fp256bnG2{*c}
 }
 
@@ -291,12 +299,14 @@ func (e *fp256bnG2) Affine() {
 func (e *fp256bnG2) Bytes() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
 	e.ToBytes(b)
+
 	return b
 }
 
 func (e *fp256bnG2) Compressed() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
 	e.ToBytes(b)
+
 	return b
 }
 

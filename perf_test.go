@@ -8,7 +8,6 @@ package math
 
 import (
 	"crypto/rand"
-	"fmt"
 	"io"
 	"math/big"
 	"testing"
@@ -112,8 +111,7 @@ func Benchmark_Sequential_PedersenCommitmentPoKKilic(b *testing.B) {
 	b.ResetTimer()
 
 	b.Run("curve BLS12_381 (direct)", func(b *testing.B) {
-
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			r := newRandZr(rng, mod)
 			c := _g.New()
 			_g.MulScalarBig(c, g, x)
@@ -154,9 +152,7 @@ func Benchmark_Sequential_PedersenCommitmentPoKGurvy(b *testing.B) {
 	b.ResetTimer()
 
 	b.Run("curve BLS12_381_GURVY (direct)", func(b *testing.B) {
-
-		for i := 0; i < b.N; i++ {
-
+		for range b.N {
 			r := newRandZr(rng, fr.Modulus())
 			c := new(bls12381.G1Affine).ScalarMultiplication(g, x)
 			c.Add(c, new(bls12381.G1Affine).ScalarMultiplication(h, r))
@@ -185,7 +181,6 @@ func Benchmark_Sequential_PedersenCommitmentPoKGurvy(b *testing.B) {
 }
 
 func Benchmark_Sequential_PedersenCommitmentPoK(b *testing.B) {
-
 	for _, curve := range Curves {
 		rng, g, h, x, err := pokPedersenCommittmentInit(b, curve)
 		if err != nil {
@@ -194,9 +189,8 @@ func Benchmark_Sequential_PedersenCommitmentPoK(b *testing.B) {
 
 		b.ResetTimer()
 
-		b.Run(fmt.Sprintf("curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
-
-			for i := 0; i < b.N; i++ {
+		b.Run("curve "+CurveIDToString(curve.curveID), func(b *testing.B) {
+			for range b.N {
 				r := curve.NewRandomZr(rng)
 				c := g.Mul(x)
 				c.Add(h.Mul(r))
@@ -226,7 +220,6 @@ func Benchmark_Sequential_PedersenCommitmentPoK(b *testing.B) {
 }
 
 func Benchmark_Sequential_BLS(b *testing.B) {
-
 	for _, curve := range Curves {
 		g, x, err := blsInit(b, curve)
 		if err != nil {
@@ -239,8 +232,8 @@ func Benchmark_Sequential_BLS(b *testing.B) {
 
 		var sig *G1
 
-		b.Run(fmt.Sprintf("sign curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+		b.Run("sign curve "+CurveIDToString(curve.curveID), func(b *testing.B) {
+			for range b.N {
 				h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
 				sig = h.Mul(x)
 			}
@@ -248,8 +241,8 @@ func Benchmark_Sequential_BLS(b *testing.B) {
 
 		sig.Neg()
 
-		b.Run(fmt.Sprintf("verify curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+		b.Run("verify curve "+CurveIDToString(curve.curveID), func(b *testing.B) {
+			for range b.N {
 				h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
 
 				p := curve.Pairing2(g, sig, pk, h)
@@ -379,7 +372,7 @@ func Benchmark_Parallel_BLS(b *testing.B) {
 
 		var sig *G1
 
-		b.Run(fmt.Sprintf("sign curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+		b.Run("sign curve "+CurveIDToString(curve.curveID), func(b *testing.B) {
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
@@ -390,7 +383,7 @@ func Benchmark_Parallel_BLS(b *testing.B) {
 
 		sig.Neg()
 
-		b.Run(fmt.Sprintf("verify curve %s", CurveIDToString(curve.curveID)), func(b *testing.B) {
+		b.Run("verify curve "+CurveIDToString(curve.curveID), func(b *testing.B) {
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					h := curve.HashToG1WithDomain([]byte("msg"), []byte("context"))
@@ -462,7 +455,6 @@ func Benchmark_Parallel_IndividualOpsGurvy(b *testing.B) {
 	b.Run("pairing2/gurvy", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-
 				t_gurv, err = bls12381.MillerLoop([]bls12381.G1Affine{*sig_gurv, h_gurv}, []bls12381.G2Affine{*g_gurv, *pk_gurv})
 				if err != nil {
 					panic(err)

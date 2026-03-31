@@ -35,6 +35,7 @@ func (g *bn254G1) Clone(a driver.G1) {
 func (e *bn254G1) Copy() driver.G1 {
 	c := &bn254G1{}
 	c.Set(&e.G1Affine)
+
 	return c
 }
 
@@ -74,11 +75,13 @@ func (g *bn254G1) Equals(a driver.G1) bool {
 
 func (g *bn254G1) Bytes() []byte {
 	raw := g.RawBytes()
+
 	return raw[:]
 }
 
 func (g *bn254G1) Compressed() []byte {
 	raw := g.G1Affine.Bytes()
+
 	return raw[:]
 }
 
@@ -99,6 +102,7 @@ var g1StrRegexp *regexp.Regexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]
 func (g *bn254G1) String() string {
 	rawstr := g.G1Affine.String()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
 
@@ -123,6 +127,7 @@ func (g *bn254G2) Clone(a driver.G2) {
 func (e *bn254G2) Copy() driver.G2 {
 	c := &bn254G2{}
 	c.Set(&e.G2Affine)
+
 	return c
 }
 
@@ -155,11 +160,13 @@ func (g *bn254G2) Affine() {
 
 func (g *bn254G2) Bytes() []byte {
 	raw := g.RawBytes()
+
 	return raw[:]
 }
 
 func (g *bn254G2) Compressed() []byte {
 	raw := g.G2Affine.Bytes()
+
 	return raw[:]
 }
 
@@ -179,6 +186,7 @@ type bn254Gt struct {
 
 func (g *bn254Gt) Exp(x driver.Zr) driver.Gt {
 	copy := bn254.GT{}
+
 	return &bn254Gt{*copy.Exp(g.GT, &x.(*common.BaseZr).Int)}
 }
 
@@ -207,6 +215,7 @@ func (g *bn254Gt) ToString() string {
 
 func (g *bn254Gt) Bytes() []byte {
 	raw := g.GT.Bytes()
+
 	return raw[:]
 }
 
@@ -225,12 +234,13 @@ func (c *Bn254) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	affinePoints := make([]bn254.G1Affine, len(a))
 	scalars := make([]fr.Element, len(b))
 
-	for i := range len(a) {
+	for i := range a {
 		affinePoints[i] = a[i].(*bn254G1).G1Affine
 		scalars[i].SetBigInt(&b[i].(*common.BaseZr).Int)
 	}
 
 	_, _ = result.MultiExp(affinePoints, scalars, ecc.MultiExpConfig{})
+
 	return &bn254G1{result}
 }
 
@@ -290,6 +300,7 @@ func (c *Bn254) GenGt() driver.Gt {
 	g2 := c.GenG2()
 	gengt := c.Pairing(g2, g1)
 	gengt = c.FExp(gengt)
+
 	return gengt
 }
 
