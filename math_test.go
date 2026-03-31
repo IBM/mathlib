@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/big"
 	mathrand "math/rand"
 	"strconv"
 	"testing"
@@ -134,6 +135,10 @@ func runZrTest(t *testing.T, c *Curve) {
 	require.NoError(t, err)
 
 	maxint64 := c.NewZrFromInt(math.MaxInt64)
+	maxint64FromBigInt := c.NewZrFromBigInt(big.NewInt(math.MaxInt64))
+	assert.True(t, maxint64.Equals(maxint64FromBigInt))
+	assert.Zero(t, maxint64FromBigInt.BigInt().Cmp(big.NewInt(math.MaxInt64)))
+
 	maxuint64 := c.NewZrFromUint64(math.MaxUint64)
 
 	iu, err := maxint64.Uint()
@@ -602,13 +607,29 @@ func runModAddSubNegTest(t *testing.T, c *Curve) {
 	b2 := c.NewRandomZr(rng)
 
 	v := c.ModAddMul2(a, b, a2, b2, c.GroupOrder)
-	atb := c.ModMul(a, b, c.GroupOrder)
-	a2tb2 := c.ModMul(a2, b2, c.GroupOrder)
-	v2 := c.ModAdd(atb, a2tb2, c.GroupOrder)
+	v2 := c.ModAdd(
+		c.ModMul(a, b, c.GroupOrder),
+		c.ModMul(a2, b2, c.GroupOrder),
+		c.GroupOrder,
+	)
 	assert.True(t, v.Equals(v2))
 
 	v3 := c.ModAddMul([]*Zr{a, a2}, []*Zr{b, b2}, c.GroupOrder)
 	assert.True(t, v.Equals(v3))
+
+	a3 := c.NewRandomZr(rng)
+	b3 := c.NewRandomZr(rng)
+	v = c.ModAddMul3(a, b, a2, b2, a3, b3, c.GroupOrder)
+	v2 = c.ModAdd(
+		c.ModAdd(
+			c.ModMul(a, b, c.GroupOrder),
+			c.ModMul(a2, b2, c.GroupOrder),
+			c.GroupOrder,
+		),
+		c.ModMul(a3, b3, c.GroupOrder),
+		c.GroupOrder,
+	)
+	assert.True(t, v.Equals(v2))
 }
 
 func runMulTest(t *testing.T, c *Curve) {
