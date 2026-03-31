@@ -260,13 +260,16 @@ func expandMsgXMD(f func() hash.Hash, msg []byte, domain []byte, outLen int) ([]
 	if len(domain) > 255 {
 		return nil, errors.New("invalid domain length")
 	}
-	domainLen := uint8(len(domain))
+	if outLen > 65535 {
+		return nil, errors.New("invalid outLen")
+	}
+	domainLen := uint8(len(domain)) // #nosec G115
 
 	// DST_prime = DST || I2OSP(len(DST), 1)
 	// b_0 = H(Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime)
 	_, _ = h.Write(make([]byte, h.BlockSize()))
 	_, _ = h.Write(msg)
-	_, _ = h.Write([]byte{uint8(outLen >> 8), uint8(outLen)})
+	_, _ = h.Write([]byte{uint8(outLen >> 8), uint8(outLen)}) // #nosec G115
 	_, _ = h.Write([]byte{0})
 	_, _ = h.Write(domain)
 	_, _ = h.Write([]byte{domainLen})
@@ -288,7 +291,7 @@ func expandMsgXMD(f func() hash.Hash, msg []byte, domain []byte, outLen int) ([]
 		h.Reset()
 		// b_i = H(strxor(b_0, b_(i - 1)) || I2OSP(i, 1) || DST_prime)
 		tmp := make([]byte, h.Size())
-		for j := 0; j < h.Size(); j++ {
+		for j := range h.Size() {
 			tmp[j] = b0[j] ^ bi[j]
 		}
 		_, _ = h.Write(tmp)

@@ -26,7 +26,7 @@ var seed = time.Now().Unix()
 func TestImmutability(t *testing.T) {
 	for _, curve := range Curves {
 		rng, err := curve.Rand()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		testImmutabilityZr(t, curve, rng)
 		testImmutabilityG1(t, curve, rng)
@@ -38,14 +38,15 @@ func TestImmutability(t *testing.T) {
 func TestCurveId(t *testing.T) {
 	for _, curve := range Curves {
 		rng, err := curve.Rand()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		runCurveIdTest(t, curve, rng)
 	}
 }
 
 func runCurveIdTest(t *testing.T, c *Curve, rng io.Reader) {
-	r := c.NewRandomZr(rng)
+	t.Helper()
+	r = c.NewRandomZr(rng)
 
 	assert.Equal(t, r.CurveID(), c.ID())
 	assert.Equal(t, c.GenG1.Mul(r).CurveID(), c.ID())
@@ -59,9 +60,10 @@ var g2 *G2
 var gt *Gt
 
 func testImmutabilityGt(t *testing.T, c *Curve, rng io.Reader) {
+	t.Helper()
 	g := c.GenGt.Exp(c.NewRandomZr(rng))
 	orig, err := c.NewGtFromBytes(g.Bytes())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Exp(Zr) Gt
 	gt = g.Exp(c.NewRandomZr(rng))
@@ -69,6 +71,7 @@ func testImmutabilityGt(t *testing.T, c *Curve, rng io.Reader) {
 }
 
 func testImmutabilityG2(t *testing.T, c *Curve, rng io.Reader) {
+	t.Helper()
 	g := c.GenG2.Mul(c.NewRandomZr(rng))
 	orig := g.Copy()
 
@@ -82,6 +85,7 @@ func testImmutabilityG2(t *testing.T, c *Curve, rng io.Reader) {
 }
 
 func testImmutabilityG1(t *testing.T, c *Curve, rng io.Reader) {
+	t.Helper()
 	g := c.GenG1.Mul(c.NewRandomZr(rng))
 	orig := g.Copy()
 
@@ -99,6 +103,7 @@ func testImmutabilityG1(t *testing.T, c *Curve, rng io.Reader) {
 }
 
 func testImmutabilityZr(t *testing.T, c *Curve, rng io.Reader) {
+	t.Helper()
 	_r := c.NewRandomZr(rng)
 	orig := _r.Copy()
 
@@ -124,37 +129,39 @@ func testImmutabilityZr(t *testing.T, c *Curve, rng io.Reader) {
 }
 
 func runZrTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	maxint64 := c.NewZrFromInt(math.MaxInt64)
 	maxuint64 := c.NewZrFromUint64(math.MaxUint64)
 
 	iu, err := maxint64.Uint()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, uint64(math.MaxInt64), iu)
 
 	i64, err := maxint64.Int()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, int64(math.MaxInt64), i64)
 
 	ui, err := maxuint64.Int()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, int64(-1), ui)
 
 	u64, err := maxuint64.Uint()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, uint64(math.MaxUint64), u64)
 
 	testRng := mathrand.New(mathrand.NewSource(seed))
 	a, b := testRng.Int63(), testRng.Int63()
 	cr, err := c.NewZrFromInt(a).Plus(c.NewZrFromInt(b)).Int()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, a+b, cr)
 
-	au, bu := uint64(testRng.Int63()), uint64(testRng.Int63())
+	v1, v2 := testRng.Int63(), testRng.Int63()
+	au, bu := uint64(v1), uint64(v2) // #nosec G115
 	cru, err := c.NewZrFromUint64(au).Plus(c.NewZrFromUint64(bu)).Uint()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, au+bu, cru)
 
 	assert.Equal(t, fmt.Sprintf("%x", math.MaxInt64), maxint64.String())
@@ -182,7 +189,7 @@ func runZrTest(t *testing.T, c *Curve) {
 	i64 = testRng.Int63()
 	i = c.NewZrFromInt(i64)
 	i64Result, err := i.Int()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, i64, i64Result)
 
 	i1 := c.NewZrFromInt(i64)
@@ -195,7 +202,7 @@ func runZrTest(t *testing.T, c *Curve) {
 	i = i.Plus(c.NewZrFromInt(math.MaxInt64))
 	i = i.Plus(c.NewZrFromInt(2))
 	_, err = i.Int()
-	assert.EqualError(t, err, "out of range")
+	require.EqualError(t, err, "out of range")
 
 	// D/H
 	r1 := c.NewRandomZr(rng)
@@ -258,6 +265,7 @@ var expectedModuli = []string{
 }
 
 func runG1Test(t *testing.T, c *Curve) {
+	t.Helper()
 	assert.Equal(t, expectedG1Gens[c.ID()], c.GenG1.String())
 
 	assert.Equal(t, expectedModuli[c.ID()], c.GroupOrder.String(), "failed with curve %T", c.c)
@@ -308,6 +316,7 @@ func runG1Test(t *testing.T, c *Curve) {
 }
 
 func runMultiScalarMul(t *testing.T, c *Curve) {
+	t.Helper()
 	// choose random elements in G1
 	rng, err := c.Rand()
 	require.NoError(t, err)
@@ -332,6 +341,7 @@ func runMultiScalarMul(t *testing.T, c *Curve) {
 }
 
 func runG2Test(t *testing.T, c *Curve) {
+	t.Helper()
 	g2copy := c.NewG2()
 	g2copy.Clone(c.GenG2)
 	assert.True(t, c.GenG2.Equals(g2copy))
@@ -356,7 +366,7 @@ func runG2Test(t *testing.T, c *Curve) {
 	assert.True(t, g5.Equals(c.GenG2.Mul(c.NewZrFromInt(23))))
 
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	a := c.NewRandomZr(rng)
 	p := c.GenG2.Mul(a)
@@ -373,8 +383,9 @@ func runG2Test(t *testing.T, c *Curve) {
 }
 
 func runPowTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	a := c.NewRandomZr(rng)
 	b := c.NewRandomZr(rng)
@@ -405,8 +416,9 @@ func runPowTest(t *testing.T, c *Curve) {
 }
 
 func runPairingTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	r0 := c.NewRandomZr(rng)
 	g1r := c.GenG1.Mul(r0)
 	g2r := c.GenG2.Mul(r0)
@@ -438,6 +450,7 @@ func runPairingTest(t *testing.T, c *Curve) {
 }
 
 func runGtTest(t *testing.T, c *Curve) {
+	t.Helper()
 	r := c.NewZrFromInt(1541)
 	g2r := c.GenG2.Mul(r)
 	a := c.Pairing(g2r, c.GenG1)
@@ -452,8 +465,9 @@ func runGtTest(t *testing.T, c *Curve) {
 }
 
 func runInvModOrderTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	r := c.NewRandomZr(rng)
 	r1 := c.NewZrFromUint64(0)
 	r1.Clone(r)
@@ -464,8 +478,9 @@ func runInvModOrderTest(t *testing.T, c *Curve) {
 }
 
 func runRndTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	r := c.NewRandomZr(rng)
 	gr := c.GenG1.Mul(r)
 
@@ -475,9 +490,10 @@ func runRndTest(t *testing.T, c *Curve) {
 }
 
 func runHashTest(t *testing.T, c *Curve) {
+	t.Helper()
 	bytes := make([]byte, 128)
 	_, err := rand.Read(bytes)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	r := c.HashToZr(bytes)
 	gr := c.GenG1.Mul(r)
@@ -488,19 +504,19 @@ func runHashTest(t *testing.T, c *Curve) {
 }
 
 func runToFroBytesTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	r := c.NewRandomZr(rng)
 	rbytes := r.Bytes()
 	rback := c.NewZrFromBytes(rbytes)
-	assert.NoError(t, err)
 	assert.True(t, r.Equals(rback))
 
 	g1r := c.GenG1.Mul(r)
 	g1rbytes := g1r.Bytes()
 	assert.Len(t, g1rbytes, c.G1ByteSize)
 	g1rback, err := c.NewG1FromBytes(g1rbytes)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
 	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, "failed with curve %T", c.c)
 	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, "failed with curve %T", c.c)
@@ -509,7 +525,7 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 	g2rbytes := g2r.Bytes()
 	assert.Len(t, g2rbytes, c.G2ByteSize)
 	g2rback, err := c.NewG2FromBytes(g2rbytes)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, g2r.Equals(g2rback))
 	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, "failed with curve %T", c.c)
 	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, "failed with curve %T", c.c)
@@ -518,32 +534,33 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 	a := c.Pairing(g2r, c.GenG1)
 	abytes := a.Bytes()
 	aback, err := c.NewGtFromBytes(abytes)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, a.Equals(aback))
 
 	g1rback, err = c.NewG1FromBytes(nil)
 	assert.Nil(t, g1rback)
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	g2rback, err = c.NewG2FromBytes(nil)
 	assert.Nil(t, g2rback)
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	gtrback, err := c.NewGtFromBytes(nil)
 	assert.Nil(t, gtrback)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func runToFroCompressedTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	r := c.NewRandomZr(rng)
 
 	g1r := c.GenG1.Mul(r)
 	g1rbytes := g1r.Compressed()
 	assert.Len(t, g1rbytes, c.CompressedG1ByteSize)
 	g1rback, err := c.NewG1FromCompressed(g1rbytes)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, g1r.Equals(g1rback))
 	assert.Len(t, g1rback.Bytes(), c.G1ByteSize, "failed with curve %T", c.c)
 	assert.Len(t, g1rback.Compressed(), c.CompressedG1ByteSize, "failed with curve %T", c.c)
@@ -552,23 +569,24 @@ func runToFroCompressedTest(t *testing.T, c *Curve) {
 	g2rbytes := g2r.Compressed()
 	assert.Len(t, g2rbytes, c.CompressedG2ByteSize)
 	g2rback, err := c.NewG2FromCompressed(g2rbytes)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, g2r.Equals(g2rback))
 	assert.Len(t, g2rback.Bytes(), c.G2ByteSize, "failed with curve %T", c.c)
 	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, "failed with curve %T", c.c)
 
 	g1rback, err = c.NewG1FromCompressed(nil)
 	assert.Nil(t, g1rback)
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	g2rback, err = c.NewG2FromCompressed(nil)
 	assert.Nil(t, g2rback)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func runModAddSubNegTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	r := c.NewRandomZr(rng)
 
 	minusr := c.ModNeg(r, c.GroupOrder)
@@ -594,8 +612,9 @@ func runModAddSubNegTest(t *testing.T, c *Curve) {
 }
 
 func runMulTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	r := c.NewRandomZr(rng)
 	rInv := r.Copy()
@@ -609,8 +628,9 @@ func runMulTest(t *testing.T, c *Curve) {
 }
 
 func runQuadDHTestPairing(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	x := c.NewRandomZr(rng)
 	y := c.NewRandomZr(rng)
 	z := c.NewRandomZr(rng)
@@ -643,8 +663,9 @@ func runQuadDHTestPairing(t *testing.T, c *Curve) {
 }
 
 func runDHTestG1(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	a := c.NewRandomZr(rng)
 	b := c.NewRandomZr(rng)
 
@@ -660,8 +681,9 @@ func runDHTestG1(t *testing.T, c *Curve) {
 }
 
 func runDHTestG2(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	a := c.NewRandomZr(rng)
 	b := c.NewRandomZr(rng)
 
@@ -677,8 +699,9 @@ func runDHTestG2(t *testing.T, c *Curve) {
 }
 
 func runCopyCloneTest(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	a := c.NewRandomZr(rng)
 	aclone := c.NewRandomZr(rng)
@@ -703,6 +726,7 @@ func runCopyCloneTest(t *testing.T, c *Curve) {
 }
 
 func testModAdd(t *testing.T, c *Curve) {
+	t.Helper()
 	i1 := c.NewZrFromInt(math.MaxInt64)
 	i2 := c.NewZrFromInt(math.MaxInt64)
 	g1 := c.GenG1.Mul2(i1, c.GenG1, i2)
@@ -714,6 +738,7 @@ func testModAdd(t *testing.T, c *Curve) {
 }
 
 func testModAdd2(t *testing.T, c *Curve) {
+	t.Helper()
 	i1 := c.NewZrFromInt(math.MaxInt64)
 	i2 := c.NewZrFromInt(math.MaxInt64)
 	g1 := c.GenG1.Mul2(i1, c.GenG1, i2)
@@ -725,6 +750,7 @@ func testModAdd2(t *testing.T, c *Curve) {
 }
 
 func testNotZeroAfterAdd(t *testing.T, c *Curve) {
+	t.Helper()
 	i1 := c.NewZrFromInt(math.MaxInt64)
 	i2 := c.NewZrFromInt(math.MaxInt64)
 	i3 := c.NewZrFromInt(2)
@@ -744,8 +770,9 @@ type testJsonStruct struct {
 }
 
 func runJsonMarshaler(t *testing.T, c *Curve) {
+	t.Helper()
 	rng, err := c.Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	zr := c.NewRandomZr(rng)
 	g1 := c.GenG1.Mul(zr)
@@ -760,11 +787,11 @@ func runJsonMarshaler(t *testing.T, c *Curve) {
 	}
 
 	bytes, err := json.Marshal(testStruct)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	testStruct = &testJsonStruct{}
 	err = json.Unmarshal(bytes, testStruct)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.True(t, testStruct.Zr.Equals(zr), "failed with curve %T", c.c)
 	assert.True(t, testStruct.G1.Equals(g1), "failed with curve %T", c.c)
@@ -777,28 +804,28 @@ func TestJSONMarshalerFails(t *testing.T) {
 	zr, g1, g2, gt := &Zr{}, &G1{}, &G2{}, &Gt{}
 
 	err = json.Unmarshal([]byte(`{"element":1}`), zr)
-	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
+	require.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
 	err = json.Unmarshal([]byte(`{"element":1}`), g1)
-	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
+	require.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
 	err = json.Unmarshal([]byte(`{"element":1}`), g2)
-	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
+	require.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
 	err = json.Unmarshal([]byte(`{"element":1}`), gt)
-	assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
+	require.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
 	// err = json.Unmarshal([]byte(`{"element":"YQo="}`), zr)
 	// assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
 	err = json.Unmarshal([]byte(`{"element":"YQo="}`), g1)
-	assert.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	require.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
 
 	err = json.Unmarshal([]byte(`{"element":"YQo="}`), g2)
-	assert.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	require.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
 
 	err = json.Unmarshal([]byte(`{"element":"YQo="}`), gt)
-	assert.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	require.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
 }
 
 func TestCurves(t *testing.T) {
@@ -830,7 +857,7 @@ func TestCurves(t *testing.T) {
 
 func Test381Compat(t *testing.T) {
 	rng, err := Curves[BLS12_381].Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	kilic := Curves[BLS12_381]
 	gurvy := Curves[BLS12_381_GURVY]
@@ -864,7 +891,7 @@ func Test381Compat(t *testing.T) {
 
 func Test381BBSCompat(t *testing.T) {
 	rng, err := Curves[BLS12_381_BBS].Rand()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	kilic := Curves[BLS12_381_BBS]
 	gurvy := Curves[BLS12_381_BBS_GURVY]

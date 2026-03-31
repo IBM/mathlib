@@ -42,7 +42,7 @@ func (e *bn254G1) Copy() driver.G1 {
 func (g *bn254G1) Add(a driver.G1) {
 	j := bn254.G1Jac{}
 	j.FromAffine(&g.G1Affine)
-	j.AddMixed((*bn254.G1Affine)(&a.(*bn254G1).G1Affine))
+	j.AddMixed(&a.(*bn254G1).G1Affine)
 	g.FromJacobian(&j)
 }
 
@@ -141,7 +141,7 @@ func (g *bn254G2) Mul(a driver.Zr) driver.G2 {
 func (g *bn254G2) Add(a driver.G2) {
 	j := bn254.G2Jac{}
 	j.FromAffine(&g.G2Affine)
-	j.AddMixed((*bn254.G2Affine)(&a.(*bn254G2).G2Affine))
+	j.AddMixed(&a.(*bn254G2).G2Affine)
 	g.FromJacobian(&j)
 }
 
@@ -149,7 +149,7 @@ func (g *bn254G2) Sub(a driver.G2) {
 	j := bn254.G2Jac{}
 	j.FromAffine(&g.G2Affine)
 	aJac := bn254.G2Jac{}
-	aJac.FromAffine((*bn254.G2Affine)(&a.(*bn254G2).G2Affine))
+	aJac.FromAffine(&a.(*bn254G2).G2Affine)
 	j.SubAssign(&aJac)
 	g.FromJacobian(&j)
 }

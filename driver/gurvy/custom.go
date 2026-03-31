@@ -57,10 +57,11 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 	if ell > 255 {
 		return nil, errors.New("invalid lenInBytes")
 	}
-	if len(dst) > 255 {
+	dstLen := len(dst)
+	if dstLen > 255 {
 		return nil, errors.New("invalid domain size (>255 bytes)")
 	}
-	sizeDomain := uint8(len(dst))
+	sizeDomain := uint8(dstLen)
 
 	// Z_pad = I2OSP(0, r_in_bytes)
 	// l_i_b_str = I2OSP(len_in_bytes, 2)
@@ -73,7 +74,7 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 	if _, err := h.Write(msg); err != nil {
 		return nil, err
 	}
-	if _, err := h.Write([]byte{uint8(lenInBytes >> 8), uint8(lenInBytes), uint8(0)}); err != nil {
+	if _, err := h.Write([]byte{uint8(lenInBytes >> 8), uint8(lenInBytes), uint8(0)}); err != nil { // #nosec G115
 		return nil, err
 	}
 	if _, err := h.Write(dst); err != nil {
@@ -107,7 +108,7 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 		// b_i = H(strxor(b₀, b_(i - 1)) ∥ I2OSP(i, 1) ∥ DST_prime)
 		h.Reset()
 		strxor := make([]byte, h.Size())
-		for j := 0; j < h.Size(); j++ {
+		for j := range h.Size() {
 			strxor[j] = b0[j] ^ b1[j]
 		}
 		if _, err := h.Write(strxor); err != nil {
