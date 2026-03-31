@@ -27,6 +27,7 @@ func newRandZr(rng io.Reader, m *big.Int) *big.Int {
 }
 
 func blsInit(b *testing.B, curve *Curve) (*G2, *Zr, error) {
+	b.Helper()
 	rng, err := curve.Rand()
 	if err != nil {
 		return nil, nil, err
@@ -39,6 +40,7 @@ func blsInit(b *testing.B, curve *Curve) (*G2, *Zr, error) {
 }
 
 func blsInitGurvy(b *testing.B) (*bls12381.G2Affine, *big.Int) {
+	b.Helper()
 	rng := rand.Reader
 
 	_, _, _, g2 := bls12381.Generators()
@@ -50,6 +52,7 @@ func blsInitGurvy(b *testing.B) (*bls12381.G2Affine, *big.Int) {
 }
 
 func blsInitKilic(b *testing.B) (*kilic.PointG2, *big.Int) {
+	b.Helper()
 	rng := rand.Reader
 
 	_g := kilic.NewG2()
@@ -63,6 +66,7 @@ func blsInitKilic(b *testing.B) (*kilic.PointG2, *big.Int) {
 }
 
 func pokPedersenCommittmentInit(b *testing.B, curve *Curve) (io.Reader, *G1, *G1, *Zr, error) {
+	b.Helper()
 	rng, err := curve.Rand()
 	if err != nil {
 		return nil, nil, nil, nil, err
@@ -76,6 +80,7 @@ func pokPedersenCommittmentInit(b *testing.B, curve *Curve) (io.Reader, *G1, *G1
 }
 
 func pokPedersenCommittmentInitGurvy(b *testing.B) (io.Reader, *bls12381.G1Affine, *bls12381.G1Affine, *big.Int) {
+	b.Helper()
 	rng := rand.Reader
 
 	_, _, g1, _ := bls12381.Generators()
@@ -88,6 +93,7 @@ func pokPedersenCommittmentInitGurvy(b *testing.B) (io.Reader, *bls12381.G1Affin
 }
 
 func pokPedersenCommittmentInitKilic(b *testing.B) (io.Reader, *kilic.PointG1, *kilic.PointG1, *big.Int) {
+	b.Helper()
 	rng := rand.Reader
 
 	_g := kilic.NewG1()

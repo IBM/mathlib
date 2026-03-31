@@ -263,7 +263,7 @@ func (z *Zr) Uint() (uint64, error) {
 		return 0, errors.New("out of range")
 	}
 
-	return uint64(binary.BigEndian.Uint64(b[32-8:])), nil
+	return binary.BigEndian.Uint64(b[32-8:]), nil
 }
 
 func (z *Zr) Int() (int64, error) {
@@ -272,7 +272,9 @@ func (z *Zr) Int() (int64, error) {
 		return 0, errors.New("out of range")
 	}
 
-	return int64(binary.BigEndian.Uint64(b[32-8:])), nil
+	u := binary.BigEndian.Uint64(b[32-8:])
+
+	return int64(u), nil // #nosec G115
 }
 
 /*********************************************************************/
