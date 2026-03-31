@@ -93,20 +93,19 @@ const (
 	// Performance-optimized implementation of BLS12-381 with assembly optimizations.
 	BLS12_381_GURVY
 
-	// BLS12_381_BBS represents BLS12-381 optimized for BBS+ signatures using Kilic.
-	// Specifically configured for anonymous credential systems and BBS+ signature schemes.
+	// BLS12_381_BBS is equivalent to BLS12_381 up to HashToG1 and HashToG2.
+	// Those functions follow the rules of the standard draft.
 	BLS12_381_BBS
 
-	// BLS12_381_BBS_GURVY represents BLS12-381 for BBS+ using the Gurvy backend.
-	// High-performance variant for BBS+ signature operations.
+	// BLS12_381_BBS_GURVY is equivalent to BLS12_381_GURVY up to HashToG1 and HashToG2.
+	// Those functions follow the rules of the standard draft.
 	BLS12_381_BBS_GURVY
 )
 
+// CurveIDToString converts a CurveID to its string representation.
+// Returns a human-readable name for the curve, useful for logging and debugging.
+// Panics if the curve ID is unknown.
 func CurveIDToString(id CurveID) string {
-	// CurveIDToString converts a CurveID to its string representation.
-	// Returns a human-readable name for the curve, useful for logging and debugging.
-	// Panics if the curve ID is unknown.
-
 	switch id {
 	case FP256BN_AMCL:
 		return "FP256BN_AMCL"
@@ -294,6 +293,8 @@ func (z *Zr) IsOne() bool {
 }
 
 // BigInt returns the scalar as a *big.Int.
+// BigInt assumes that its output will not be altered by the caller.
+// It responsibility of the caller to clone the output of BigInt if needed.
 func (z *Zr) BigInt() *big.Int {
 	return z.zr.BigInt()
 }
