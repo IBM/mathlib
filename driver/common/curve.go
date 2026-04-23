@@ -119,3 +119,15 @@ func (p *CurveBase) ModAddMul3(a1 driver.Zr, a2 driver.Zr, b1 driver.Zr, b2 driv
 		m,
 	)
 }
+
+func (p *CurveBase) ModMulInPlace(result, a, b, m driver.Zr) {
+	result.Clone(p.ModMul(a, b, m))
+}
+
+func (p *CurveBase) ModAddMul2InPlace(result driver.Zr, a1, c1, b1, c2, m driver.Zr) {
+	result.Clone(p.ModAddMul2(a1, c1, b1, c2, m))
+}
+
+func (p *CurveBase) ModAddMul3InPlace(result driver.Zr, a1, a2, b1, b2, c1, c2, m driver.Zr) {
+	result.Clone(p.ModAddMul3(a1, a2, b1, b2, c1, c2, m))
+}

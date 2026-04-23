@@ -25,6 +25,9 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
+// curveModulus is the shared field modulus, allocated once.
+var curveModulus = fr.Modulus()
+
 var g1StrRegexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\)$`)
 var g1Bytes12_381 [48]byte
 var g2Bytes12_381 [96]byte
@@ -40,120 +43,156 @@ func init() {
 	g1Infinity.Y.SetOne()
 }
 
+// Zr represents a scalar field element backed by fr.Element ([4]uint64).
+// The rawBigInt field is non-nil only for special values like GroupOrder
+// (which equals p and is 0 in the field but needs its actual big.Int value
+// for operations like Mod and InvModP).
 type Zr struct {
-	big.Int
-	Modulus big.Int
+	val       fr.Element
+	rawBigInt *big.Int // non-nil only for GroupOrder
+}
+
+// toBigInt writes the Zr value into the provided big.Int.
+func (b *Zr) toBigInt(bi *big.Int) {
+	if b.rawBigInt != nil {
+		bi.Set(b.rawBigInt)
+	} else {
+		b.val.BigInt(bi)
+	}
 }
 
 func (b *Zr) Plus(a driver.Zr) driver.Zr {
-	rv := &Zr{Modulus: b.Modulus}
-	rv.Add(&b.Int, &a.(*Zr).Int)
-
+	rv := &Zr{}
+	rv.val.Add(&b.val, &a.(*Zr).val)
 	return rv
 }
 
 func (b *Zr) IsZero() bool {
-	return b.BitLen() == 0
+	if b.rawBigInt != nil {
+		return b.rawBigInt.BitLen() == 0
+	}
+	return b.val.IsZero()
 }
 
 func (b *Zr) BigInt() *big.Int {
-	return &b.Int
+	bi := new(big.Int)
+	b.toBigInt(bi)
+	return bi
 }
 
 func (b *Zr) IsOne() bool {
-	bits := b.Bits()
-
-	return len(bits) == 1 && bits[0] == 1 && b.Sign() > 0
+	if b.rawBigInt != nil {
+		return b.rawBigInt.Cmp(big.NewInt(1)) == 0
+	}
+	return b.val.IsOne()
 }
 
 func (b *Zr) Minus(a driver.Zr) driver.Zr {
-	rv := &Zr{Modulus: b.Modulus}
-	rv.Sub(&b.Int, &a.(*Zr).Int)
-
+	rv := &Zr{}
+	rv.val.Sub(&b.val, &a.(*Zr).val)
 	return rv
 }
 
 func (b *Zr) Mul(x driver.Zr) driver.Zr {
-	fr := frElements.Get()
-	defer frElements.Put(fr)
-	frX := frElements.Get()
-	defer frElements.Put(frX)
-
-	fr.SetBigInt(&b.Int)
-	frX.SetBigInt(&x.(*Zr).Int)
-	fr.Mul(fr, frX)
-
-	rv := &Zr{Modulus: b.Modulus}
-	fr.BigInt(&rv.Int)
-
+	rv := &Zr{}
+	rv.val.Mul(&b.val, &x.(*Zr).val)
 	return rv
 }
 
 func (b *Zr) PowMod(x driver.Zr) driver.Zr {
-	fr := frElements.Get()
-	defer frElements.Put(fr)
+	bi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi)
+	x.(*Zr).toBigInt(bi)
 
-	fr.SetBigInt(&b.Int)
-	fr.Exp(*fr, &x.(*Zr).Int)
-
-	rv := &Zr{Modulus: b.Modulus}
-	fr.BigInt(&rv.Int)
-
+	rv := &Zr{}
+	rv.val.Exp(b.val, bi)
 	return rv
 }
 
 func (b *Zr) Mod(a driver.Zr) {
-	b.Int.Mod(&b.Int, &a.(*Zr).Int)
+	bi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi)
+	b.toBigInt(bi)
+
+	ai := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(ai)
+	a.(*Zr).toBigInt(ai)
+
+	bi.Mod(bi, ai)
+	b.val.SetBigInt(bi)
+	b.rawBigInt = nil
 }
 
 func (b *Zr) InvModP(p driver.Zr) {
-	b.ModInverse(&b.Int, &p.(*Zr).Int)
+	bi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi)
+	b.toBigInt(bi)
+
+	pi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(pi)
+	p.(*Zr).toBigInt(pi)
+
+	bi.ModInverse(bi, pi)
+	b.val.SetBigInt(bi)
+	b.rawBigInt = nil
 }
 
 func (b *Zr) InvModOrder() {
-	fr := frElements.Get()
-	defer frElements.Put(fr)
-	fr.SetBigInt(&b.Int)
-	fr.Inverse(fr)
-	fr.BigInt(&b.Int)
+	b.val.Inverse(&b.val)
+	b.rawBigInt = nil
 }
 
 func (b *Zr) Bytes() []byte {
-	target := b.Int
-
-	if b.Sign() < 0 || b.Cmp(&b.Modulus) > 0 {
-		target = *new(big.Int).Set(&b.Int)
-		target = *target.Mod(&target, &b.Modulus)
-		if target.Sign() < 0 {
-			target = *target.Add(&target, &b.Modulus)
-		}
+	if b.rawBigInt != nil {
+		return common.BigToBytes(b.rawBigInt)
 	}
-
-	return common.BigToBytes(&target)
+	raw := b.val.Bytes()
+	return raw[:]
 }
 
 func (b *Zr) Equals(p driver.Zr) bool {
-	return b.Cmp(&p.(*Zr).Int) == 0
+	other := p.(*Zr)
+	if b.rawBigInt != nil || other.rawBigInt != nil {
+		bi1 := bigIntPool.Get().(*big.Int)
+		defer bigIntPool.Put(bi1)
+		bi2 := bigIntPool.Get().(*big.Int)
+		defer bigIntPool.Put(bi2)
+		b.toBigInt(bi1)
+		other.toBigInt(bi2)
+		return bi1.Cmp(bi2) == 0
+	}
+	return b.val.Equal(&other.val)
 }
 
 func (b *Zr) Copy() driver.Zr {
-	rv := &Zr{Modulus: b.Modulus}
-	rv.Set(&b.Int)
-
+	rv := &Zr{}
+	rv.val.Set(&b.val)
+	if b.rawBigInt != nil {
+		rv.rawBigInt = new(big.Int).Set(b.rawBigInt)
+	}
 	return rv
 }
 
 func (b *Zr) Clone(a driver.Zr) {
-	raw := a.(*Zr).Int.Bytes()
-	b.SetBytes(raw)
+	src := a.(*Zr)
+	b.val.Set(&src.val)
+	if src.rawBigInt != nil {
+		b.rawBigInt = new(big.Int).Set(src.rawBigInt)
+	} else {
+		b.rawBigInt = nil
+	}
 }
 
 func (b *Zr) String() string {
-	return b.Text(16)
+	bi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi)
+	b.toBigInt(bi)
+	return bi.Text(16)
 }
 
 func (b *Zr) Neg() {
-	b.Int.Neg(&b.Int)
+	b.val.Neg(&b.val)
+	b.rawBigInt = nil
 }
 
 /*********************************************************************/
@@ -186,16 +225,28 @@ func (g *G1) Add(a driver.G1) {
 }
 
 func (g *G1) Mul(a driver.Zr) driver.G1 {
+	bi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi)
+	a.(*Zr).toBigInt(bi)
+
 	gc := &G1{}
-	gc.ScalarMultiplication(&g.G1Affine, &a.(*Zr).Int)
+	gc.ScalarMultiplication(&g.G1Affine, bi)
 
 	return gc
 }
 
 func (g *G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
+	bi1 := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi1)
+	e.(*Zr).toBigInt(bi1)
+
+	bi2 := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi2)
+	f.(*Zr).toBigInt(bi2)
+
 	first := G1Jacs.Get()
 	defer G1Jacs.Put(first)
-	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*G1).G1Affine, &e.(*Zr).Int, &f.(*Zr).Int)
+	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*G1).G1Affine, bi1, bi2)
 	gc := &G1{}
 	gc.FromJacobian(first)
 
@@ -203,9 +254,17 @@ func (g *G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 }
 
 func (g *G1) Mul2InPlace(e driver.Zr, Q driver.G1, f driver.Zr) {
+	bi1 := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi1)
+	e.(*Zr).toBigInt(bi1)
+
+	bi2 := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi2)
+	f.(*Zr).toBigInt(bi2)
+
 	first := G1Jacs.Get()
 	defer G1Jacs.Put(first)
-	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*G1).G1Affine, &e.(*Zr).Int, &f.(*Zr).Int)
+	first = JointScalarMultiplication(first, &g.G1Affine, &Q.(*G1).G1Affine, bi1, bi2)
 	g.FromJacobian(first)
 }
 
@@ -270,8 +329,12 @@ func (e *G2) Copy() driver.G2 {
 }
 
 func (g *G2) Mul(a driver.Zr) driver.G2 {
+	bi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi)
+	a.(*Zr).toBigInt(bi)
+
 	gc := &G2{}
-	gc.ScalarMultiplication(&g.G2Affine, &a.(*Zr).Int)
+	gc.ScalarMultiplication(&g.G2Affine, bi)
 
 	return gc
 }
@@ -323,9 +386,13 @@ type Gt struct {
 }
 
 func (g *Gt) Exp(x driver.Zr) driver.Gt {
+	bi := bigIntPool.Get().(*big.Int)
+	defer bigIntPool.Put(bi)
+	x.(*Zr).toBigInt(bi)
+
 	c := bls12381.GT{}
 
-	return &Gt{*c.Exp(g.GT, &x.(*Zr).Int)}
+	return &Gt{*c.Exp(g.GT, bi)}
 }
 
 func (g *Gt) Equals(a driver.Gt) bool {
@@ -501,64 +568,51 @@ func (c *Curve) NewGtFromBytes(b []byte) driver.Gt {
 }
 
 func (c *Curve) ModNeg(a1, m driver.Zr) driver.Zr {
-	res := &Zr{Modulus: c.Modulus}
-	res.Sub(&m.(*Zr).Int, &a1.(*Zr).Int)
-	res.Int.Mod(&res.Int, &m.(*Zr).Int)
-
+	res := &Zr{}
+	res.val.Neg(&a1.(*Zr).val)
 	return res
 }
 
 func (c *Curve) ModSub(a1, b1, m driver.Zr) driver.Zr {
-	a1Fr := frElements.Get()
-	defer frElements.Put(a1Fr)
-	a1Fr.SetBigInt(&a1.(*Zr).Int)
-
-	a2Fr := frElements.Get()
-	defer frElements.Put(a2Fr)
-	a2Fr.SetBigInt(&b1.(*Zr).Int)
-
-	a1Fr.Sub(a1Fr, a2Fr)
-
-	res := &Zr{Modulus: c.Modulus}
-	a1Fr.BigInt(&res.Int)
-
+	res := &Zr{}
+	res.val.Sub(&a1.(*Zr).val, &b1.(*Zr).val)
 	return res
 }
 
 func (c *Curve) GroupOrder() driver.Zr {
-	return &Zr{Int: c.Modulus, Modulus: c.Modulus}
+	return &Zr{rawBigInt: new(big.Int).Set(&c.Modulus)}
 }
 
 func (c *Curve) NewZrFromBytes(b []byte) driver.Zr {
-	res := &Zr{Modulus: c.Modulus}
-	res.SetBytes(b)
-
+	res := &Zr{}
+	res.val.SetBytes(b)
 	return res
 }
 
 func (c *Curve) NewZrFromInt64(i int64) driver.Zr {
-	return &Zr{Int: *big.NewInt(i), Modulus: c.Modulus}
+	res := &Zr{}
+	res.val.SetInt64(i)
+	return res
 }
 
 func (c *Curve) NewZrFromUint64(i uint64) driver.Zr {
-	return &Zr{Int: *new(big.Int).SetUint64(i), Modulus: c.Modulus}
+	res := &Zr{}
+	res.val.SetUint64(i)
+	return res
 }
 
 func (c *Curve) NewZrFromBigInt(i *big.Int) driver.Zr {
-	return &Zr{Int: *i, Modulus: c.Modulus}
+	res := &Zr{}
+	res.val.SetBigInt(i)
+	return res
 }
 
 func (c *Curve) NewRandomZr(rng io.Reader) driver.Zr {
-	e := frElements.Get()
-	defer frElements.Put(e)
-	e, err := e.SetRandom()
+	res := &Zr{}
+	_, err := res.val.SetRandom()
 	if err != nil {
 		panic(err)
 	}
-
-	res := &Zr{Modulus: c.Modulus}
-	e.BigInt(&res.Int)
-
 	return res
 }
 
@@ -567,7 +621,9 @@ func (c *Curve) HashToZr(data []byte) driver.Zr {
 	digestBig := new(big.Int).SetBytes(digest[:])
 	digestBig.Mod(digestBig, &c.Modulus)
 
-	return &Zr{Int: *digestBig, Modulus: c.Modulus}
+	res := &Zr{}
+	res.val.SetBigInt(digestBig)
+	return res
 }
 
 func (p *Curve) Rand() (io.Reader, error) {
@@ -611,67 +667,36 @@ func (c *Curve) HashToG2WithDomain(data, domain []byte) driver.G2 {
 }
 
 func (c *Curve) ModMul(a1, b1, m driver.Zr) driver.Zr {
-	a1Fr := frElements.Get()
-	defer frElements.Put(a1Fr)
-	a1Fr.SetBigInt(&a1.(*Zr).Int)
-
-	a2Fr := frElements.Get()
-	defer frElements.Put(a2Fr)
-	a2Fr.SetBigInt(&b1.(*Zr).Int)
-
-	a1Fr.Mul(a1Fr, a2Fr)
-
-	res := &Zr{Modulus: c.Modulus}
-	a1Fr.BigInt(&res.Int)
-
+	res := &Zr{}
+	res.val.Mul(&a1.(*Zr).val, &b1.(*Zr).val)
 	return res
 }
 
 func (c *Curve) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
-	a1Fr := frElements.Get()
-	defer frElements.Put(a1Fr)
-	b1Fr := frElements.Get()
-	defer frElements.Put(b1Fr)
-	sum := frElements.Get()
-	defer frElements.Put(sum)
-
+	var sum, tmp fr.Element
 	sum.SetZero()
 	for i := range a1 {
-		a1Fr.SetBigInt(&a1[i].(*Zr).Int)
-		b1Fr.SetBigInt(&b1[i].(*Zr).Int)
-		a1Fr.Mul(a1Fr, b1Fr)
-		sum.Add(sum, a1Fr)
+		tmp.Mul(&a1[i].(*Zr).val, &b1[i].(*Zr).val)
+		sum.Add(&sum, &tmp)
 	}
 
-	res := &Zr{Modulus: c.Modulus}
-	sum.BigInt(&res.Int)
-
+	res := &Zr{}
+	res.val.Set(&sum)
 	return res
 }
 
 func (c *Curve) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Zr, m driver.Zr) driver.Zr {
-	aFr := frElements.Get()
-	defer frElements.Put(aFr)
-	cFr := frElements.Get()
-	defer frElements.Put(cFr)
-
-	sum := frElements.Get()
-	defer frElements.Put(sum)
-
+	var sum, tmp fr.Element
 	sum.SetZero()
-	aFr.SetBigInt(&a1.(*Zr).Int)
-	cFr.SetBigInt(&c1.(*Zr).Int)
-	aFr.Mul(aFr, cFr)
-	sum.Add(sum, aFr)
 
-	aFr.SetBigInt(&b1.(*Zr).Int)
-	cFr.SetBigInt(&c2.(*Zr).Int)
-	aFr.Mul(aFr, cFr)
-	sum.Add(sum, aFr)
+	tmp.Mul(&a1.(*Zr).val, &c1.(*Zr).val)
+	sum.Add(&sum, &tmp)
 
-	res := &Zr{Modulus: c.Modulus}
-	sum.BigInt(&res.Int)
+	tmp.Mul(&b1.(*Zr).val, &c2.(*Zr).val)
+	sum.Add(&sum, &tmp)
 
+	res := &Zr{}
+	res.val.Set(&sum)
 	return res
 }
 
@@ -684,68 +709,34 @@ func (c *Curve) ModAddMul3(
 	d2 driver.Zr,
 	m driver.Zr,
 ) driver.Zr {
-	tmp1 := frElements.Get()
-	defer frElements.Put(tmp1)
-	tmp2 := frElements.Get()
-	defer frElements.Put(tmp2)
-
-	sum := frElements.Get()
-	defer frElements.Put(sum)
-
+	var sum, tmp fr.Element
 	sum.SetZero()
-	tmp1.SetBigInt(&a1.(*Zr).Int)
-	tmp2.SetBigInt(&a2.(*Zr).Int)
-	tmp1.Mul(tmp1, tmp2)
-	sum.Add(sum, tmp1)
 
-	tmp1.SetBigInt(&b1.(*Zr).Int)
-	tmp2.SetBigInt(&b2.(*Zr).Int)
-	tmp1.Mul(tmp1, tmp2)
-	sum.Add(sum, tmp1)
+	tmp.Mul(&a1.(*Zr).val, &a2.(*Zr).val)
+	sum.Add(&sum, &tmp)
 
-	tmp1.SetBigInt(&d1.(*Zr).Int)
-	tmp2.SetBigInt(&d2.(*Zr).Int)
-	tmp1.Mul(tmp1, tmp2)
-	sum.Add(sum, tmp1)
+	tmp.Mul(&b1.(*Zr).val, &b2.(*Zr).val)
+	sum.Add(&sum, &tmp)
 
-	res := &Zr{Modulus: c.Modulus}
-	sum.BigInt(&res.Int)
+	tmp.Mul(&d1.(*Zr).val, &d2.(*Zr).val)
+	sum.Add(&sum, &tmp)
 
+	res := &Zr{}
+	res.val.Set(&sum)
 	return res
 }
 
 func (c *Curve) ModAdd(a1, b1, m driver.Zr) driver.Zr {
-	a1Fr := frElements.Get()
-	defer frElements.Put(a1Fr)
-	a1Fr.SetBigInt(&a1.(*Zr).Int)
-
-	a2Fr := frElements.Get()
-	defer frElements.Put(a2Fr)
-	a2Fr.SetBigInt(&b1.(*Zr).Int)
-
-	a1Fr.Add(a1Fr, a2Fr)
-
-	res := &Zr{Modulus: c.Modulus}
-	a1Fr.BigInt(&res.Int)
-
+	res := &Zr{}
+	res.val.Add(&a1.(*Zr).val, &b1.(*Zr).val)
 	return res
 }
 
 func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
-	a1Fr := frElements.Get()
-	defer frElements.Put(a1Fr)
-	a1Fr.SetBigInt(&a1.(*Zr).Int)
-
-	tmp := frElements.Get()
-	defer frElements.Put(tmp)
-	tmp.SetBigInt(&b1.(*Zr).Int)
-
-	a1Fr.Add(a1Fr, tmp)
-
-	tmp.SetBigInt(&c1.(*Zr).Int)
-	a1Fr.Add(a1Fr, tmp)
-
-	a1Fr.BigInt(&a1.(*Zr).Int)
+	a := a1.(*Zr)
+	a.val.Add(&a.val, &b1.(*Zr).val)
+	a.val.Add(&a.val, &c1.(*Zr).val)
+	a.rawBigInt = nil
 }
 
 func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
@@ -754,7 +745,7 @@ func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 
 	for i := range a {
 		affinePoints[i] = a[i].(*G1).G1Affine
-		scalars[i].SetBigInt(&b[i].(*Zr).Int)
+		scalars[i] = b[i].(*Zr).val // Direct fr.Element copy — no SetBigInt!
 	}
 
 	first := G1Jacs.Get()
@@ -773,6 +764,32 @@ type BBSCurve struct {
 
 func NewBBSCurve() *BBSCurve {
 	return &BBSCurve{*NewCurve()}
+}
+
+func (c *Curve) ModMulInPlace(result, a, b, m driver.Zr) {
+	r := result.(*Zr)
+	r.val.Mul(&a.(*Zr).val, &b.(*Zr).val)
+	r.rawBigInt = nil
+}
+
+func (c *Curve) ModAddMul2InPlace(result driver.Zr, a1, c1, b1, c2, m driver.Zr) {
+	r := result.(*Zr)
+	var tmp fr.Element
+	r.val.Mul(&a1.(*Zr).val, &c1.(*Zr).val)
+	tmp.Mul(&b1.(*Zr).val, &c2.(*Zr).val)
+	r.val.Add(&r.val, &tmp)
+	r.rawBigInt = nil
+}
+
+func (c *Curve) ModAddMul3InPlace(result driver.Zr, a1, a2, b1, b2, d1, d2, m driver.Zr) {
+	r := result.(*Zr)
+	var tmp fr.Element
+	r.val.Mul(&a1.(*Zr).val, &a2.(*Zr).val)
+	tmp.Mul(&b1.(*Zr).val, &b2.(*Zr).val)
+	r.val.Add(&r.val, &tmp)
+	tmp.Mul(&d1.(*Zr).val, &d2.(*Zr).val)
+	r.val.Add(&r.val, &tmp)
+	r.rawBigInt = nil
 }
 
 func (c *BBSCurve) HashToG1(data []byte) driver.G1 {
