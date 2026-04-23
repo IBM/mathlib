@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package bls12381
 
 import (
+	"math/big"
 	"sync"
 
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fr"
@@ -34,4 +35,11 @@ func (frElementPool) Put(v *fr.Element) {
 	// reset v before putting it back
 	v.SetZero()
 	_frElementPool.Put(v)
+}
+
+// bigIntPool is a shared *big.Int memory pool for temporary conversions
+var bigIntPool = sync.Pool{
+	New: func() interface{} {
+		return new(big.Int)
+	},
 }

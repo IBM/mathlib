@@ -967,3 +967,21 @@ func (c *Curve) MultiScalarMul(a []*G1, b []*Zr) *G1 {
 
 	return &G1{g1: c.c.MultiScalarMul(aDriver, bDriver), curveID: c.curveID}
 }
+
+// ModMulInPlace computes (a * b) mod m and stores the result in result.
+// This avoids allocating a new Zr for the result.
+func (c *Curve) ModMulInPlace(result, a, b, m *Zr) {
+	c.c.ModMulInPlace(result.zr, a.zr, b.zr, m.zr)
+}
+
+// ModAddMul2InPlace computes (a1*c1 + b1*c2) mod m and stores the result in result.
+// This avoids allocating a new Zr for the result.
+func (c *Curve) ModAddMul2InPlace(result, a1, c1, b1, c2, m *Zr) {
+	c.c.ModAddMul2InPlace(result.zr, a1.zr, c1.zr, b1.zr, c2.zr, m.zr)
+}
+
+// ModAddMul3InPlace computes (a1*a2 + b1*b2 + c1*c2) mod m and stores the result in result.
+// This avoids allocating a new Zr for the result.
+func (c *Curve) ModAddMul3InPlace(result, a1, a2, b1, b2, c1, c2, m *Zr) {
+	c.c.ModAddMul3InPlace(result.zr, a1.zr, a2.zr, b1.zr, b2.zr, c1.zr, c2.zr, m.zr)
+}

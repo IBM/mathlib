@@ -168,6 +168,15 @@ type Curve interface {
 
 	// MultiScalarMul computes multi-scalar multiplication: [b[0]]a[0] + [b[1]]a[1] + ... + [b[n]]a[n].
 	MultiScalarMul(a []G1, b []Zr) G1
+
+	// ModMulInPlace computes (a * b) mod m and stores the result in result.
+	ModMulInPlace(result, a, b, m Zr)
+
+	// ModAddMul2InPlace computes (a1*c1 + b1*c2) mod m and stores the result in result.
+	ModAddMul2InPlace(result Zr, a1, c1, b1, c2, m Zr)
+
+	// ModAddMul3InPlace computes (a1*a2 + b1*b2 + c1*c2) mod m and stores the result in result.
+	ModAddMul3InPlace(result Zr, a1, a2, b1, b2, c1, c2, m Zr)
 }
 
 // Zr represents an element in the scalar field of an elliptic curve.
