@@ -166,7 +166,7 @@ func (b *Zr) Equals(p driver.Zr) bool {
 		defer bigIntPool.Put(bi2)
 		b.toBigInt(bi1)
 		other.toBigInt(bi2)
-		
+
 		return bi1.Cmp(bi2) == 0
 	}
 
