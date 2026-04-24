@@ -25,15 +25,14 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-// curveModulus is the shared field modulus, allocated once.
-var curveModulus = fr.Modulus()
-
 var g1StrRegexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]\)$`)
 var g1Bytes12_381 [48]byte
 var g2Bytes12_381 [96]byte
 
 // point at infinity
 var g1Infinity bls12381.G1Jac
+
+var bigIntOne = big.NewInt(1)
 
 func init() {
 	_, _, g1, g2 := bls12381.Generators()
@@ -64,6 +63,7 @@ func (b *Zr) toBigInt(bi *big.Int) {
 func (b *Zr) Plus(a driver.Zr) driver.Zr {
 	rv := &Zr{}
 	rv.val.Add(&b.val, &a.(*Zr).val)
+
 	return rv
 }
 
@@ -71,50 +71,56 @@ func (b *Zr) IsZero() bool {
 	if b.rawBigInt != nil {
 		return b.rawBigInt.BitLen() == 0
 	}
+
 	return b.val.IsZero()
 }
 
 func (b *Zr) BigInt() *big.Int {
 	bi := new(big.Int)
 	b.toBigInt(bi)
+
 	return bi
 }
 
 func (b *Zr) IsOne() bool {
 	if b.rawBigInt != nil {
-		return b.rawBigInt.Cmp(big.NewInt(1)) == 0
+		return b.rawBigInt.Cmp(bigIntOne) == 0
 	}
+
 	return b.val.IsOne()
 }
 
 func (b *Zr) Minus(a driver.Zr) driver.Zr {
 	rv := &Zr{}
 	rv.val.Sub(&b.val, &a.(*Zr).val)
+
 	return rv
 }
 
 func (b *Zr) Mul(x driver.Zr) driver.Zr {
 	rv := &Zr{}
 	rv.val.Mul(&b.val, &x.(*Zr).val)
+
 	return rv
 }
 
 func (b *Zr) PowMod(x driver.Zr) driver.Zr {
-	bi := bigIntPool.Get().(*big.Int)
+	bi := bigIntPool.Get()
 	defer bigIntPool.Put(bi)
 	x.(*Zr).toBigInt(bi)
 
 	rv := &Zr{}
 	rv.val.Exp(b.val, bi)
+
 	return rv
 }
 
 func (b *Zr) Mod(a driver.Zr) {
-	bi := bigIntPool.Get().(*big.Int)
+	bi := bigIntPool.Get()
 	defer bigIntPool.Put(bi)
 	b.toBigInt(bi)
 
-	ai := bigIntPool.Get().(*big.Int)
+	ai := bigIntPool.Get()
 	defer bigIntPool.Put(ai)
 	a.(*Zr).toBigInt(ai)
 
@@ -124,11 +130,11 @@ func (b *Zr) Mod(a driver.Zr) {
 }
 
 func (b *Zr) InvModP(p driver.Zr) {
-	bi := bigIntPool.Get().(*big.Int)
+	bi := bigIntPool.Get()
 	defer bigIntPool.Put(bi)
 	b.toBigInt(bi)
 
-	pi := bigIntPool.Get().(*big.Int)
+	pi := bigIntPool.Get()
 	defer bigIntPool.Put(pi)
 	p.(*Zr).toBigInt(pi)
 
@@ -147,20 +153,23 @@ func (b *Zr) Bytes() []byte {
 		return common.BigToBytes(b.rawBigInt)
 	}
 	raw := b.val.Bytes()
+
 	return raw[:]
 }
 
 func (b *Zr) Equals(p driver.Zr) bool {
 	other := p.(*Zr)
 	if b.rawBigInt != nil || other.rawBigInt != nil {
-		bi1 := bigIntPool.Get().(*big.Int)
+		bi1 := bigIntPool.Get()
 		defer bigIntPool.Put(bi1)
-		bi2 := bigIntPool.Get().(*big.Int)
+		bi2 := bigIntPool.Get()
 		defer bigIntPool.Put(bi2)
 		b.toBigInt(bi1)
 		other.toBigInt(bi2)
+		
 		return bi1.Cmp(bi2) == 0
 	}
+
 	return b.val.Equal(&other.val)
 }
 
@@ -170,6 +179,7 @@ func (b *Zr) Copy() driver.Zr {
 	if b.rawBigInt != nil {
 		rv.rawBigInt = new(big.Int).Set(b.rawBigInt)
 	}
+
 	return rv
 }
 
@@ -184,9 +194,10 @@ func (b *Zr) Clone(a driver.Zr) {
 }
 
 func (b *Zr) String() string {
-	bi := bigIntPool.Get().(*big.Int)
+	bi := bigIntPool.Get()
 	defer bigIntPool.Put(bi)
 	b.toBigInt(bi)
+
 	return bi.Text(16)
 }
 
@@ -225,7 +236,7 @@ func (g *G1) Add(a driver.G1) {
 }
 
 func (g *G1) Mul(a driver.Zr) driver.G1 {
-	bi := bigIntPool.Get().(*big.Int)
+	bi := bigIntPool.Get()
 	defer bigIntPool.Put(bi)
 	a.(*Zr).toBigInt(bi)
 
@@ -236,11 +247,11 @@ func (g *G1) Mul(a driver.Zr) driver.G1 {
 }
 
 func (g *G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
-	bi1 := bigIntPool.Get().(*big.Int)
+	bi1 := bigIntPool.Get()
 	defer bigIntPool.Put(bi1)
 	e.(*Zr).toBigInt(bi1)
 
-	bi2 := bigIntPool.Get().(*big.Int)
+	bi2 := bigIntPool.Get()
 	defer bigIntPool.Put(bi2)
 	f.(*Zr).toBigInt(bi2)
 
@@ -254,11 +265,11 @@ func (g *G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 }
 
 func (g *G1) Mul2InPlace(e driver.Zr, Q driver.G1, f driver.Zr) {
-	bi1 := bigIntPool.Get().(*big.Int)
+	bi1 := bigIntPool.Get()
 	defer bigIntPool.Put(bi1)
 	e.(*Zr).toBigInt(bi1)
 
-	bi2 := bigIntPool.Get().(*big.Int)
+	bi2 := bigIntPool.Get()
 	defer bigIntPool.Put(bi2)
 	f.(*Zr).toBigInt(bi2)
 
@@ -329,7 +340,7 @@ func (e *G2) Copy() driver.G2 {
 }
 
 func (g *G2) Mul(a driver.Zr) driver.G2 {
-	bi := bigIntPool.Get().(*big.Int)
+	bi := bigIntPool.Get()
 	defer bigIntPool.Put(bi)
 	a.(*Zr).toBigInt(bi)
 
@@ -386,7 +397,7 @@ type Gt struct {
 }
 
 func (g *Gt) Exp(x driver.Zr) driver.Gt {
-	bi := bigIntPool.Get().(*big.Int)
+	bi := bigIntPool.Get()
 	defer bigIntPool.Put(bi)
 	x.(*Zr).toBigInt(bi)
 
@@ -570,12 +581,14 @@ func (c *Curve) NewGtFromBytes(b []byte) driver.Gt {
 func (c *Curve) ModNeg(a1, m driver.Zr) driver.Zr {
 	res := &Zr{}
 	res.val.Neg(&a1.(*Zr).val)
+
 	return res
 }
 
 func (c *Curve) ModSub(a1, b1, m driver.Zr) driver.Zr {
 	res := &Zr{}
 	res.val.Sub(&a1.(*Zr).val, &b1.(*Zr).val)
+
 	return res
 }
 
@@ -586,24 +599,28 @@ func (c *Curve) GroupOrder() driver.Zr {
 func (c *Curve) NewZrFromBytes(b []byte) driver.Zr {
 	res := &Zr{}
 	res.val.SetBytes(b)
+
 	return res
 }
 
 func (c *Curve) NewZrFromInt64(i int64) driver.Zr {
 	res := &Zr{}
 	res.val.SetInt64(i)
+
 	return res
 }
 
 func (c *Curve) NewZrFromUint64(i uint64) driver.Zr {
 	res := &Zr{}
 	res.val.SetUint64(i)
+
 	return res
 }
 
 func (c *Curve) NewZrFromBigInt(i *big.Int) driver.Zr {
 	res := &Zr{}
 	res.val.SetBigInt(i)
+
 	return res
 }
 
@@ -613,6 +630,7 @@ func (c *Curve) NewRandomZr(rng io.Reader) driver.Zr {
 	if err != nil {
 		panic(err)
 	}
+
 	return res
 }
 
@@ -623,6 +641,7 @@ func (c *Curve) HashToZr(data []byte) driver.Zr {
 
 	res := &Zr{}
 	res.val.SetBigInt(digestBig)
+
 	return res
 }
 
@@ -669,6 +688,7 @@ func (c *Curve) HashToG2WithDomain(data, domain []byte) driver.G2 {
 func (c *Curve) ModMul(a1, b1, m driver.Zr) driver.Zr {
 	res := &Zr{}
 	res.val.Mul(&a1.(*Zr).val, &b1.(*Zr).val)
+
 	return res
 }
 
@@ -682,6 +702,7 @@ func (c *Curve) ModAddMul(a1, b1 []driver.Zr, m driver.Zr) driver.Zr {
 
 	res := &Zr{}
 	res.val.Set(&sum)
+
 	return res
 }
 
@@ -697,6 +718,7 @@ func (c *Curve) ModAddMul2(a1 driver.Zr, c1 driver.Zr, b1 driver.Zr, c2 driver.Z
 
 	res := &Zr{}
 	res.val.Set(&sum)
+
 	return res
 }
 
@@ -723,12 +745,14 @@ func (c *Curve) ModAddMul3(
 
 	res := &Zr{}
 	res.val.Set(&sum)
+
 	return res
 }
 
 func (c *Curve) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 	res := &Zr{}
 	res.val.Add(&a1.(*Zr).val, &b1.(*Zr).val)
+
 	return res
 }
 
