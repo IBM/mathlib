@@ -43,10 +43,7 @@ var swuParamsForG1 = struct {
 }
 
 func (fe *Fe) setBytes(in []byte) *Fe {
-	l := len(in)
-	if l >= fpByteSize {
-		l = fpByteSize
-	}
+	l := min(len(in), fpByteSize)
 	padded := make([]byte, fpByteSize)
 	copy(padded[fpByteSize-l:], in[:])
 	var a int

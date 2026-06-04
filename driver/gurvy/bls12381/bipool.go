@@ -15,7 +15,7 @@ import (
 var bigIntPool biPool
 
 var _bigIntPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return new(big.Int)
 	},
 }

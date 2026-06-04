@@ -16,7 +16,7 @@ import (
 var G1Jacs g1JacPool
 
 var _g1JacPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return new(bls12381.G1Jac)
 	},
 }

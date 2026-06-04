@@ -39,14 +39,6 @@ func toGurvyAffine(p *G1Affine) *bls12381.G1Affine {
 	return (*bls12381.G1Affine)(unsafe.Pointer(p))
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-
-	return b
-}
-
 // ExpandMsgXmd expands msg to a slice of lenInBytes bytes.
 // https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-06#section-5
 // https://tools.ietf.org/html/rfc8017#section-4.1 (I2OSP/O2ISP)

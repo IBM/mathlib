@@ -1,12 +1,12 @@
 module github.com/IBM/mathlib
 
-go 1.25.7
+go 1.26.3
 
 require (
 	github.com/consensys/gnark-crypto v0.20.1
 	github.com/hyperledger/fabric-amcl v0.0.0-20230602173724-9e02669dceb2
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.49.0
+	golang.org/x/crypto v0.52.0
 )
 
 require (
@@ -16,6 +16,6 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	golang.org/x/sys v0.42.0
+	golang.org/x/sys v0.45.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
