@@ -16,7 +16,6 @@ package compat_test
 
 import (
 	"crypto/sha256"
-	"math/big"
 	"testing"
 	"unsafe"
 
@@ -80,29 +79,12 @@ func toFpElement(p *kilicFe) *fp.Element {
 	return (*fp.Element)(unsafe.Pointer(p))
 }
 
-// bigIntToKilicFe converts a big.Int to a kilicFe in Montgomery form.
-func bigIntToKilicFe(val *big.Int) *kilicFe {
-	var kFe kilicFe
-	bytes := val.Bytes()
-	padded := make([]byte, 48)
-	copy(padded[48-len(bytes):], bytes)
-	for i := 0; i < 6; i++ {
-		a := 48 - i*8
-		kFe[i] = uint64(padded[a-1]) | uint64(padded[a-2])<<8 |
-			uint64(padded[a-3])<<16 | uint64(padded[a-4])<<24 |
-			uint64(padded[a-5])<<32 | uint64(padded[a-6])<<40 |
-			uint64(padded[a-7])<<48 | uint64(padded[a-8])<<56
-	}
-	kilicToMont(&kFe, &kFe)
-	return &kFe
-}
-
 // ---------------------------------------------------------------------------
 // Oracle tests
 // ---------------------------------------------------------------------------
 
 func TestCompatIsQuadraticResidue(t *testing.T) {
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		var x fp.Element
 		_, err := x.SetRandom()
 		require.NoError(t, err)
@@ -120,7 +102,7 @@ func TestCompatIsQuadraticResidue(t *testing.T) {
 }
 
 func TestCompatSqrt(t *testing.T) {
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		var x fp.Element
 		_, err := x.SetRandom()
 		require.NoError(t, err)
@@ -148,7 +130,7 @@ func TestCompatSgn0(t *testing.T) {
 	// signBE is defined in kilic as checking if negZ.cmp(z) > -1
 	// where negZ = -z, z = fromMont(e).
 	// So signBE(e) is true if -z >= z, which means z > (p-1)/2 or z == 0.
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		var x fp.Element
 		_, err := x.SetRandom()
 		require.NoError(t, err)
@@ -164,6 +146,7 @@ func TestCompatSgn0(t *testing.T) {
 		for j := 5; j >= 0; j-- {
 			if negZ[j] < z[j] {
 				expectedSignBE = false
+
 				break
 			} else if negZ[j] > z[j] {
 				break
@@ -180,7 +163,7 @@ func TestCompatSgn0(t *testing.T) {
 }
 
 func TestCompatSwuMapG1BE(t *testing.T) {
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		var u fp.Element
 		_, err := u.SetRandom()
 		require.NoError(t, err)
@@ -199,7 +182,7 @@ func TestCompatIsogenyMapG1(t *testing.T) {
 	// The two isogeny implementations (kilic vs gnark) use different polynomial
 	// representations and only agree on valid points of the isogenous curve E'.
 	// Generate valid E' points via kilicSwuMapG1 before comparing.
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		var u fp.Element
 		_, err := u.SetRandom()
 		require.NoError(t, err)
@@ -220,7 +203,7 @@ func TestCompatIsogenyMapG1(t *testing.T) {
 }
 
 func TestCompatHash(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		msg := []byte(string(rune(i)) + "test_hash_msg")
 		domain := []byte("test_hash_domain")
 
@@ -238,7 +221,7 @@ func TestCompatHash(t *testing.T) {
 func TestCompatHashToG1GenericBESwu(t *testing.T) {
 	g1Kilic := kilic.NewG1()
 
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		msg := []byte(string(rune(i)) + "test_message_compat")
 		domain := []byte("test_domain_compat")
 

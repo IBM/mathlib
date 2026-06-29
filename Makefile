@@ -1,3 +1,5 @@
+GO_MODULES := . driver/gurvy/compat
+
 .PHONY: all
 all: checks unit-tests unit-tests-race
 
@@ -9,11 +11,19 @@ checks: check-deps
 
 .PHONY: unit-tests
 unit-tests:
-	@go test -timeout 480s -cover $(shell go list ./...)
+	@echo "Unit-testing Go modules..."
+	@for dir in $(GO_MODULES); do \
+		echo "  Unit-testing module: $$dir"; \
+		(cd $$dir && go test -cover ./...); \
+	done
 
 .PHONY: unit-tests-race
 unit-tests-race:
-	@export GORACE=history_size=7; go test -timeout 960s -race -cover $(shell go list ./...)
+	@echo "Unit-testing with race Go modules..."
+	@for dir in $(GO_MODULES); do \
+		echo "  Unit-testing with race module: $$dir"; \
+		(export GORACE=history_size=7 && cd $$dir && go test -race -cover ./...); \
+	done
 
 .PHONY: perf
 perf:
@@ -27,14 +37,20 @@ check-deps:
 .PHONY: lint
 # run various linters
 lint:
-	@echo "Running Go Linters..."
-	golangci-lint run --color=always --timeout=4m
+	@echo "Running Go linters..."
+	@for dir in $(GO_MODULES); do \
+		echo "  Running Go linters on module: $$dir"; \
+		(cd $$dir && golangci-lint run --color=always --timeout=4m); \
+	done
 
 .PHONY: lint-auto-fix
 # run linters with auto-fix
 lint-auto-fix:
-	@echo "Running Go Linters with auto-fix..."
-	golangci-lint run --color=always --timeout=4m --fix
+	@echo "Running Go linters with auto-fix..."
+	@for dir in $(GO_MODULES); do \
+		echo "  Running Go linters with auto-fix on module: $$dir"; \
+		(cd $$dir && golangci-lint run --color=always --timeout=4m --fix); \
+	done
 
 .PHONY: install-linter-tool
 # install golangci-lint
@@ -45,4 +61,16 @@ install-linter-tool:
 .PHONY: fmt
 fmt: ## Run gofmt on the entire project
 	@echo "Running gofmt..."
-	@gofmt -l -s -w .
+	@for dir in $(GO_MODULES); do \
+		echo "  Formatting module: $$dir"; \
+		(cd $$dir && find . -path './.git' -prune -o -name '*.go' -print | xargs gofmt -l -s -w); \
+	done
+
+.PHONY: tidy
+# tidy up go modules
+tidy:
+	@echo "Tidying Go modules..."
+	@for dir in $(GO_MODULES); do \
+		echo "  Tidying module: $$dir"; \
+		(cd $$dir && go mod tidy); \
+	done

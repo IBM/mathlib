@@ -862,6 +862,7 @@ func TestCurves(t *testing.T) {
 		if curve.IsDeprecated() {
 			continue
 		}
+
 		testNotZeroAfterAdd(t, curve)
 		testModAdd(t, curve)
 		testModAdd2(t, curve)
