@@ -113,6 +113,10 @@ func Benchmark_Sequential_PedersenCommitmentPoKGurvy(b *testing.B) {
 
 func Benchmark_Sequential_PedersenCommitmentPoK(b *testing.B) {
 	for _, curve := range Curves {
+		if curve.IsDeprecated() {
+			continue
+		}
+
 		rng, g, h, x, err := pokPedersenCommittmentInit(b, curve)
 		if err != nil {
 			panic(err)
@@ -152,6 +156,10 @@ func Benchmark_Sequential_PedersenCommitmentPoK(b *testing.B) {
 
 func Benchmark_Sequential_BLS(b *testing.B) {
 	for _, curve := range Curves {
+		if curve.IsDeprecated() {
+			continue
+		}
+
 		g, x, err := blsInit(b, curve)
 		if err != nil {
 			panic(err)
@@ -238,6 +246,10 @@ func Benchmark_Parallel_BLSGurvy(b *testing.B) {
 
 func Benchmark_Parallel_BLS(b *testing.B) {
 	for _, curve := range Curves {
+		if curve.IsDeprecated() {
+			continue
+		}
+
 		if curve.curveID != BLS12_381_GURVY {
 			continue
 		}
