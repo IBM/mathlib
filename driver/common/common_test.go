@@ -77,6 +77,7 @@ var testModulus = func() big.Int {
 		"73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001",
 		16,
 	)
+
 	return *m
 }()
 
@@ -189,7 +190,7 @@ func TestBaseZrCopy(t *testing.T) {
 	b := a.Copy().(*BaseZr)
 	assert.True(t, a.Equals(b))
 	// Mutating the copy must not affect the original.
-	b.Int.Add(&b.Int, big.NewInt(1))
+	b.Add(&b.Int, big.NewInt(1))
 	assert.False(t, a.Equals(b))
 }
 
@@ -221,6 +222,7 @@ func newCurveBase() *CurveBase {
 
 func newCBZr(i int64) *BaseZr {
 	cb := newCurveBase()
+
 	return cb.NewZrFromInt64(i).(*BaseZr)
 }
 
@@ -262,15 +264,15 @@ func TestCurveBaseNewRandomZr(t *testing.T) {
 	require.NoError(t, err)
 	r := cb.NewRandomZr(rng).(*BaseZr)
 	// Must be in [0, modulus)
-	assert.True(t, r.Sign() >= 0)
-	assert.True(t, r.Cmp(&testModulus) < 0)
+	assert.GreaterOrEqual(t, r.Sign(), 0)
+	assert.Negative(t, r.Cmp(&testModulus))
 }
 
 func TestCurveBaseHashToZr(t *testing.T) {
 	cb := newCurveBase()
 	h := cb.HashToZr([]byte("hello")).(*BaseZr)
-	assert.True(t, h.Sign() >= 0)
-	assert.True(t, h.Cmp(&testModulus) < 0)
+	assert.GreaterOrEqual(t, h.Sign(), 0)
+	assert.Negative(t, h.Cmp(&testModulus))
 }
 
 func TestCurveBaseModNeg(t *testing.T) {

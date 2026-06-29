@@ -33,13 +33,6 @@ type curveDriver interface {
 	GenGt() driver.Gt
 }
 
-func randomZr(t *testing.T, c driver.Curve) driver.Zr {
-	t.Helper()
-	rng, err := c.Rand()
-	require.NoError(t, err)
-	return c.NewRandomZr(rng)
-}
-
 // ---------------------------------------------------------------------------
 // Shared curve test suite — run once for each driver.
 // ---------------------------------------------------------------------------
@@ -470,11 +463,11 @@ type bls377Driver struct {
 	*Bls12_377
 }
 
-func (d *bls377Driver) GenG1() driver.G1 { return d.Bls12_377.GenG1() }
-func (d *bls377Driver) GenG2() driver.G2 { return d.Bls12_377.GenG2() }
-func (d *bls377Driver) GenGt() driver.Gt { return d.Bls12_377.GenGt() }
-func (d *bls377Driver) NewG1() driver.G1 { return d.Bls12_377.NewG1() }
-func (d *bls377Driver) NewG2() driver.G2 { return d.Bls12_377.NewG2() }
+func (d *bls377Driver) GenG1() driver.G1         { return d.Bls12_377.GenG1() }
+func (d *bls377Driver) GenG2() driver.G2         { return d.Bls12_377.GenG2() }
+func (d *bls377Driver) GenGt() driver.Gt         { return d.Bls12_377.GenGt() }
+func (d *bls377Driver) NewG1() driver.G1         { return d.Bls12_377.NewG1() }
+func (d *bls377Driver) NewG2() driver.G2         { return d.Bls12_377.NewG2() }
 func (d *bls377Driver) Rand() (io.Reader, error) { return rand.Reader, nil }
 
 var _ curveDriver = (*bls377Driver)(nil)

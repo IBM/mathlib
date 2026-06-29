@@ -11,7 +11,6 @@ SPDX-License-Identifier: Apache-2.0
 package bls12381
 
 import (
-	"crypto/rand"
 	"math/big"
 	"testing"
 
@@ -27,12 +26,11 @@ import (
 
 func newCurve() *Curve { return NewCurve() }
 
-func rng() interface{ Read([]byte) (int, error) } { return rand.Reader }
-
 func randZr(t *testing.T, c *Curve) driver.Zr {
 	t.Helper()
 	r, err := c.Rand()
 	require.NoError(t, err)
+
 	return c.NewRandomZr(r)
 }
 
