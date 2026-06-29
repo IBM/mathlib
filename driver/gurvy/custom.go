@@ -10,13 +10,10 @@ package gurvy
 import (
 	"errors"
 	"hash"
-	"unsafe"
 
-	"github.com/IBM/mathlib/driver/kilic"
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/fp"
 	"github.com/consensys/gnark-crypto/ecc/bls12-381/hash_to_curve"
-	"github.com/consensys/gnark-crypto/field/pool"
 )
 
 const Bits = 381 // number of bits needed to represent a Element
@@ -27,19 +24,8 @@ type G1Affine struct {
 	X, Y fp.Element
 }
 
-func toKilicElement(p *fp.Element) *kilic.Fe {
-	return (*kilic.Fe)(unsafe.Pointer(p))
-}
-
-func toGurvyElement(p *kilic.Fe) *fp.Element {
-	return (*fp.Element)(unsafe.Pointer(p))
-}
-
-func toGurvyAffine(p *G1Affine) *bls12381.G1Affine {
-	return (*bls12381.G1Affine)(unsafe.Pointer(p))
-}
-
 // ExpandMsgXmd expands msg to a slice of lenInBytes bytes.
+// Matches kilic's implementation for BESwu compatibility
 // https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-06#section-5
 // https://tools.ietf.org/html/rfc8017#section-4.1 (I2OSP/O2ISP)
 func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([]byte, error) {
@@ -55,10 +41,7 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 	}
 	sizeDomain := uint8(dstLen)
 
-	// Z_pad = I2OSP(0, r_in_bytes)
-	// l_i_b_str = I2OSP(len_in_bytes, 2)
-	// DST_prime = I2OSP(len(DST), 1) ∥ DST
-	// b₀ = H(Z_pad ∥ msg ∥ l_i_b_str ∥ I2OSP(0, 1) ∥ DST_prime)
+	// b₀ = H(Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST || sizeDomain)
 	h.Reset()
 	if _, err := h.Write(make([]byte, h.BlockSize())); err != nil {
 		return nil, err
@@ -77,7 +60,7 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 	}
 	b0 := h.Sum(nil)
 
-	// b₁ = H(b₀ ∥ I2OSP(1, 1) ∥ DST_prime)
+	// b₁ = H(b₀ || I2OSP(1, 1) || DST || sizeDomain)
 	h.Reset()
 	if _, err := h.Write(b0); err != nil {
 		return nil, err
@@ -97,7 +80,7 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 	copy(res[:h.Size()], b1)
 
 	for i := 2; i <= ell; i++ {
-		// b_i = H(strxor(b₀, b_(i - 1)) ∥ I2OSP(i, 1) ∥ DST_prime)
+		// b_i = H(strxor(b₀, b_(i - 1)) || I2OSP(i, 1) || DST || sizeDomain)
 		h.Reset()
 		strxor := make([]byte, h.Size())
 		for j := range h.Size() {
@@ -123,12 +106,11 @@ func ExpandMsgXmd(msg, dst []byte, lenInBytes int, hashFunc func() hash.Hash) ([
 }
 
 // Hash msg to count prime field elements.
-// https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-06#section-5.2
+// Uses the same method as kilic for BESwu compatibility:
+// splits 64 bytes into two 32-byte chunks, converts each to field element,
+// then combines as e1 + e0 * F where F = 2^256 * R (mod p)
 func Hash(msg, dst []byte, count int, hashFunc func() hash.Hash) ([]fp.Element, error) {
-	// 128 bits of security
-	// L = ceil((ceil(log2(p)) + k) / 8), where k is the security parameter = 128
-	const Bytes = 1 + (Bits-1)/8
-	const L = 16 + Bytes
+	const L = 64 // bytes per field element (per kilic's hashToFpXMD)
 
 	lenInBytes := count * L
 	pseudoRandomBytes, err := ExpandMsgXmd(msg, dst, lenInBytes, hashFunc)
@@ -136,17 +118,34 @@ func Hash(msg, dst []byte, count int, hashFunc func() hash.Hash) ([]fp.Element, 
 		return nil, err
 	}
 
-	// get temporary big int from the pool
-	vv := pool.BigInt.Get()
+	// F = 2^256 * R (Montgomery form)
+	// From kilic: F = 2^256 * R mod p
+	var F fp.Element
+	F[0] = 0x75b3cd7c5ce820f
+	F[1] = 0x3ec6ba621c3edb0b
+	F[2] = 0x168a13d82bff6bce
+	F[3] = 0x87663c4bf8c449d2
+	F[4] = 0x15f34c83ddc8d830
+	F[5] = 0xf9628b49caa2e85
 
 	res := make([]fp.Element, count)
 	for i := range count {
-		vv.SetBytes(pseudoRandomBytes[i*L : (i+1)*L])
-		res[i].SetBigInt(vv)
-	}
+		chunk := pseudoRandomBytes[i*L : (i+1)*L]
+		// Split into two 32-byte chunks, right-align in 48-byte arrays (like kilic)
+		a0 := make([]byte, 48)
+		copy(a0[16:], chunk[:32]) // copy to bytes 16-47 (right-aligned)
+		a1 := make([]byte, 48)
+		copy(a1[16:], chunk[32:]) // copy to bytes 16-47 (right-aligned)
 
-	// release object into pool
-	pool.BigInt.Put(vv)
+		var e0, e1 fp.Element
+		e0.SetBytes(a0)
+		e1.SetBytes(a1)
+
+		// e1 + e0 * F
+		var tmp fp.Element
+		tmp.Mul(&e0, &F)
+		res[i].Add(&e1, &tmp)
+	}
 
 	return res, nil
 }
@@ -157,29 +156,28 @@ func HashToG1GenericBESwu(msg, dst []byte, hashFunc func() hash.Hash) (bls12381.
 		return bls12381.G1Affine{}, err
 	}
 
-	xQ0, yQ0 := kilic.SwuMapG1BE(toKilicElement(&u[0]))
-	xQ1, yQ1 := kilic.SwuMapG1BE(toKilicElement(&u[1]))
+	xQ0, yQ0 := SwuMapG1BE(&u[0])
+	xQ1, yQ1 := SwuMapG1BE(&u[1])
 
-	_xq0 := toGurvyElement(xQ0)
-	_yq0 := toGurvyElement(yQ0)
-	_xq1 := toGurvyElement(xQ1)
-	_yq1 := toGurvyElement(yQ1)
+	Q0 := G1Affine{*xQ0, *yQ0}
+	Q1 := G1Affine{*xQ1, *yQ1}
 
-	Q0 := G1Affine{*_xq0, *_yq0}
-	Q1 := G1Affine{*_xq1, *_yq1}
-
-	// TODO (perf): Add in E' first, then apply isogeny
-	hash_to_curve.G1Isogeny(&Q0.X, &Q0.Y)
-	hash_to_curve.G1Isogeny(&Q1.X, &Q1.Y)
-
+	// Add the two E' points first, then apply isogeny — matches kilic's HashToCurve order.
 	var _Q0, _Q1 bls12381.G1Jac
-	_Q0.FromAffine(toGurvyAffine(&Q0))
-	_Q1.FromAffine(toGurvyAffine(&Q1)).AddAssign(&_Q0)
+	_Q0.FromAffine((*bls12381.G1Affine)(&Q0))
+	_Q1.FromAffine((*bls12381.G1Affine)(&Q1)).AddAssign(&_Q0)
 
-	_Q1.ClearCofactor(&_Q1)
+	var sum bls12381.G1Affine
+	sum.FromJacobian(&_Q1)
 
-	toGurvyAffine(&Q1).FromJacobian(&_Q1)
-	res := toGurvyAffine(&Q1)
+	hash_to_curve.G1Isogeny(&sum.X, &sum.Y)
 
-	return *res, nil
+	var sumJac bls12381.G1Jac
+	sumJac.FromAffine(&sum)
+	sumJac.ClearCofactor(&sumJac)
+
+	var res bls12381.G1Affine
+	res.FromJacobian(&sumJac)
+
+	return res, nil
 }

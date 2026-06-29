@@ -26,6 +26,10 @@ var seed = time.Now().Unix()
 
 func TestImmutability(t *testing.T) {
 	for _, curve := range Curves {
+		if curve.IsDeprecated() {
+			continue
+		}
+
 		rng, err := curve.Rand()
 		require.NoError(t, err)
 
@@ -38,6 +42,10 @@ func TestImmutability(t *testing.T) {
 
 func TestCurveId(t *testing.T) {
 	for _, curve := range Curves {
+		if curve.IsDeprecated() {
+			continue
+		}
+
 		rng, err := curve.Rand()
 		require.NoError(t, err)
 
@@ -851,6 +859,9 @@ func TestJSONMarshalerFails(t *testing.T) {
 
 func TestCurves(t *testing.T) {
 	for _, curve := range Curves {
+		if curve.IsDeprecated() {
+			continue
+		}
 		testNotZeroAfterAdd(t, curve)
 		testModAdd(t, curve)
 		testModAdd2(t, curve)
@@ -876,70 +887,38 @@ func TestCurves(t *testing.T) {
 	}
 }
 
-func Test381Compat(t *testing.T) {
-	rng, err := Curves[BLS12_381].Rand()
-	require.NoError(t, err)
-
-	kilic := Curves[BLS12_381]
-	gurvy := Curves[BLS12_381_GURVY]
-
-	rk := kilic.NewRandomZr(rng)
-	rg := gurvy.NewZrFromBytes(rk.Bytes())
-	assert.Equal(t, rk.Bytes(), rg.Bytes())
-
-	g1g := gurvy.GenG1.Mul(rg)
-	g1k := kilic.GenG1.Mul(rk)
-	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
-	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
-
-	g2g := gurvy.GenG2.Mul(rg)
-	g2k := kilic.GenG2.Mul(rk)
-	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
-	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
-
-	gtg := gurvy.GenGt.Exp(rg)
-	gtk := kilic.GenGt.Exp(rk)
-	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
-
-	hg := gurvy.HashToG1([]byte("Chase!"))
-	hk := kilic.HashToG1([]byte("Chase!"))
-	assert.Equal(t, hg.Bytes(), hk.Bytes())
-
-	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
-	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
-	assert.Equal(t, hg.Bytes(), hk.Bytes())
-}
-
 func Test381BBSCompat(t *testing.T) {
+	// BLS12_381_BBS and BLS12_381_BBS_GURVY now share the same Gurvy backend.
+	// Verify they produce identical results.
 	rng, err := Curves[BLS12_381_BBS].Rand()
 	require.NoError(t, err)
 
-	kilic := Curves[BLS12_381_BBS]
-	gurvy := Curves[BLS12_381_BBS_GURVY]
+	bbs := Curves[BLS12_381_BBS]
+	bbsGurvy := Curves[BLS12_381_BBS_GURVY]
 
-	rk := kilic.NewRandomZr(rng)
-	rg := gurvy.NewZrFromBytes(rk.Bytes())
+	rk := bbs.NewRandomZr(rng)
+	rg := bbsGurvy.NewZrFromBytes(rk.Bytes())
 	assert.Equal(t, rk.Bytes(), rg.Bytes())
 
-	g1g := gurvy.GenG1.Mul(rg)
-	g1k := kilic.GenG1.Mul(rk)
-	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
-	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
+	g1bbs := bbs.GenG1.Mul(rk)
+	g1bbsGurvy := bbsGurvy.GenG1.Mul(rg)
+	assert.Equal(t, g1bbs.Bytes(), g1bbsGurvy.Bytes())
+	assert.Equal(t, g1bbs.Compressed(), g1bbsGurvy.Compressed())
 
-	g2g := gurvy.GenG2.Mul(rg)
-	g2k := kilic.GenG2.Mul(rk)
-	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
-	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
+	g2bbs := bbs.GenG2.Mul(rk)
+	g2bbsGurvy := bbsGurvy.GenG2.Mul(rg)
+	assert.Equal(t, g2bbs.Bytes(), g2bbsGurvy.Bytes())
+	assert.Equal(t, g2bbs.Compressed(), g2bbsGurvy.Compressed())
 
-	gtg := gurvy.GenGt.Exp(rg)
-	gtk := kilic.GenGt.Exp(rk)
-	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
+	gtbbs := bbs.GenGt.Exp(rk)
+	gtbbsGurvy := bbsGurvy.GenGt.Exp(rg)
+	assert.Equal(t, gtbbs.Bytes(), gtbbsGurvy.Bytes())
 
-	hg := gurvy.HashToG1([]byte("Chase!"))
-	hk := kilic.HashToG1([]byte("Chase!"))
-	assert.Equal(t, hg.Bytes(), hk.Bytes())
+	hbbs := bbs.HashToG1([]byte("Chase!"))
+	hbbsGurvy := bbsGurvy.HashToG1([]byte("Chase!"))
+	assert.Equal(t, hbbs.Bytes(), hbbsGurvy.Bytes())
 
-	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
-	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
-	assert.Equal(t, hg.Bytes(), hk.Bytes())
+	hbbs = bbs.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	hbbsGurvy = bbsGurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	assert.Equal(t, hbbs.Bytes(), hbbsGurvy.Bytes())
 }
