@@ -19,7 +19,7 @@ The library abstracts the complexity of pairing operations while providing flexi
 ## Features
 
 - **Multiple Curve Support**: FP256BN, BN254, BLS12-381, BLS12-377, and BBS+ variants
-- **Pluggable Backends**: Support for AMCL, Gurvy, and Kilic implementations
+- **Pluggable Backends**: Support for AMCL and Gurvy implementations
 - **Type-Safe API**: Strongly-typed group elements (G1, G2, Gt, Zr)
 - **Efficient Operations**: Optimized pairing computations and multi-scalar multiplications
 - **Serialization**: Support for both compressed and uncompressed point representations
@@ -76,11 +76,16 @@ func main() {
 | `FP256BN_AMCL` | 256-bit Barreto-Naehrig curve | AMCL | General-purpose pairing operations |
 | `FP256BN_AMCL_MIRACL` | 256-bit BN curve (MIRACL variant) | AMCL | Legacy compatibility |
 | `BN254` | 254-bit Barreto-Naehrig curve | Gurvy | High-performance applications |
-| `BLS12_381` | BLS12-381 curve | Kilic | Modern protocols, BLS signatures |
+| `BLS12_381` | BLS12-381 curve | Gurvy | Modern protocols, BLS signatures |
 | `BLS12_381_GURVY` | BLS12-381 curve | Gurvy | Performance-optimized BLS12-381 |
 | `BLS12_377_GURVY` | BLS12-377 curve | Gurvy | Recursive proof systems |
-| `BLS12_381_BBS` | BLS12-381 for BBS+ signatures | Kilic | Anonymous credentials |
+| `BLS12_381_BBS` | BLS12-381 for BBS+ signatures | Gurvy | Anonymous credentials |
 | `BLS12_381_BBS_GURVY` | BLS12-381 for BBS+ signatures | Gurvy | High-performance BBS+ |
+
+> **Note:** `BLS12_381` and `BLS12_381_BBS` were previously backed by the Kilic
+> implementation. They are now backed by Gurvy (gnark-crypto) and remain
+> byte-compatible with both their prior output and their explicit `_GURVY`
+> siblings.
 
 ### Choosing a Curve
 
@@ -243,11 +248,11 @@ fmt.Printf("Multi-scalar multiplication result: %s\n", result.String())
 │  Curve, G1, G2, Gt, Zr interfaces   │
 └─────────────────┬───────────────────┘
                   │
-        ┌─────────┼─────────┐
-        ▼         ▼         ▼
-    ┌──────┐  ┌──────┐  ┌──────┐
-    │ AMCL │  │Gurvy │  │Kilic │
-    └──────┘  └──────┘  └──────┘
+        ┌─────────┴─────────┐
+        ▼                   ▼
+    ┌──────┐            ┌──────┐
+    │ AMCL │            │Gurvy │
+    └──────┘            └──────┘
 ```
 
 This design allows:
@@ -258,8 +263,7 @@ This design allows:
 ### Backend Implementations
 
 - **AMCL (Apache Milagro Crypto Library)**: Mature, well-tested implementation
-- **Gurvy**: High-performance Go-native implementation with assembly optimizations
-- **Kilic**: Optimized BLS12-381 implementation with focus on BLS signatures
+- **Gurvy** (gnark-crypto): High-performance Go-native implementation with assembly optimizations; backs all BLS12-381, BLS12-377, and BN254 curves
 
 ## Performance Considerations
 
@@ -324,5 +328,5 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 This library builds upon the excellent work of:
 - Apache Milagro Crypto Library (AMCL)
-- ConsenSys Gurvy library
-- Kilic BLS12-381 implementation
+- ConsenSys gnark-crypto (Gurvy) library
+- Kilic BLS12-381 implementation (basis for the original BLS12-381 backend and the big-endian-sign hash-to-curve now reimplemented natively)

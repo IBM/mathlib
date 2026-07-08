@@ -876,70 +876,76 @@ func TestCurves(t *testing.T) {
 	}
 }
 
+// Test381Compat verifies that the canonical BLS12_381 curve ID (now backed by
+// the gnark-crypto/gurvy implementation, formerly by kilic) is byte-compatible
+// with its explicit BLS12_381_GURVY sibling.
 func Test381Compat(t *testing.T) {
 	rng, err := Curves[BLS12_381].Rand()
 	require.NoError(t, err)
 
-	kilic := Curves[BLS12_381]
+	canonical := Curves[BLS12_381]
 	gurvy := Curves[BLS12_381_GURVY]
 
-	rk := kilic.NewRandomZr(rng)
+	rk := canonical.NewRandomZr(rng)
 	rg := gurvy.NewZrFromBytes(rk.Bytes())
 	assert.Equal(t, rk.Bytes(), rg.Bytes())
 
 	g1g := gurvy.GenG1.Mul(rg)
-	g1k := kilic.GenG1.Mul(rk)
+	g1k := canonical.GenG1.Mul(rk)
 	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
 	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
 
 	g2g := gurvy.GenG2.Mul(rg)
-	g2k := kilic.GenG2.Mul(rk)
+	g2k := canonical.GenG2.Mul(rk)
 	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
 	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
 
 	gtg := gurvy.GenGt.Exp(rg)
-	gtk := kilic.GenGt.Exp(rk)
+	gtk := canonical.GenGt.Exp(rk)
 	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
 
 	hg := gurvy.HashToG1([]byte("Chase!"))
-	hk := kilic.HashToG1([]byte("Chase!"))
+	hk := canonical.HashToG1([]byte("Chase!"))
 	assert.Equal(t, hg.Bytes(), hk.Bytes())
 
 	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
-	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	hk = canonical.HashToG1WithDomain([]byte("CD"), []byte("EF"))
 	assert.Equal(t, hg.Bytes(), hk.Bytes())
 }
 
+// Test381BBSCompat verifies that the canonical BLS12_381_BBS curve ID (now
+// backed by the gnark-crypto/gurvy implementation, formerly by kilic) is
+// byte-compatible with its explicit BLS12_381_BBS_GURVY sibling.
 func Test381BBSCompat(t *testing.T) {
 	rng, err := Curves[BLS12_381_BBS].Rand()
 	require.NoError(t, err)
 
-	kilic := Curves[BLS12_381_BBS]
+	canonical := Curves[BLS12_381_BBS]
 	gurvy := Curves[BLS12_381_BBS_GURVY]
 
-	rk := kilic.NewRandomZr(rng)
+	rk := canonical.NewRandomZr(rng)
 	rg := gurvy.NewZrFromBytes(rk.Bytes())
 	assert.Equal(t, rk.Bytes(), rg.Bytes())
 
 	g1g := gurvy.GenG1.Mul(rg)
-	g1k := kilic.GenG1.Mul(rk)
+	g1k := canonical.GenG1.Mul(rk)
 	assert.Equal(t, g1g.Bytes(), g1k.Bytes())
 	assert.Equal(t, g1g.Compressed(), g1k.Compressed())
 
 	g2g := gurvy.GenG2.Mul(rg)
-	g2k := kilic.GenG2.Mul(rk)
+	g2k := canonical.GenG2.Mul(rk)
 	assert.Equal(t, g2g.Bytes(), g2k.Bytes())
 	assert.Equal(t, g2g.Compressed(), g2k.Compressed())
 
 	gtg := gurvy.GenGt.Exp(rg)
-	gtk := kilic.GenGt.Exp(rk)
+	gtk := canonical.GenGt.Exp(rk)
 	assert.Equal(t, gtg.Bytes(), gtk.Bytes())
 
 	hg := gurvy.HashToG1([]byte("Chase!"))
-	hk := kilic.HashToG1([]byte("Chase!"))
+	hk := canonical.HashToG1([]byte("Chase!"))
 	assert.Equal(t, hg.Bytes(), hk.Bytes())
 
 	hg = gurvy.HashToG1WithDomain([]byte("CD"), []byte("EF"))
-	hk = kilic.HashToG1WithDomain([]byte("CD"), []byte("EF"))
+	hk = canonical.HashToG1WithDomain([]byte("CD"), []byte("EF"))
 	assert.Equal(t, hg.Bytes(), hk.Bytes())
 }

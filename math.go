@@ -35,10 +35,10 @@ SPDX-License-Identifier: Apache-2.0
 //   - FP256BN_AMCL: 256-bit Barreto-Naehrig curve (AMCL backend)
 //   - BN254: 254-bit Barreto-Naehrig curve (Gurvy backend)
 //   - FP256BN_AMCL_MIRACL: 256-bit BN curve MIRACL variant (AMCL backend)
-//   - BLS12_381: BLS12-381 curve (Kilic backend)
+//   - BLS12_381: BLS12-381 curve (Gurvy backend)
 //   - BLS12_377_GURVY: BLS12-377 curve (Gurvy backend)
 //   - BLS12_381_GURVY: BLS12-381 curve (Gurvy backend)
-//   - BLS12_381_BBS: BLS12-381 optimized for BBS+ signatures (Kilic backend)
+//   - BLS12_381_BBS: BLS12-381 optimized for BBS+ signatures (Gurvy backend)
 //   - BLS12_381_BBS_GURVY: BLS12-381 for BBS+ (Gurvy backend)
 //
 // # Thread Safety
@@ -59,7 +59,6 @@ import (
 	"github.com/IBM/mathlib/driver/amcl"
 	"github.com/IBM/mathlib/driver/gurvy"
 	"github.com/IBM/mathlib/driver/gurvy/bls12381"
-	"github.com/IBM/mathlib/driver/kilic"
 )
 
 // CurveID identifies a specific elliptic curve configuration and its backend implementation.
@@ -80,9 +79,10 @@ const (
 	// Provided for legacy compatibility with MIRACL-based systems.
 	FP256BN_AMCL_MIRACL
 
-	// BLS12_381 represents the BLS12-381 curve using the Kilic backend.
+	// BLS12_381 represents the BLS12-381 curve using the Gurvy (gnark-crypto) backend.
 	// Recommended for new projects due to excellent security margins and wide adoption.
 	// Suitable for BLS signatures and modern cryptographic protocols.
+	// Byte-compatible with the former Kilic backend and with BLS12_381_GURVY.
 	BLS12_381
 
 	// BLS12_377_GURVY represents the BLS12-377 curve using the Gurvy backend.
@@ -183,17 +183,17 @@ var Curves []*Curve = []*Curve{
 		curveID:              FP256BN_AMCL_MIRACL,
 	},
 	{
-		c:                    kilic.NewBls12_381(),
-		GenG1:                NewG1((&kilic.Bls12_381{}).GenG1(), BLS12_381),
-		GenG2:                NewG2((&kilic.Bls12_381{}).GenG2(), BLS12_381),
-		GenGt:                NewGt((&kilic.Bls12_381{}).GenGt(), BLS12_381),
-		GroupOrder:           NewZr(kilic.NewBls12_381().GroupOrder(), BLS12_381),
-		CoordByteSize:        (&kilic.Bls12_381{}).CoordinateByteSize(),
-		G1ByteSize:           (&kilic.Bls12_381{}).G1ByteSize(),
-		CompressedG1ByteSize: (&kilic.Bls12_381{}).CompressedG1ByteSize(),
-		G2ByteSize:           (&kilic.Bls12_381{}).G2ByteSize(),
-		CompressedG2ByteSize: (&kilic.Bls12_381{}).CompressedG2ByteSize(),
-		ScalarByteSize:       (&kilic.Bls12_381{}).ScalarByteSize(),
+		c:                    bls12381.NewCurve(),
+		GenG1:                NewG1((&bls12381.Curve{}).GenG1(), BLS12_381),
+		GenG2:                NewG2((&bls12381.Curve{}).GenG2(), BLS12_381),
+		GenGt:                NewGt((&bls12381.Curve{}).GenGt(), BLS12_381),
+		GroupOrder:           NewZr(bls12381.NewCurve().GroupOrder(), BLS12_381),
+		CoordByteSize:        (&bls12381.Curve{}).CoordinateByteSize(),
+		G1ByteSize:           (&bls12381.Curve{}).G1ByteSize(),
+		CompressedG1ByteSize: (&bls12381.Curve{}).CompressedG1ByteSize(),
+		G2ByteSize:           (&bls12381.Curve{}).G2ByteSize(),
+		CompressedG2ByteSize: (&bls12381.Curve{}).CompressedG2ByteSize(),
+		ScalarByteSize:       (&bls12381.Curve{}).ScalarByteSize(),
 		curveID:              BLS12_381,
 	},
 	{
@@ -225,17 +225,17 @@ var Curves []*Curve = []*Curve{
 		curveID:              BLS12_381_GURVY,
 	},
 	{
-		c:                    kilic.NewBls12_381BBS(),
-		GenG1:                NewG1(kilic.NewBls12_381BBS().GenG1(), BLS12_381_BBS),
-		GenG2:                NewG2(kilic.NewBls12_381BBS().GenG2(), BLS12_381_BBS),
-		GenGt:                NewGt(kilic.NewBls12_381BBS().GenGt(), BLS12_381_BBS),
-		GroupOrder:           NewZr(kilic.NewBls12_381().GroupOrder(), BLS12_381_BBS),
-		CoordByteSize:        kilic.NewBls12_381BBS().CoordinateByteSize(),
-		G1ByteSize:           kilic.NewBls12_381BBS().G1ByteSize(),
-		CompressedG1ByteSize: kilic.NewBls12_381BBS().CompressedG1ByteSize(),
-		G2ByteSize:           kilic.NewBls12_381BBS().G2ByteSize(),
-		CompressedG2ByteSize: kilic.NewBls12_381BBS().CompressedG2ByteSize(),
-		ScalarByteSize:       kilic.NewBls12_381BBS().ScalarByteSize(),
+		c:                    bls12381.NewBBSCurve(),
+		GenG1:                NewG1(bls12381.NewBBSCurve().GenG1(), BLS12_381_BBS),
+		GenG2:                NewG2(bls12381.NewBBSCurve().GenG2(), BLS12_381_BBS),
+		GenGt:                NewGt(bls12381.NewBBSCurve().GenGt(), BLS12_381_BBS),
+		GroupOrder:           NewZr(bls12381.NewCurve().GroupOrder(), BLS12_381_BBS),
+		CoordByteSize:        bls12381.NewBBSCurve().CoordinateByteSize(),
+		G1ByteSize:           bls12381.NewBBSCurve().G1ByteSize(),
+		CompressedG1ByteSize: bls12381.NewBBSCurve().CompressedG1ByteSize(),
+		G2ByteSize:           bls12381.NewBBSCurve().G2ByteSize(),
+		CompressedG2ByteSize: bls12381.NewBBSCurve().CompressedG2ByteSize(),
+		ScalarByteSize:       bls12381.NewBBSCurve().ScalarByteSize(),
 		curveID:              BLS12_381_BBS,
 	},
 	{
