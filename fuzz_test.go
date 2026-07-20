@@ -20,7 +20,7 @@ func FuzzUnmarshalJSONCurveID(f *testing.F) {
 	f.Add(len(Curves), []byte("AAAA"))
 	f.Add(len(Curves)+1000, []byte("AAAA"))
 	f.Add(1<<31-1, []byte(""))
-	f.Add(-1 << 31, []byte("!!!!"))
+	f.Add(-1<<31, []byte("!!!!"))
 
 	f.Fuzz(func(t *testing.T, curveID int, element []byte) {
 		payload := fmt.Appendf(nil, `{"curve": %d, "element": %q}`, curveID, element)
