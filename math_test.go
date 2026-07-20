@@ -849,6 +849,74 @@ func TestJSONMarshalerFails(t *testing.T) {
 	require.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
 }
 
+// TestJSONUnmarshalerInvalidCurveID is a regression test for a panic where an
+// out-of-range or negative "curve" field in the JSON payload caused an unrecovered
+// index-out-of-range panic (Curves[ce.CurveID]) instead of a returned error.
+func TestJSONUnmarshalerInvalidCurveID(t *testing.T) {
+	invalidIDs := []int{-1, len(Curves), len(Curves) + 1000, 9999}
+
+	for _, id := range invalidIDs {
+		payload := fmt.Appendf(nil, `{"curve": %d, "element": "AAAA"}`, id)
+
+		zr := &Zr{}
+		err := zr.UnmarshalJSON(payload)
+		require.Error(t, err, "Zr.UnmarshalJSON should reject curve id %d", id)
+
+		g1 := &G1{}
+		err = g1.UnmarshalJSON(payload)
+		require.Error(t, err, "G1.UnmarshalJSON should reject curve id %d", id)
+
+		g2 := &G2{}
+		err = g2.UnmarshalJSON(payload)
+		require.Error(t, err, "G2.UnmarshalJSON should reject curve id %d", id)
+
+		gt := &Gt{}
+		err = gt.UnmarshalJSON(payload)
+		require.Error(t, err, "Gt.UnmarshalJSON should reject curve id %d", id)
+	}
+
+	// sanity check: every valid curve id must still be accepted.
+	for id := range Curves {
+		payload := fmt.Appendf(nil, `{"curve": %d, "element": "AAAA"}`, id)
+		zr := &Zr{}
+		err := zr.UnmarshalJSON(payload)
+		assert.NoError(t, err, "valid curve id %d should be accepted", id)
+	}
+}
+
+// TestHashToGWithDomainOverlongDomain is a regression test for a panic in the
+// gnark-backed drivers where a domain longer than 255 bytes caused
+// HashToG1WithDomain/HashToG2WithDomain to panic instead of returning nil.
+// AMCL-backed curves (FP256BN_AMCL, FP256BN_AMCL_MIRACL) are exercised too:
+// their HashToG1WithDomain uses HMAC and never panics on domain length, and
+// their HashToG2WithDomain panics unconditionally (regardless of domain
+// length, see L1) which the curve-agnostic recover() in Curve.HashToG2WithDomain
+// now converts into a nil return as well.
+func TestHashToGWithDomainOverlongDomain(t *testing.T) {
+	data := []byte("hello world")
+	overlongDomain := make([]byte, 256)
+
+	for _, curve := range Curves {
+		require.NotPanics(t, func() {
+			p := curve.HashToG1WithDomain(data, overlongDomain)
+			if curve.ID() != FP256BN_AMCL && curve.ID() != FP256BN_AMCL_MIRACL {
+				assert.Nil(t, p, "expected nil G1 for overlong domain on curve %v", curve.ID())
+			}
+		}, "HashToG1WithDomain must not panic on curve %v", curve.ID())
+
+		require.NotPanics(t, func() {
+			curve.HashToG2WithDomain(data, overlongDomain)
+		}, "HashToG2WithDomain must not panic on curve %v", curve.ID())
+	}
+
+	// sanity check: a short, valid domain must still work on the curves that support G1 domain hashing.
+	shortDomain := []byte("my-domain")
+	for _, curve := range Curves {
+		p := curve.HashToG1WithDomain(data, shortDomain)
+		assert.NotNil(t, p, "expected non-nil G1 for short domain on curve %v", curve.ID())
+	}
+}
+
 func TestCurves(t *testing.T) {
 	for _, curve := range Curves {
 		testNotZeroAfterAdd(t, curve)

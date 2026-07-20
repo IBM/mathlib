@@ -46,6 +46,16 @@ func init() {
 // The rawBigInt field is non-nil only for special values like GroupOrder
 // (which equals p and is 0 in the field but needs its actual big.Int value
 // for operations like Mod and InvModP).
+//
+// Only methods that explicitly branch on rawBigInt (IsZero, IsOne, Bytes, Equals,
+// Copy, Clone, String, Mod, InvModP, InvModOrder, PowMod, toBigInt) preserve the
+// true big-int value. Plus/Minus/Mul operate on val directly (val == 0 whenever
+// rawBigInt != nil, since p mod p == 0), so arithmetic combining a rawBigInt-backed
+// Zr with another Zr via Plus/Minus/Mul silently ignores the raw value. This is safe
+// today because GroupOrder is only ever used as a PowMod exponent (where the result
+// is invariant to the field reduction by Fermat's little theorem) or passed to the
+// rawBigInt-aware methods above — do not add a new arithmetic use of GroupOrder via
+// Plus/Minus/Mul without accounting for this.
 type Zr struct {
 	val       fr.Element
 	rawBigInt *big.Int // non-nil only for GroupOrder
@@ -246,6 +256,11 @@ func (g *G1) Mul(a driver.Zr) driver.G1 {
 	return gc
 }
 
+// Mul2 computes [e]g + [f]Q via a joint Strauss-Shamir scalar multiplication.
+// Benchmarked against two independent Mul calls plus an Add: allocates far less
+// (1 vs ~26 allocs) but is not faster in wall-clock time, because — unlike Mul —
+// it does not use the GLV endomorphism speedup, so it forgoes the ~2x speedup that
+// GLV gives each individual scalar multiplication.
 func (g *G1) Mul2(e driver.Zr, Q driver.G1, f driver.Zr) driver.G1 {
 	bi1 := bigIntPool.Get()
 	defer bigIntPool.Put(bi1)
@@ -867,7 +882,9 @@ func (c *BBSCurve) HashToG2WithDomain(data, domain []byte) driver.G2 {
 }
 
 // JointScalarMultiplication computes [s1]a1+[s2]a2 using Strauss-Shamir technique
-// where a1 and a2 are affine points.
+// where a1 and a2 are affine points. This does not use the GLV endomorphism (unlike
+// G1Jac.ScalarMultiplication), so it is an allocation optimization over two independent
+// scalar multiplications plus an addition, not a wall-clock optimization.
 func JointScalarMultiplication(p *bls12381.G1Jac, a1, a2 *bls12381.G1Affine, s1, s2 *big.Int) *bls12381.G1Jac {
 	var res, p1, p2 bls12381.G1Jac
 	res.Set(&g1Infinity)
