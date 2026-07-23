@@ -949,3 +949,22 @@ func Test381BBSCompat(t *testing.T) {
 	hk = canonical.HashToG1WithDomain([]byte("CD"), []byte("EF"))
 	assert.Equal(t, hg.Bytes(), hk.Bytes())
 }
+
+// TestNewRandomZrHonorsReader verifies that NewRandomZr draws from the
+// caller-supplied io.Reader on every curve, so a deterministic reader yields
+// deterministic scalars (a driver that ignores rng fails the same-seed check).
+func TestNewRandomZrHonorsReader(t *testing.T) {
+	for _, curve := range Curves {
+		name := CurveIDToString(curve.curveID)
+
+		a := curve.NewRandomZr(mathrand.New(mathrand.NewSource(0x5eed)))
+		b := curve.NewRandomZr(mathrand.New(mathrand.NewSource(0x5eed)))
+		assert.True(t, a.Equals(b),
+			"curve %s: NewRandomZr ignores the caller's io.Reader "+
+				"(identical seed produced different scalars)", name)
+
+		d := curve.NewRandomZr(mathrand.New(mathrand.NewSource(0xd1ff)))
+		assert.False(t, a.Equals(d),
+			"curve %s: NewRandomZr gave identical scalars for different seeds", name)
+	}
+}

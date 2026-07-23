@@ -625,13 +625,12 @@ func (c *Curve) NewZrFromBigInt(i *big.Int) driver.Zr {
 }
 
 func (c *Curve) NewRandomZr(rng io.Reader) driver.Zr {
-	res := &Zr{}
-	_, err := res.val.SetRandom()
+	bi, err := rand.Int(rng, &c.Modulus)
 	if err != nil {
 		panic(err)
 	}
 
-	return res
+	return &Zr{val: *new(fr.Element).SetBigInt(bi)}
 }
 
 func (c *Curve) HashToZr(data []byte) driver.Zr {
