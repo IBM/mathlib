@@ -78,7 +78,7 @@ func (b *BaseZr) InvModP(p driver.Zr) {
 func (b *BaseZr) Bytes() []byte {
 	target := b.Int
 
-	if b.Int.Sign() < 0 || b.Int.Cmp(&b.Modulus) > 0 {
+	if b.Int.Sign() < 0 || b.Int.Cmp(&b.Modulus) >= 0 {
 		target = *new(big.Int).Set(&b.Int)
 		target = *target.Mod(&target, &b.Modulus)
 		if target.Sign() < 0 {

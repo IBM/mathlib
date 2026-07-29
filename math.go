@@ -259,11 +259,14 @@ func (z *Zr) Int() (int64, error) {
 	return int64(binary.BigEndian.Uint64(b[32-8:])), nil
 }
 
-// TODO doesn't behave as expected
 func (z *Zr) IsZero() bool {
-	zero := z.Copy()
-	zero = zero.Minus(zero)
-	return z.Equals(zero)
+	b := z.Bytes()
+	for _, byt := range b {
+		if byt != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 /*********************************************************************/
