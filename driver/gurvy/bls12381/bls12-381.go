@@ -639,13 +639,29 @@ func (c *Curve) NewZrFromBigInt(i *big.Int) driver.Zr {
 	return res
 }
 
+// NewRandomZr draws a uniformly random scalar using rng as the exclusive source of entropy
+// (so the same reader/seed always produces the same scalar), via rejection sampling on a
+// stack buffer - the same strategy fr.Element.SetRandom uses internally, but reading from
+// the caller's reader instead of crypto/rand. Acceptance probability is q/2^255 ~= 0.90,
+// i.e. ~1.1 iterations expected. Allocation-free, unlike a rand.Int-based implementation.
 func (c *Curve) NewRandomZr(rng io.Reader) driver.Zr {
-	bi, err := rand.Int(rng, &c.Modulus)
-	if err != nil {
-		panic(err)
+	var buf [fr.Bytes]byte
+
+	z := &Zr{}
+
+	for {
+		if _, err := io.ReadFull(rng, buf[:]); err != nil {
+			panic(err)
+		}
+
+		buf[0] &= 0x7f // fr's modulus is 255 bits (top byte 0x73)
+
+		if err := z.val.SetBytesCanonical(buf[:]); err == nil {
+			break
+		}
 	}
 
-	return &Zr{val: *new(fr.Element).SetBigInt(bi)}
+	return z
 }
 
 func (c *Curve) HashToZr(data []byte) driver.Zr {
@@ -777,13 +793,35 @@ func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
 	a.rawBigInt = nil
 }
 
+// multiScalarMulPairwiseThreshold is the minimum number of (base, scalar) pairs at which
+// gnark's bucket-method MultiExp beats a pairwise Mul2+Add loop. MultiExp has a large fixed
+// cost (window/chunk setup, goroutine fan-out) that a handful of points cannot amortize.
+//
+// Benchmarked on Apple M1 Max, go test -bench Benchmark_Sequential_MultiScalarMul -cpu 1
+// (see perf_test.go): the pairwise loop wins through n=6-7 and MultiExp wins from n=7-8 on,
+// consistently across BN254, BLS12_377_GURVY, BLS12_381_GURVY and BLS12_381_BBS_GURVY.
+const multiScalarMulPairwiseThreshold = 7
+
 func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
+	switch n := len(a); {
+	case n == 0:
+		return &G1{}
+	case n == 1:
+		return a[0].(*G1).Mul(b[0])
+	case n < multiScalarMulPairwiseThreshold:
+		return multiScalarMulPairwise(a, b)
+	}
+
 	affinePoints := make([]bls12381.G1Affine, len(a))
 	scalars := make([]fr.Element, len(b))
 
+	bi := bigIntPool.Get()
+	defer bigIntPool.Put(bi)
+
 	for i := range a {
 		affinePoints[i] = a[i].(*G1).G1Affine
-		scalars[i] = b[i].(*Zr).val // Direct fr.Element copy — no SetBigInt!
+		b[i].(*Zr).toBigInt(bi)
+		scalars[i].SetBigInt(bi)
 	}
 
 	first := G1Jacs.Get()
@@ -794,6 +832,35 @@ func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	gc.FromJacobian(first)
 
 	return gc
+}
+
+// multiScalarMulPairwise computes the sum via pairwise Mul2 (joint scalar multiplication),
+// which is not faster in wall-clock time than two independent Mul calls plus an Add on the
+// gnark-backed curves (it forgoes the GLV endomorphism speedup - see Mul2's doc comment),
+// but it allocates far less, so it wins over MultiExp below multiScalarMulPairwiseThreshold.
+func multiScalarMulPairwise(a []driver.G1, b []driver.Zr) driver.G1 {
+	var res *G1
+
+	i := 0
+	for ; i+1 < len(a); i += 2 {
+		g := a[i].(*G1).Mul2(b[i], a[i+1], b[i+1]).(*G1)
+		if res == nil {
+			res = g
+		} else {
+			res.Add(g)
+		}
+	}
+
+	if i < len(a) {
+		g := a[i].(*G1).Mul(b[i]).(*G1)
+		if res == nil {
+			res = g
+		} else {
+			res.Add(g)
+		}
+	}
+
+	return res
 }
 
 type BBSCurve struct {

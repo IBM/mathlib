@@ -227,6 +227,15 @@ type Bls12_377 struct {
 }
 
 func (c *Bls12_377) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
+	switch n := len(a); {
+	case n == 0:
+		return &bls12377G1{}
+	case n == 1:
+		return a[0].(*bls12377G1).Mul(b[0])
+	case n < multiScalarMulPairwiseThreshold:
+		return multiScalarMulPairwise(a, b)
+	}
+
 	var result bls12377.G1Affine
 	affinePoints := make([]bls12377.G1Affine, len(a))
 	scalars := make([]fr.Element, len(b))
