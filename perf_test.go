@@ -353,8 +353,10 @@ func Benchmark_Sequential_G1Mul2(b *testing.B) {
 }
 
 // Benchmark_Sequential_MultiScalarMul sweeps the number of (base, scalar) pairs on each
-// gnark-backed curve to find where MultiExp starts to beat a pairwise loop. Feeds the
-// small-n dispatch threshold in each driver's MultiScalarMul.
+// gnark-backed curve to find where MultiExp starts to beat a pairwise loop. MultiScalarMul
+// always takes the MultiExp path (beyond the trivial n<=1 cases); this benchmark documents
+// the size range in which a caller that knows its sizes is better off calling Mul/Mul2 itself
+// (see the CSP range proof's smallMSM in Panurus for such a caller).
 func Benchmark_Sequential_MultiScalarMul(b *testing.B) {
 	sizes := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 20, 32, 64}
 

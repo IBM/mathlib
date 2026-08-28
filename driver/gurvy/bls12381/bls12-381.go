@@ -793,23 +793,18 @@ func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
 	a.rawBigInt = nil
 }
 
-// multiScalarMulPairwiseThreshold is the minimum number of (base, scalar) pairs at which
-// gnark's bucket-method MultiExp beats a pairwise Mul2+Add loop. MultiExp has a large fixed
-// cost (window/chunk setup, goroutine fan-out) that a handful of points cannot amortize.
-//
-// Benchmarked on Apple M1 Max, go test -bench Benchmark_Sequential_MultiScalarMul -cpu 1
-// (see perf_test.go): the pairwise loop wins through n=6-7 and MultiExp wins from n=7-8 on,
-// consistently across BN254, BLS12_377_GURVY, BLS12_381_GURVY and BLS12_381_BBS_GURVY.
-const multiScalarMulPairwiseThreshold = 7
-
+// MultiScalarMul computes the sum of the scalar multiplications of the given bases by the
+// given scalars via gnark's bucket-method MultiExp. MultiExp carries a fixed cost (window
+// and chunk setup, goroutine fan-out) that a pairwise Mul2+Add loop does not, so for very
+// small n a caller that knows its sizes may be better served by Mul/Mul2 directly; callers
+// that care make that choice themselves, and this method does not second-guess them beyond
+// the trivial n==0 and n==1 cases.
 func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	switch n := len(a); {
 	case n == 0:
 		return &G1{}
 	case n == 1:
 		return a[0].(*G1).Mul(b[0])
-	case n < multiScalarMulPairwiseThreshold:
-		return multiScalarMulPairwise(a, b)
 	}
 
 	affinePoints := make([]bls12381.G1Affine, len(a))
@@ -832,35 +827,6 @@ func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
 	gc.FromJacobian(first)
 
 	return gc
-}
-
-// multiScalarMulPairwise computes the sum via pairwise Mul2 (joint scalar multiplication),
-// which is not faster in wall-clock time than two independent Mul calls plus an Add on the
-// gnark-backed curves (it forgoes the GLV endomorphism speedup - see Mul2's doc comment),
-// but it allocates far less, so it wins over MultiExp below multiScalarMulPairwiseThreshold.
-func multiScalarMulPairwise(a []driver.G1, b []driver.Zr) driver.G1 {
-	var res *G1
-
-	i := 0
-	for ; i+1 < len(a); i += 2 {
-		g := a[i].(*G1).Mul2(b[i], a[i+1], b[i+1]).(*G1)
-		if res == nil {
-			res = g
-		} else {
-			res.Add(g)
-		}
-	}
-
-	if i < len(a) {
-		g := a[i].(*G1).Mul(b[i]).(*G1)
-		if res == nil {
-			res = g
-		} else {
-			res.Add(g)
-		}
-	}
-
-	return res
 }
 
 type BBSCurve struct {
