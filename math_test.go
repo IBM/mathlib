@@ -327,8 +327,8 @@ func runMultiScalarMul(t *testing.T, c *Curve) {
 	rng, err := c.Rand()
 	require.NoError(t, err)
 
-	// sweep sizes around the pairwise/MultiExp dispatch boundary used by the gnark-backed
-	// drivers (threshold 7), plus a couple of larger sizes.
+	// sweep the trivially special-cased sizes (0, 1) and a spread of sizes that go through
+	// the general MultiExp path.
 	for _, n := range []int{0, 1, 2, 6, 7, 8, 10, 33} {
 		g1s := make([]*G1, n)
 		zrs := make([]*Zr, n)
@@ -348,7 +348,7 @@ func runMultiScalarMul(t *testing.T, c *Curve) {
 		assert.True(t, g1.Equals(g2), "curve %s: MultiScalarMul mismatch at n=%d", CurveIDToString(c.curveID), n)
 	}
 
-	// a zero scalar and an infinity base must not upset the pairwise or MultiExp path.
+	// a zero scalar and an infinity base must not upset MultiScalarMul.
 	g1s := []*G1{c.GenG1.Mul(c.NewRandomZr(rng)), c.NewG1(), c.GenG1.Mul(c.NewRandomZr(rng))}
 	zrs := []*Zr{c.NewRandomZr(rng), c.NewRandomZr(rng), c.NewZrFromInt(0)}
 
@@ -361,9 +361,8 @@ func runMultiScalarMul(t *testing.T, c *Curve) {
 
 	// GroupOrder is a special-cased Zr (see bls12381.Zr's rawBigInt doc comment) whose val
 	// is 0 but whose true value must still be honored by scalar multiplication - pins the
-	// consistency fix between MultiScalarMul's pairwise (Mul2/Mul) and MultiExp branches.
-	// exercised once below the pairwise/MultiExp threshold and once above it, so the fix
-	// covers both branches.
+	// consistency fix between MultiScalarMul's small-n Mul path and its MultiExp path.
+	// Exercised at two sizes so the fix covers both.
 	for _, n := range []int{2, 10} {
 		g1sGO := make([]*G1, n)
 		zrsGO := make([]*Zr, n)
