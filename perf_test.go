@@ -8,6 +8,7 @@ package math
 
 import (
 	"crypto/rand"
+	"fmt"
 	"io"
 	"math/big"
 	"testing"
@@ -278,6 +279,108 @@ func Benchmark_Parallel_BLS(b *testing.B) {
 				}
 			})
 		})
+	}
+}
+
+// gnarkBackedCurveIDs lists the curves whose driver goes through gnark-crypto's
+// bucket-method MultiExp, i.e. the ones the MultiScalarMul small-n dispatch applies to.
+var gnarkBackedCurveIDs = []CurveID{BN254, BLS12_377_GURVY, BLS12_381_GURVY, BLS12_381_BBS_GURVY}
+
+// Benchmark_Sequential_NewRandomZr measures random scalar generation across curves.
+func Benchmark_Sequential_NewRandomZr(b *testing.B) {
+	for _, curve := range Curves {
+		rng, err := curve.Rand()
+		if err != nil {
+			panic(err)
+		}
+
+		b.Run("curve "+CurveIDToString(curve.curveID), func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				_ = curve.NewRandomZr(rng)
+			}
+		})
+	}
+}
+
+// Benchmark_Sequential_G1Mul measures a single G1 scalar multiplication, the baseline
+// that MultiScalarMul and Mul2 are compared against at small n.
+func Benchmark_Sequential_G1Mul(b *testing.B) {
+	for _, id := range gnarkBackedCurveIDs {
+		curve := Curves[id]
+		rng, err := curve.Rand()
+		if err != nil {
+			panic(err)
+		}
+
+		p := curve.GenG1.Mul(curve.NewRandomZr(rng))
+		s := curve.NewRandomZr(rng)
+
+		b.Run("curve "+CurveIDToString(id), func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				_ = p.Mul(s)
+			}
+		})
+	}
+}
+
+// Benchmark_Sequential_G1Mul2 measures the joint two-scalar multiplication used as the
+// small-n building block for MultiScalarMul.
+func Benchmark_Sequential_G1Mul2(b *testing.B) {
+	for _, id := range gnarkBackedCurveIDs {
+		curve := Curves[id]
+		rng, err := curve.Rand()
+		if err != nil {
+			panic(err)
+		}
+
+		p := curve.GenG1.Mul(curve.NewRandomZr(rng))
+		q := curve.GenG1.Mul(curve.NewRandomZr(rng))
+		s1 := curve.NewRandomZr(rng)
+		s2 := curve.NewRandomZr(rng)
+
+		b.Run("curve "+CurveIDToString(id), func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				_ = p.Mul2(s1, q, s2)
+			}
+		})
+	}
+}
+
+// Benchmark_Sequential_MultiScalarMul sweeps the number of (base, scalar) pairs on each
+// gnark-backed curve to find where MultiExp starts to beat a pairwise loop. Feeds the
+// small-n dispatch threshold in each driver's MultiScalarMul.
+func Benchmark_Sequential_MultiScalarMul(b *testing.B) {
+	sizes := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16, 20, 32, 64}
+
+	for _, id := range gnarkBackedCurveIDs {
+		curve := Curves[id]
+		rng, err := curve.Rand()
+		if err != nil {
+			panic(err)
+		}
+
+		for _, n := range sizes {
+			bases := make([]*G1, n)
+			scalars := make([]*Zr, n)
+			for i := range bases {
+				bases[i] = curve.GenG1.Mul(curve.NewRandomZr(rng))
+				scalars[i] = curve.NewRandomZr(rng)
+			}
+
+			b.Run(fmt.Sprintf("curve %s/n=%d", CurveIDToString(id), n), func(b *testing.B) {
+				b.ReportAllocs()
+				b.ResetTimer()
+				for range b.N {
+					_ = curve.MultiScalarMul(bases, scalars)
+				}
+			})
+		}
 	}
 }
 

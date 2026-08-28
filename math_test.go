@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package math
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -326,23 +327,60 @@ func runMultiScalarMul(t *testing.T, c *Curve) {
 	rng, err := c.Rand()
 	require.NoError(t, err)
 
-	n := 10
-	g1s := make([]*G1, n)
-	zrs := make([]*Zr, n)
-	for i := range n {
-		g1s[i] = c.GenG1.Mul(c.NewRandomZr(rng))
-		zrs[i] = c.NewRandomZr(rng)
+	// sweep sizes around the pairwise/MultiExp dispatch boundary used by the gnark-backed
+	// drivers (threshold 7), plus a couple of larger sizes.
+	for _, n := range []int{0, 1, 2, 6, 7, 8, 10, 33} {
+		g1s := make([]*G1, n)
+		zrs := make([]*Zr, n)
+		for i := range n {
+			g1s[i] = c.GenG1.Mul(c.NewRandomZr(rng))
+			zrs[i] = c.NewRandomZr(rng)
+		}
+
+		// trivial multi scalar mul
+		g1 := c.NewG1()
+		for i := range n {
+			g1.Add(g1s[i].Mul(zrs[i]))
+		}
+		// single call
+		g2 := c.MultiScalarMul(g1s, zrs)
+
+		assert.True(t, g1.Equals(g2), "curve %s: MultiScalarMul mismatch at n=%d", CurveIDToString(c.curveID), n)
 	}
 
-	// trivial multi scalar mul
+	// a zero scalar and an infinity base must not upset the pairwise or MultiExp path.
+	g1s := []*G1{c.GenG1.Mul(c.NewRandomZr(rng)), c.NewG1(), c.GenG1.Mul(c.NewRandomZr(rng))}
+	zrs := []*Zr{c.NewRandomZr(rng), c.NewRandomZr(rng), c.NewZrFromInt(0)}
+
 	g1 := c.NewG1()
-	for i := range n {
+	for i := range g1s {
 		g1.Add(g1s[i].Mul(zrs[i]))
 	}
-	// single call
 	g2 := c.MultiScalarMul(g1s, zrs)
+	assert.True(t, g1.Equals(g2), "curve %s: MultiScalarMul mismatch with zero scalar/infinity base", CurveIDToString(c.curveID))
 
-	assert.True(t, g1.Equals(g2))
+	// GroupOrder is a special-cased Zr (see bls12381.Zr's rawBigInt doc comment) whose val
+	// is 0 but whose true value must still be honored by scalar multiplication - pins the
+	// consistency fix between MultiScalarMul's pairwise (Mul2/Mul) and MultiExp branches.
+	// exercised once below the pairwise/MultiExp threshold and once above it, so the fix
+	// covers both branches.
+	for _, n := range []int{2, 10} {
+		g1sGO := make([]*G1, n)
+		zrsGO := make([]*Zr, n)
+		g1sGO[0] = c.GenG1.Mul(c.NewRandomZr(rng))
+		zrsGO[0] = c.GroupOrder
+		for i := 1; i < n; i++ {
+			g1sGO[i] = c.GenG1.Mul(c.NewRandomZr(rng))
+			zrsGO[i] = c.NewRandomZr(rng)
+		}
+
+		g1GO := c.NewG1()
+		for i := range g1sGO {
+			g1GO.Add(g1sGO[i].Mul(zrsGO[i]))
+		}
+		g2GO := c.MultiScalarMul(g1sGO, zrsGO)
+		assert.True(t, g1GO.Equals(g2GO), "curve %s: MultiScalarMul mismatch with GroupOrder scalar at n=%d", CurveIDToString(c.curveID), n)
+	}
 }
 
 func runG2Test(t *testing.T, c *Curve) {
@@ -1035,4 +1073,40 @@ func TestNewRandomZrHonorsReader(t *testing.T) {
 		assert.False(t, a.Equals(d),
 			"curve %s: NewRandomZr gave identical scalars for different seeds", name)
 	}
+}
+
+// TestNewRandomZrRejectsBadReader verifies that a reader which cannot supply enough entropy
+// causes NewRandomZr to panic rather than silently fall back to some other randomness source.
+func TestNewRandomZrRejectsBadReader(t *testing.T) {
+	for _, curve := range Curves {
+		name := CurveIDToString(curve.curveID)
+		assert.Panics(t, func() {
+			curve.NewRandomZr(bytes.NewReader(nil))
+		}, "curve %s: NewRandomZr should panic when the reader has no data", name)
+	}
+}
+
+// TestNewRandomZrDistribution is a smoke check (not a rigorous statistical test) that the
+// bls12381 driver's stack-buffer rejection-sampling NewRandomZr does not produce duplicates
+// or an obviously biased high bit over a few thousand draws - the kind of bug an incorrect
+// mask (e.g. zeroing more bits than the 255-bit modulus requires) would introduce.
+func TestNewRandomZrDistribution(t *testing.T) {
+	curve := Curves[BLS12_381_GURVY]
+	rng, err := curve.Rand()
+	require.NoError(t, err)
+
+	const samples = 4096
+	seen := make(map[string]struct{}, samples)
+	secondBitSet := 0
+	for range samples {
+		z := curve.NewRandomZr(rng)
+		b := z.Bytes()
+		seen[string(b)] = struct{}{}
+		if b[0]&0x40 != 0 {
+			secondBitSet++
+		}
+	}
+	assert.Len(t, seen, samples, "NewRandomZr produced a duplicate scalar in %d draws", samples)
+	assert.InDelta(t, samples/2, secondBitSet, float64(samples)/8,
+		"NewRandomZr's second-highest bit looks biased over %d draws", samples)
 }
