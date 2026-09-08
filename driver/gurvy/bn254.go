@@ -236,10 +236,10 @@ type Bn254 struct {
 // that care make that choice themselves, and this method does not second-guess them beyond
 // the trivial n==0 and n==1 cases.
 func (c *Bn254) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
-	switch n := len(a); {
-	case n == 0:
+	switch n := len(a); n {
+	case 0:
 		return &bn254G1{}
-	case n == 1:
+	case 1:
 		return a[0].(*bn254G1).Mul(b[0])
 	}
 
