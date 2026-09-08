@@ -800,10 +800,10 @@ func (c *Curve) ModAdd2(a1, b1, c1, m driver.Zr) {
 // that care make that choice themselves, and this method does not second-guess them beyond
 // the trivial n==0 and n==1 cases.
 func (c *Curve) MultiScalarMul(a []driver.G1, b []driver.Zr) driver.G1 {
-	switch n := len(a); {
-	case n == 0:
+	switch n := len(a); n {
+	case 0:
 		return &G1{}
-	case n == 1:
+	case 1:
 		return a[0].(*G1).Mul(b[0])
 	}
 
