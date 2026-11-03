@@ -325,6 +325,10 @@ func (g *G1) IsInfinity() bool {
 func (g *G1) String() string {
 	rawstr := g.G1Affine.String()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+	if m == nil {
+		// e.g. the point at infinity, which gnark-crypto renders as "O"
+		return rawstr
+	}
 
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
@@ -545,49 +549,48 @@ func (c *Curve) NewG2() driver.G2 {
 
 func (c *Curve) NewG1FromBytes(b []byte) driver.G1 {
 	v := &G1{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12381.SizeOfG1AffineUncompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Curve) NewG2FromBytes(b []byte) driver.G2 {
 	v := &G2{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12381.SizeOfG2AffineUncompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Curve) NewG1FromCompressed(b []byte) driver.G1 {
 	v := &G1{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12381.SizeOfG1AffineCompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Curve) NewG2FromCompressed(b []byte) driver.G2 {
 	v := &G2{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12381.SizeOfG2AffineCompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Curve) NewGtFromBytes(b []byte) driver.Gt {
 	v := &Gt{}
+	// SetBytes checks the length and that every coefficient is canonical, but
+	// not group membership.
 	err := v.SetBytes(b)
 	if err != nil {
 		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
+	}
+	// IsInSubGroup checks z^(p^4-p^2+1) = 1 and then z^(p+1-t) = 1; it does
+	// not reject zero, which trivially satisfies both equations.
+	if v.IsZero() || !v.IsInSubGroup() {
+		panic("invalid Gt element: not in the order-r subgroup")
 	}
 
 	return v
@@ -616,6 +619,20 @@ func (c *Curve) NewZrFromBytes(b []byte) driver.Zr {
 	res.val.SetBytes(b)
 
 	return res
+}
+
+// NewZrFromBytesCanonical implements driver.CanonicalZrDecoder: b must be
+// exactly fr.Bytes long and encode a value strictly smaller than the group order.
+func (c *Curve) NewZrFromBytesCanonical(b []byte) (driver.Zr, error) {
+	if len(b) != fr.Bytes {
+		return nil, fmt.Errorf("invalid scalar encoding: expected %d bytes, got %d", fr.Bytes, len(b))
+	}
+	res := &Zr{}
+	if err := res.val.SetBytesCanonical(b); err != nil {
+		return nil, fmt.Errorf("invalid scalar encoding: %w", err)
+	}
+
+	return res, nil
 }
 
 func (c *Curve) NewZrFromInt64(i int64) driver.Zr {

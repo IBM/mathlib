@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package amcl
 
 import (
+	"bytes"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -139,35 +141,133 @@ func (p *Fp256Miraclbn) NewG2() driver.G2 {
 func bigToMiraclBIG(bi *big.Int) *FP256BN.BIG {
 	biCopy := bi
 
+	// The group order itself is passed through unreduced: callers rely on
+	// P.Mul(GroupOrder) (and Gt.Exp(GroupOrder)) to test subgroup membership,
+	// which reducing q to 0 would turn into a check that always succeeds.
 	if bi.Sign() < 0 || bi.Cmp(&modulusBig) > 0 {
-		biCopy = new(big.Int).Set(bi)
-		biCopy = biCopy.Mod(biCopy, &modulusBig)
-		if biCopy.Sign() < 0 {
-			biCopy = biCopy.Add(biCopy, &modulusBig)
-		}
+		// big.Int.Mod is Euclidean: the result is always in [0, modulus).
+		biCopy = new(big.Int).Mod(bi, &modulusBig)
 	}
 
 	return FP256BN.FromBytes(common.BigToBytes(biCopy))
 }
 
+// decodeFp256bnMiraclG1 decodes a G1 point from its uncompressed (0x04||X||Y)
+// or compressed ((0x02|0x03)||X) encoding. See decodeFp256bnG1: ECP_fromBytes
+// maps every invalid input to infinity and ignores trailing bytes, so we
+// enforce exact length, prefix and a canonical round trip. G1 has cofactor 1.
+func decodeFp256bnMiraclG1(b []byte, compressed bool) *FP256BN.ECP {
+	size := 2*int(FP256BN.MODBYTES) + 1
+	if compressed {
+		size = int(FP256BN.MODBYTES) + 1
+	}
+	if len(b) != size {
+		panic(fmt.Sprintf("invalid G1 encoding: expected %d bytes, got %d", size, len(b)))
+	}
+	if compressed && b[0] != 0x02 && b[0] != 0x03 || !compressed && b[0] != 0x04 {
+		panic(fmt.Sprintf("invalid G1 encoding: unexpected prefix 0x%02x", b[0]))
+	}
+
+	P := FP256BN.ECP_fromBytes(b)
+
+	re := make([]byte, size)
+	P.ToBytes(re, compressed)
+	if !bytes.Equal(re, b) {
+		panic("invalid G1 encoding: not the canonical encoding of a point on the curve")
+	}
+
+	return P
+}
+
+// decodeFp256bnMiraclG2 decodes a G2 point from its uncompressed (0x04||X||Y)
+// or compressed ((0x02|0x03)||X) encoding, enforcing exact length, prefix, a
+// canonical round trip and membership in the order-r subgroup.
+func decodeFp256bnMiraclG2(b []byte, compressed bool) *FP256BN.ECP2 {
+	size := 4*int(FP256BN.MODBYTES) + 1
+	if compressed {
+		size = 2*int(FP256BN.MODBYTES) + 1
+	}
+	if len(b) != size {
+		panic(fmt.Sprintf("invalid G2 encoding: expected %d bytes, got %d", size, len(b)))
+	}
+	if compressed && b[0] != 0x02 && b[0] != 0x03 || !compressed && b[0] != 0x04 {
+		panic(fmt.Sprintf("invalid G2 encoding: unexpected prefix 0x%02x", b[0]))
+	}
+
+	P := FP256BN.ECP2_fromBytes(b)
+
+	re := make([]byte, size)
+	P.ToBytes(re, compressed)
+	if !bytes.Equal(re, b) {
+		panic("invalid G2 encoding: not the canonical encoding of a point on the twist")
+	}
+
+	// G2member returns false for the point at infinity, which is a valid G2 element.
+	if !P.Is_infinity() && !FP256BN.G2member(P) {
+		panic("invalid G2 encoding: point is not in the order-r subgroup")
+	}
+
+	return P
+}
+
+// isFp256bnG2Member reports whether the point encoded in b (MIRACL core
+// uncompressed layout) is on the twist and in the order-r subgroup G2.
+func isFp256bnG2Member(b []byte) bool {
+	P := FP256BN.ECP2_fromBytes(b)
+
+	return !P.Is_infinity() && FP256BN.G2member(P)
+}
+
+// isFp256bnGtMember reports whether the Fp12 element encoded in b (MIRACL core
+// layout) is in the order-r subgroup Gt. The identity is a member (GTmember
+// itself rejects it).
+func isFp256bnGtMember(b []byte) bool {
+	g := FP256BN.FP12_fromBytes(b)
+
+	return g.Isunity() || FP256BN.GTmember(g)
+}
+
+// decodeFp256bnMiraclGt decodes a Gt element, requiring exact length,
+// canonical field elements and membership in the order-r subgroup of Fp12^*.
+func decodeFp256bnMiraclGt(b []byte) *FP256BN.FP12 {
+	size := 12 * int(FP256BN.MODBYTES)
+	if len(b) != size {
+		panic(fmt.Sprintf("invalid Gt encoding: expected %d bytes, got %d", size, len(b)))
+	}
+
+	g := FP256BN.FP12_fromBytes(b)
+
+	re := make([]byte, size)
+	g.ToBytes(re)
+	if !bytes.Equal(re, b) {
+		panic("invalid Gt encoding: non-canonical field element")
+	}
+
+	if !g.Isunity() && !FP256BN.GTmember(g) {
+		panic("invalid Gt encoding: element is not in the order-r subgroup")
+	}
+
+	return g
+}
+
 func (p *Fp256Miraclbn) NewG1FromBytes(b []byte) driver.G1 {
-	return &fp256bnMiraclG1{*FP256BN.ECP_fromBytes(b)}
+	return &fp256bnMiraclG1{*decodeFp256bnMiraclG1(b, false)}
 }
 
 func (p *Fp256Miraclbn) NewG2FromBytes(b []byte) driver.G2 {
-	return &fp256bnMiraclG2{FP256BN.ECP2_fromBytes(b)}
+	return &fp256bnMiraclG2{decodeFp256bnMiraclG2(b, false)}
 }
 
 func (p *Fp256Miraclbn) NewG1FromCompressed(b []byte) driver.G1 {
-	return &fp256bnMiraclG1{*FP256BN.ECP_fromBytes(b)}
+	return &fp256bnMiraclG1{*decodeFp256bnMiraclG1(b, true)}
 }
 
 func (p *Fp256Miraclbn) NewG2FromCompressed(b []byte) driver.G2 {
-	return &fp256bnMiraclG2{FP256BN.ECP2_fromBytes(b)}
+	return &fp256bnMiraclG2{decodeFp256bnMiraclG2(b, true)}
 }
 
 func (p *Fp256Miraclbn) NewGtFromBytes(b []byte) driver.Gt {
-	return &fp256bnMiraclGt{*FP256BN.FP12_fromBytes(b)}
+	return &fp256bnMiraclGt{*decodeFp256bnMiraclGt(b)}
 }
 
 func (p *Fp256Miraclbn) HashToG1(data []byte) driver.G1 {
@@ -252,6 +352,10 @@ func (e *fp256bnMiraclG1) Sub(a driver.G1) {
 func (b *fp256bnMiraclG1) String() string {
 	rawstr := b.ToString()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+	if m == nil {
+		// e.g. the point at infinity, which AMCL renders as "infinity"
+		return rawstr
+	}
 
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
@@ -313,4 +417,9 @@ func (e *fp256bnMiraclG2) Compressed() []byte {
 
 func (b *fp256bnMiraclG2) String() string {
 	return b.ToString()
+}
+
+// NewZrFromBytesCanonical implements driver.CanonicalZrDecoder.
+func (p *Fp256Miraclbn) NewZrFromBytesCanonical(b []byte) (driver.Zr, error) {
+	return common.NewBaseZrFromBytesCanonical(&p.Modulus, b)
 }

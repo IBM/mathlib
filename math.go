@@ -756,9 +756,39 @@ func (c *Curve) NewRandomZr(rng io.Reader) *Zr {
 }
 
 // NewZrFromBytes creates a Zr scalar from its byte representation.
-// The byte slice should be in the format produced by Zr.Bytes().
+// The byte slice should be in the format produced by Zr.Bytes(). It accepts
+// any length and reduces the value modulo the group order, so it is not
+// injective; use NewZrFromBytesCanonical to reject non-canonical encodings.
 func (c *Curve) NewZrFromBytes(b []byte) *Zr {
 	return &Zr{zr: c.c.NewZrFromBytes(b), curveID: c.curveID}
+}
+
+// NewZrFromBytesCanonical decodes a Zr scalar from its canonical byte
+// representation, as produced by Zr.Bytes(). Unlike NewZrFromBytes, which
+// accepts inputs of any length and silently reduces them modulo the group
+// order, it returns an error unless len(b) == ScalarByteSize and the encoded
+// big-endian value is strictly smaller than the group order. Use it to decode
+// scalars received from untrusted parties, where distinct byte strings must not
+// decode to the same scalar.
+func (c *Curve) NewZrFromBytesCanonical(b []byte) (*Zr, error) {
+	if d, ok := c.c.(driver.CanonicalZrDecoder); ok {
+		zr, err := d.NewZrFromBytesCanonical(b)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Zr{zr: zr, curveID: c.curveID}, nil
+	}
+
+	// Generic fallback for drivers that do not implement CanonicalZrDecoder.
+	if len(b) != c.ScalarByteSize {
+		return nil, fmt.Errorf("invalid scalar encoding: expected %d bytes, got %d", c.ScalarByteSize, len(b))
+	}
+	if new(big.Int).SetBytes(b).Cmp(c.GroupOrder.BigInt()) >= 0 {
+		return nil, errors.New("invalid scalar encoding: value not smaller than the group order")
+	}
+
+	return c.NewZrFromBytes(b), nil
 }
 
 // NewG1FromBytes deserializes a G1 point from its uncompressed byte representation.
