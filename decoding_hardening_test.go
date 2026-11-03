@@ -9,6 +9,7 @@ package math
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"math/big"
 	"testing"
 
@@ -372,4 +373,105 @@ func TestGtFromBytesSubgroupCheck(t *testing.T) {
 			require.Error(t, err, "zero is not a Gt element")
 		})
 	}
+}
+
+// Identities produced by arithmetic must encode canonically and round-trip.
+func TestComputedIdentityRoundTrip(t *testing.T) {
+	for _, c := range Curves {
+		t.Run(CurveIDToString(c.ID()), func(t *testing.T) {
+			for _, k := range []int64{1, 2, 7} {
+				P := c.GenG1.Mul(c.NewZrFromInt(k))
+				pp := P.Copy()
+				pp.Sub(P)
+				for _, id := range []*G1{pp, P.Mul(c.GroupOrder), P.Mul(c.NewZrFromInt(0))} {
+					require.True(t, id.IsInfinity())
+					require.Equal(t, c.NewG1().Bytes(), id.Bytes())
+					require.Equal(t, c.NewG1().Compressed(), id.Compressed())
+					_, err := c.NewG1FromBytes(id.Bytes())
+					require.NoError(t, err)
+					_, err = c.NewG1FromCompressed(id.Compressed())
+					require.NoError(t, err)
+				}
+
+				Q := c.GenG2.Mul(c.NewZrFromInt(k))
+				qq := Q.Copy()
+				qq.Sub(Q)
+				for _, id := range []*G2{qq, Q.Mul(c.GroupOrder), Q.Mul(c.NewZrFromInt(0))} {
+					require.True(t, id.Equals(c.NewG2()))
+					require.Equal(t, c.NewG2().Bytes(), id.Bytes())
+					require.Equal(t, c.NewG2().Compressed(), id.Compressed())
+					_, err := c.NewG2FromBytes(id.Bytes())
+					require.NoError(t, err)
+					_, err = c.NewG2FromCompressed(id.Compressed())
+					require.NoError(t, err)
+				}
+			}
+		})
+	}
+}
+
+// Only the canonical encoding of infinity is accepted.
+func TestNonCanonicalInfinityRejected(t *testing.T) {
+	for _, c := range Curves {
+		t.Run(CurveIDToString(c.ID()), func(t *testing.T) {
+			// On BN254 all-zero is the canonical encoding, so it is skipped.
+			if z := make([]byte, c.G1ByteSize); !bytes.Equal(z, c.NewG1().Bytes()) {
+				_, err := c.NewG1FromBytes(z)
+				require.Error(t, err)
+			}
+			if z := make([]byte, c.G2ByteSize); !bytes.Equal(z, c.NewG2().Bytes()) {
+				_, err := c.NewG2FromBytes(z)
+				require.Error(t, err)
+			}
+			_, err := c.NewG1FromCompressed(make([]byte, c.CompressedG1ByteSize))
+			require.Error(t, err)
+		})
+	}
+}
+
+// G1 coordinates >= p and compressed x without a square root are rejected (AMCL).
+func TestAmclG1InvalidCoordinates(t *testing.T) {
+	p, ok := new(big.Int).SetString("fffffffffffcf0cd46e5f25eee71a49f0cdc65fb12980a82d3292ddbaed33013", 16)
+	require.True(t, ok)
+	for _, id := range []CurveID{FP256BN_AMCL, FP256BN_AMCL_MIRACL} {
+		c := Curves[id]
+		t.Run(CurveIDToString(id), func(t *testing.T) {
+			b := c.GenG1.Bytes()
+			for _, off := range []int{1, 33} {
+				v := new(big.Int).SetBytes(b[off : off+32])
+				v.Add(v, p)
+				if v.BitLen() > 256 {
+					continue
+				}
+				nb := bytes.Clone(b)
+				v.FillBytes(nb[off : off+32])
+				_, err := c.NewG1FromBytes(nb)
+				require.Error(t, err, "coordinate + p at offset %d", off)
+			}
+
+			// y^2 = x^3 + 3 has no solution for some small x.
+			rejected := 0
+			for x := int64(1); x < 50; x++ {
+				comp := append([]byte{0x02}, enc32(big.NewInt(x))...)
+				if _, err := c.NewG1FromCompressed(comp); err != nil {
+					rejected++
+				}
+			}
+			require.Positive(t, rejected)
+		})
+	}
+}
+
+// JSON keeps the lenient NewZrFromBytes semantics (documented behaviour).
+func TestZrJSONLenient(t *testing.T) {
+	c := Curves[BN254]
+	q := orderOf(c)
+	raw, err := json.Marshal(map[string]any{
+		"curve":   BN254,
+		"element": enc32(new(big.Int).Add(q, big.NewInt(5))),
+	})
+	require.NoError(t, err)
+	var z Zr
+	require.NoError(t, json.Unmarshal(raw, &z))
+	require.True(t, z.Equals(c.NewZrFromInt(5)))
 }
