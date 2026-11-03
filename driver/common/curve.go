@@ -9,6 +9,8 @@ package common
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
+	"fmt"
 	"io"
 	"math/big"
 
@@ -52,7 +54,12 @@ func (c *CurveBase) ModAdd(a1, b1, m driver.Zr) driver.Zr {
 }
 
 func (c *CurveBase) GroupOrder() driver.Zr {
-	return &BaseZr{Int: c.Modulus, Modulus: c.Modulus}
+	// Deep-copy the modulus so that in-place operations on the returned Zr can
+	// never alias (and corrupt) the curve's own modulus.
+	res := &BaseZr{Modulus: c.Modulus, isGroupOrder: true}
+	res.Set(&c.Modulus)
+
+	return res
 }
 
 func (c *CurveBase) NewZrFromBytes(b []byte) driver.Zr {
@@ -60,6 +67,24 @@ func (c *CurveBase) NewZrFromBytes(b []byte) driver.Zr {
 	res.SetBytes(b)
 
 	return res
+}
+
+// NewBaseZrFromBytesCanonical decodes b as a big-endian scalar modulo modulus
+// and returns an error unless len(b) == ScalarByteSize and the encoded value is
+// strictly smaller than modulus, i.e. unless b is the (unique) encoding that
+// Bytes produces for that scalar. Drivers whose Zr type is BaseZr use it to
+// implement driver.CanonicalZrDecoder.
+func NewBaseZrFromBytesCanonical(modulus *big.Int, b []byte) (*BaseZr, error) {
+	if len(b) != ScalarByteSize {
+		return nil, fmt.Errorf("invalid scalar encoding: expected %d bytes, got %d", ScalarByteSize, len(b))
+	}
+	res := &BaseZr{Modulus: *modulus}
+	res.SetBytes(b)
+	if res.Cmp(modulus) >= 0 {
+		return nil, errors.New("invalid scalar encoding: value not smaller than the group order")
+	}
+
+	return res, nil
 }
 
 func (c *CurveBase) NewZrFromInt64(i int64) driver.Zr {
@@ -71,7 +96,11 @@ func (c *CurveBase) NewZrFromUint64(i uint64) driver.Zr {
 }
 
 func (c *CurveBase) NewZrFromBigInt(i *big.Int) driver.Zr {
-	return &BaseZr{Int: *i, Modulus: c.Modulus}
+	// Deep copy: a struct copy of *i would share its limb array with the caller.
+	res := &BaseZr{Modulus: c.Modulus}
+	res.Set(i)
+
+	return res
 }
 
 func (c *CurveBase) NewRandomZr(rng io.Reader) driver.Zr {

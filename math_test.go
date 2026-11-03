@@ -573,7 +573,9 @@ func runToFroBytesTest(t *testing.T, c *Curve) {
 	assert.Len(t, g2rback.Compressed(), c.CompressedG2ByteSize, "failed with curve %T", c.c)
 
 	g2r = c.GenG2.Mul(r)
-	a := c.Pairing(g2r, c.GenG1)
+	// NewGtFromBytes only accepts elements of the order-r subgroup Gt, so the
+	// Miller loop output must go through the final exponentiation first.
+	a := c.FExp(c.Pairing(g2r, c.GenG1))
 	abytes := a.Bytes()
 	aback, err := c.NewGtFromBytes(abytes)
 	require.NoError(t, err)
@@ -835,7 +837,7 @@ func runJsonMarshaler(t *testing.T, c *Curve) {
 	zr := c.NewRandomZr(rng)
 	g1 := c.GenG1.Mul(zr)
 	g2 := c.GenG2.Mul(zr)
-	gt := c.Pairing(g2, g1)
+	gt := c.FExp(c.Pairing(g2, g1)) // only elements of Gt can be deserialized
 
 	testStruct := &testJsonStruct{
 		Zr: zr,
@@ -877,13 +879,13 @@ func TestJSONMarshalerFails(t *testing.T) {
 	// assert.EqualError(t, err, "json: cannot unmarshal number into Go struct field curveElement.element of type []uint8")
 
 	err = json.Unmarshal([]byte(`{"element":"YQo="}`), g1)
-	require.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	require.EqualError(t, err, "failure [invalid G1 encoding: expected 65 bytes, got 2]")
 
 	err = json.Unmarshal([]byte(`{"element":"YQo="}`), g2)
-	require.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	require.EqualError(t, err, "failure [invalid G2 encoding: expected 128 bytes, got 2]")
 
 	err = json.Unmarshal([]byte(`{"element":"YQo="}`), gt)
-	require.EqualError(t, err, "failure [runtime error: index out of range [2] with length 2]")
+	require.EqualError(t, err, "failure [invalid Gt encoding: expected 384 bytes, got 2]")
 }
 
 // TestJSONUnmarshalerInvalidCurveID is a regression test for a panic where an

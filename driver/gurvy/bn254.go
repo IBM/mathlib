@@ -102,6 +102,10 @@ var g1StrRegexp *regexp.Regexp = regexp.MustCompile(`^E\([[]([0-9]+),([0-9]+)[]]
 func (g *bn254G1) String() string {
 	rawstr := g.G1Affine.String()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+	if m == nil {
+		// e.g. the point at infinity, which gnark-crypto renders as "O"
+		return rawstr
+	}
 
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
@@ -351,49 +355,48 @@ func (c *Bn254) NewG2() driver.G2 {
 
 func (c *Bn254) NewG1FromBytes(b []byte) driver.G1 {
 	v := &bn254G1{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bn254.SizeOfG1AffineUncompressed, v.SetBytes)
+	common.RequireCanonicalInfinity(b, v.IsInfinity(), v.Bytes)
 
 	return v
 }
 
 func (c *Bn254) NewG2FromBytes(b []byte) driver.G2 {
 	v := &bn254G2{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bn254.SizeOfG2AffineUncompressed, v.SetBytes)
+	common.RequireCanonicalInfinity(b, v.IsInfinity(), v.Bytes)
 
 	return v
 }
 
 func (c *Bn254) NewG1FromCompressed(b []byte) driver.G1 {
 	v := &bn254G1{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bn254.SizeOfG1AffineCompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Bn254) NewG2FromCompressed(b []byte) driver.G2 {
 	v := &bn254G2{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bn254.SizeOfG2AffineCompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Bn254) NewGtFromBytes(b []byte) driver.Gt {
 	v := &bn254Gt{}
+	// SetBytes checks the length and that every coefficient is canonical, but
+	// not group membership.
 	err := v.SetBytes(b)
 	if err != nil {
 		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
+	}
+	if !isInGT(&v.GT) {
+		panic("invalid Gt element: not in the order-r subgroup")
 	}
 
 	return v
@@ -433,4 +436,30 @@ func (p *Bn254) HashToG2WithDomain(data, domain []byte) driver.G2 {
 	}
 
 	return &bn254G2{g2}
+}
+
+// NewZrFromBytesCanonical implements driver.CanonicalZrDecoder.
+func (p *Bn254) NewZrFromBytesCanonical(b []byte) (driver.Zr, error) {
+	return common.NewBaseZrFromBytesCanonical(&p.Modulus, b)
+}
+
+// isInGT reports whether z is in the order-r subgroup of Fp12^*.
+//
+// gnark-crypto's BN254 E12.IsInSubGroup implements the test of
+// https://eprint.iacr.org/2022/348, which is only sound for elements of the
+// cyclotomic subgroup (it uses cyclotomic squaring), so we first check that z is
+// non-zero and satisfies z^(p^4-p^2+1) = 1, using only Frobenius maps.
+func isInGT(z *bn254.GT) bool {
+	if z.IsZero() {
+		return false
+	}
+
+	var a, b bn254.GT
+	a.FrobeniusSquare(z)
+	b.FrobeniusSquare(&a).Mul(&b, z)
+	if !a.Equal(&b) {
+		return false
+	}
+
+	return z.IsInSubGroup()
 }

@@ -7,8 +7,10 @@ SPDX-License-Identifier: Apache-2.0
 package amcl
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 	"regexp"
 	"strings"
@@ -25,7 +27,23 @@ type fp256bnGt struct {
 }
 
 func (a *fp256bnGt) Exp(x driver.Zr) driver.Gt {
-	return &fp256bnGt{*a.Pow(bigToMiraclBIGCore(&x.(*common.BaseZr).Int))}
+	// FP12.Pow in this AMCL version returns the base unchanged for a zero
+	// exponent, so a zero exponent is handled here explicitly. A non-zero
+	// multiple of the group order is raised to the group order instead of
+	// being reduced to 0, so that Exp(GroupOrder) still distinguishes elements
+	// outside the order-q subgroup.
+	xi := &x.(*common.BaseZr).Int
+	if xi.Sign() == 0 {
+		return &fp256bnGt{*FP256BN.NewFP12int(1)}
+	}
+	var e big.Int
+	if e.Mod(xi, &modulusBig).Sign() == 0 {
+		e.Set(&modulusBig)
+	} else {
+		e.Set(xi)
+	}
+
+	return &fp256bnGt{*a.Pow(bigToMiraclBIGCore(&e))}
 }
 
 func (a *fp256bnGt) Equals(b driver.Gt) bool {
@@ -135,35 +153,154 @@ func (p *Fp256bn) NewG2() driver.G2 {
 func bigToMiraclBIGCore(bi *big.Int) *FP256BN.BIG {
 	biCopy := bi
 
+	// The group order itself is passed through unreduced: callers rely on
+	// P.Mul(GroupOrder) (and Gt.Exp(GroupOrder)) to test subgroup membership,
+	// which reducing q to 0 would turn into a check that always succeeds.
 	if bi.Sign() < 0 || bi.Cmp(&modulusBig) > 0 {
-		biCopy = new(big.Int).Set(bi)
-		biCopy = biCopy.Mod(biCopy, &modulusBig)
-		if biCopy.Sign() < 0 {
-			biCopy = biCopy.Add(biCopy, &modulusBig)
-		}
+		// big.Int.Mod is Euclidean: the result is always in [0, modulus).
+		biCopy = new(big.Int).Mod(bi, &modulusBig)
 	}
 
 	return FP256BN.FromBytes(common.BigToBytes(biCopy))
 }
 
+// decodeFp256bnG1 decodes a G1 point from its uncompressed (0x04||X||Y) or
+// compressed ((0x02|0x03)||X) SEC1-style encoding.
+//
+// FP256BN.ECP_fromBytes never fails: an invalid prefix, a coordinate >= p or a
+// point that is not on the curve all decode to the point at infinity, and any
+// trailing bytes are ignored. We therefore enforce the exact length and prefix
+// and require the decoded point to re-encode to exactly the input. This rejects
+// every malformed input and leaves the canonical encoding of the point at
+// infinity (as produced by Bytes/Compressed) as the only input that decodes to
+// infinity.
+//
+// FP256BN is a BN curve, so G1 has cofactor 1: every point on the curve is in
+// the order-r subgroup and no further check is needed.
+func decodeFp256bnG1(b []byte, compressed bool) *FP256BN.ECP {
+	size := 2*int(FP256BN.MODBYTES) + 1
+	if compressed {
+		size = int(FP256BN.MODBYTES) + 1
+	}
+	if len(b) != size {
+		panic(fmt.Sprintf("invalid G1 encoding: expected %d bytes, got %d", size, len(b)))
+	}
+	if compressed && b[0] != 0x02 && b[0] != 0x03 || !compressed && b[0] != 0x04 {
+		panic(fmt.Sprintf("invalid G1 encoding: unexpected prefix 0x%02x", b[0]))
+	}
+
+	P := FP256BN.ECP_fromBytes(b)
+
+	re := make([]byte, size)
+	P.ToBytes(re, compressed)
+	if !bytes.Equal(re, b) {
+		panic("invalid G1 encoding: not the canonical encoding of a point on the curve")
+	}
+
+	return P
+}
+
+// decodeFp256bnG2 decodes a G2 point from its Xa||Xb||Ya||Yb encoding (the only
+// format this driver supports, used for both Bytes and Compressed).
+//
+// FP256BN.ECP2_fromBytes reduces coordinates modulo p, maps points that are not
+// on the twist to infinity and ignores trailing bytes, so, as for G1, we enforce
+// the exact length and a canonical round trip. The twist has a large cofactor,
+// so we additionally check that the point lies in the order-r subgroup G2.
+func decodeFp256bnG2(b []byte) *FP256BN.ECP2 {
+	size := 4 * int(FP256BN.MODBYTES)
+	if len(b) != size {
+		panic(fmt.Sprintf("invalid G2 encoding: expected %d bytes, got %d", size, len(b)))
+	}
+
+	P := FP256BN.ECP2_fromBytes(b)
+
+	re := make([]byte, size)
+	P.ToBytes(re)
+	if !bytes.Equal(re, b) {
+		panic("invalid G2 encoding: not the canonical encoding of a point on the twist")
+	}
+
+	// As for Gt (see decodeFp256bnGt), the legacy package has no membership
+	// test, so we use the fast endomorphism-based one of the MIRACL core
+	// package, whose uncompressed G2 layout is 0x04||Xb||Xa||Yb||Ya.
+	if !P.Is_infinity() && !isFp256bnG2Member(toMiraclG2Bytes(b)) {
+		panic("invalid G2 encoding: point is not in the order-r subgroup")
+	}
+
+	return P
+}
+
+// decodeFp256bnGt decodes a Gt element, requiring exact length, canonical field
+// elements and membership in the order-r subgroup of Fp12^*.
+func decodeFp256bnGt(b []byte) *FP256BN.FP12 {
+	size := 12 * int(FP256BN.MODBYTES)
+	if len(b) != size {
+		panic(fmt.Sprintf("invalid Gt encoding: expected %d bytes, got %d", size, len(b)))
+	}
+
+	g := FP256BN.FP12_fromBytes(b)
+
+	re := make([]byte, size)
+	g.ToBytes(re)
+	if !bytes.Equal(re, b) {
+		panic("invalid Gt encoding: non-canonical field element")
+	}
+
+	// The legacy AMCL package does not export a GT membership test. The MIRACL
+	// core package implements the same curve and Fp12 tower, with an encoding
+	// that lists the twelve Fp coefficients in reverse order, so we reuse its
+	// (fast, Frobenius-based) membership test.
+	if !g.Isunity() && !isFp256bnGtMember(reverseFpLimbs(b, int(FP256BN.MODBYTES))) {
+		panic("invalid Gt encoding: element is not in the order-r subgroup")
+	}
+
+	return g
+}
+
+// toMiraclG2Bytes converts a legacy Xa||Xb||Ya||Yb G2 encoding into the MIRACL
+// core uncompressed encoding 0x04||Xb||Xa||Yb||Ya.
+func toMiraclG2Bytes(b []byte) []byte {
+	mb := int(FP256BN.MODBYTES)
+	out := make([]byte, 1, 1+4*mb)
+	out[0] = 0x04
+	out = append(out, b[mb:2*mb]...)
+	out = append(out, b[0:mb]...)
+	out = append(out, b[3*mb:4*mb]...)
+	out = append(out, b[2*mb:3*mb]...)
+
+	return out
+}
+
+// reverseFpLimbs returns a copy of b with its size-byte chunks in reverse order.
+func reverseFpLimbs(b []byte, size int) []byte {
+	out := make([]byte, len(b))
+	n := len(b) / size
+	for i := range n {
+		copy(out[(n-1-i)*size:(n-i)*size], b[i*size:(i+1)*size])
+	}
+
+	return out
+}
+
 func (p *Fp256bn) NewG1FromBytes(b []byte) driver.G1 {
-	return &fp256bnG1{*FP256BN.ECP_fromBytes(b)}
+	return &fp256bnG1{*decodeFp256bnG1(b, false)}
 }
 
 func (p *Fp256bn) NewG2FromBytes(b []byte) driver.G2 {
-	return &fp256bnG2{*FP256BN.ECP2_fromBytes(b)}
+	return &fp256bnG2{*decodeFp256bnG2(b)}
 }
 
 func (p *Fp256bn) NewG1FromCompressed(b []byte) driver.G1 {
-	return &fp256bnG1{*FP256BN.ECP_fromBytes(b)}
+	return &fp256bnG1{*decodeFp256bnG1(b, true)}
 }
 
 func (p *Fp256bn) NewG2FromCompressed(b []byte) driver.G2 {
-	return &fp256bnG2{*FP256BN.ECP2_fromBytes(b)}
+	return &fp256bnG2{*decodeFp256bnG2(b)}
 }
 
 func (p *Fp256bn) NewGtFromBytes(b []byte) driver.Gt {
-	return &fp256bnGt{*FP256BN.FP12_fromBytes(b)}
+	return &fp256bnGt{*decodeFp256bnGt(b)}
 }
 
 func (p *Fp256bn) HashToG1(data []byte) driver.G1 {
@@ -233,14 +370,14 @@ func (e *fp256bnG1) IsInfinity() bool {
 
 func (e *fp256bnG1) Bytes() []byte {
 	b := make([]byte, 2*int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, false)
+	g1Infinity(&e.ECP).ToBytes(b, false)
 
 	return b
 }
 
 func (e *fp256bnG1) Compressed() []byte {
 	b := make([]byte, int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, true)
+	g1Infinity(&e.ECP).ToBytes(b, true)
 
 	return b
 }
@@ -254,6 +391,10 @@ var g1StrRegexp *regexp.Regexp = regexp.MustCompile(`^\(([0-9a-f]+),([0-9a-f]+)\
 func (b *fp256bnG1) String() string {
 	rawstr := b.ToString()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+	if m == nil {
+		// e.g. the point at infinity, which AMCL renders as "infinity"
+		return rawstr
+	}
 
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
@@ -302,18 +443,42 @@ func (e *fp256bnG2) Affine() {
 
 func (e *fp256bnG2) Bytes() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
-	e.ToBytes(b)
+	g2Infinity(&e.ECP2).ToBytes(b)
 
 	return b
 }
 
 func (e *fp256bnG2) Compressed() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
-	e.ToBytes(b)
+	g2Infinity(&e.ECP2).ToBytes(b)
 
 	return b
 }
 
 func (b *fp256bnG2) String() string {
 	return b.ToString()
+}
+
+// NewZrFromBytesCanonical implements driver.CanonicalZrDecoder.
+func (p *Fp256bn) NewZrFromBytesCanonical(b []byte) (driver.Zr, error) {
+	return common.NewBaseZrFromBytesCanonical(&p.Modulus, b)
+}
+
+// g1Infinity returns the canonical identity if P is the identity, else P.
+// AMCL serialises a computed identity from its leftover coordinates.
+func g1Infinity(P *FP256BN.ECP) *FP256BN.ECP {
+	if P.Is_infinity() {
+		return FP256BN.NewECP()
+	}
+
+	return P
+}
+
+// g2Infinity is the G2 analogue of g1Infinity.
+func g2Infinity(P *FP256BN.ECP2) *FP256BN.ECP2 {
+	if P.Is_infinity() {
+		return FP256BN.NewECP2()
+	}
+
+	return P
 }
