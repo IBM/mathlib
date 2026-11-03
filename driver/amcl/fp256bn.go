@@ -370,14 +370,14 @@ func (e *fp256bnG1) IsInfinity() bool {
 
 func (e *fp256bnG1) Bytes() []byte {
 	b := make([]byte, 2*int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, false)
+	g1Infinity(&e.ECP).ToBytes(b, false)
 
 	return b
 }
 
 func (e *fp256bnG1) Compressed() []byte {
 	b := make([]byte, int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, true)
+	g1Infinity(&e.ECP).ToBytes(b, true)
 
 	return b
 }
@@ -443,14 +443,14 @@ func (e *fp256bnG2) Affine() {
 
 func (e *fp256bnG2) Bytes() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
-	e.ToBytes(b)
+	g2Infinity(&e.ECP2).ToBytes(b)
 
 	return b
 }
 
 func (e *fp256bnG2) Compressed() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES))
-	e.ToBytes(b)
+	g2Infinity(&e.ECP2).ToBytes(b)
 
 	return b
 }
@@ -462,4 +462,23 @@ func (b *fp256bnG2) String() string {
 // NewZrFromBytesCanonical implements driver.CanonicalZrDecoder.
 func (p *Fp256bn) NewZrFromBytesCanonical(b []byte) (driver.Zr, error) {
 	return common.NewBaseZrFromBytesCanonical(&p.Modulus, b)
+}
+
+// g1Infinity returns the canonical identity if P is the identity, else P.
+// AMCL serialises a computed identity from its leftover coordinates.
+func g1Infinity(P *FP256BN.ECP) *FP256BN.ECP {
+	if P.Is_infinity() {
+		return FP256BN.NewECP()
+	}
+
+	return P
+}
+
+// g2Infinity is the G2 analogue of g1Infinity.
+func g2Infinity(P *FP256BN.ECP2) *FP256BN.ECP2 {
+	if P.Is_infinity() {
+		return FP256BN.NewECP2()
+	}
+
+	return P
 }

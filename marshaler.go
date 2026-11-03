@@ -25,6 +25,8 @@ func validCurveID(id CurveID) error {
 	return nil
 }
 
+// UnmarshalJSON decodes the element with the lenient NewZrFromBytes (any
+// length, reduced mod q). Use NewZrFromBytesCanonical for untrusted input.
 func (z *Zr) UnmarshalJSON(raw []byte) error {
 	ce := &curveElement{}
 	err := json.Unmarshal(raw, ce)

@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package math
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 )
@@ -59,5 +60,55 @@ func FuzzHashToGWithDomain(f *testing.F) {
 
 		_ = curve.HashToG1WithDomain(data, domain)
 		_ = curve.HashToG2WithDomain(data, domain)
+	})
+}
+
+// FuzzDecodeCanonical checks that every accepted encoding is canonical: a
+// successful decode must re-encode to exactly the input.
+func FuzzDecodeCanonical(f *testing.F) {
+	for i, c := range Curves {
+		f.Add(i, 0, c.GenG1.Bytes())
+		f.Add(i, 1, c.GenG1.Compressed())
+		f.Add(i, 2, c.GenG2.Bytes())
+		f.Add(i, 3, c.GenG2.Compressed())
+		f.Add(i, 4, c.GenGt.Bytes())
+		f.Add(i, 5, c.GroupOrder.Bytes())
+		f.Add(i, 0, c.NewG1().Bytes())
+	}
+
+	f.Fuzz(func(t *testing.T, curveIdx, kind int, b []byte) {
+		n := len(Curves)
+		c := Curves[((curveIdx%n)+n)%n]
+
+		var out []byte
+		switch ((kind % 6) + 6) % 6 {
+		case 0:
+			if p, err := c.NewG1FromBytes(b); err == nil {
+				out = p.Bytes()
+			}
+		case 1:
+			if p, err := c.NewG1FromCompressed(b); err == nil {
+				out = p.Compressed()
+			}
+		case 2:
+			if p, err := c.NewG2FromBytes(b); err == nil {
+				out = p.Bytes()
+			}
+		case 3:
+			if p, err := c.NewG2FromCompressed(b); err == nil {
+				out = p.Compressed()
+			}
+		case 4:
+			if g, err := c.NewGtFromBytes(b); err == nil {
+				out = g.Bytes()
+			}
+		case 5:
+			if z, err := c.NewZrFromBytesCanonical(b); err == nil {
+				out = z.Bytes()
+			}
+		}
+		if out != nil && !bytes.Equal(out, b) {
+			t.Fatalf("non-canonical encoding accepted: %x re-encodes to %x", b, out)
+		}
 	})
 }

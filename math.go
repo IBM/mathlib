@@ -678,11 +678,13 @@ func (g *Gt) Bytes() []byte {
 //	message := []byte("sign this")
 //	signature := curve.HashToG1(message).Mul(secretKey)
 type Curve struct {
-	c                    driver.Curve
-	GenG1                *G1 // Generator point for the G1 group
-	GenG2                *G2 // Generator point for the G2 group
-	GenGt                *Gt // Generator (identity) element for the Gt group
-	GroupOrder           *Zr // Order of the curve groups
+	c     driver.Curve
+	GenG1 *G1 // Generator point for the G1 group
+	GenG2 *G2 // Generator point for the G2 group
+	GenGt *Gt // Generator (identity) element for the Gt group
+	// GroupOrder is q, kept unreduced: P.Mul(GroupOrder) and Gt.Exp(GroupOrder)
+	// test subgroup membership. Other multiples of q may reduce to 0.
+	GroupOrder           *Zr
 	CoordByteSize        int // Size of a single coordinate in bytes
 	G1ByteSize           int // Size of uncompressed G1 point in bytes
 	CompressedG1ByteSize int // Size of compressed G1 point in bytes

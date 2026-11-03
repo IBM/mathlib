@@ -354,6 +354,7 @@ func (c *Bls12_377) NewG1FromBytes(b []byte) driver.G1 {
 	v := &bls12377G1{}
 	// SetBytes performs the on-curve and subgroup checks.
 	common.SetBytesExact(b, bls12377.SizeOfG1AffineUncompressed, v.SetBytes)
+	common.RequireCanonicalInfinity(b, v.IsInfinity(), v.Bytes)
 
 	return v
 }
@@ -362,6 +363,7 @@ func (c *Bls12_377) NewG2FromBytes(b []byte) driver.G2 {
 	v := &bls12377G2{}
 	// SetBytes performs the on-curve and subgroup checks.
 	common.SetBytesExact(b, bls12377.SizeOfG2AffineUncompressed, v.SetBytes)
+	common.RequireCanonicalInfinity(b, v.IsInfinity(), v.Bytes)
 
 	return v
 }

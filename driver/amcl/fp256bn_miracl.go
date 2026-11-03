@@ -333,14 +333,14 @@ func (e *fp256bnMiraclG1) IsInfinity() bool {
 
 func (e *fp256bnMiraclG1) Bytes() []byte {
 	b := make([]byte, 2*int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, false)
+	miraclG1Infinity(&e.ECP).ToBytes(b, false)
 
 	return b
 }
 
 func (e *fp256bnMiraclG1) Compressed() []byte {
 	b := make([]byte, int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, true)
+	miraclG1Infinity(&e.ECP).ToBytes(b, true)
 
 	return b
 }
@@ -403,14 +403,14 @@ func (e *fp256bnMiraclG2) Affine() {
 
 func (e *fp256bnMiraclG2) Bytes() []byte {
 	b := make([]byte, 4*int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, false)
+	miraclG2Infinity(e.ECP2).ToBytes(b, false)
 
 	return b
 }
 
 func (e *fp256bnMiraclG2) Compressed() []byte {
 	b := make([]byte, 2*int(FP256BN.MODBYTES)+1)
-	e.ToBytes(b, true)
+	miraclG2Infinity(e.ECP2).ToBytes(b, true)
 
 	return b
 }
@@ -422,4 +422,23 @@ func (b *fp256bnMiraclG2) String() string {
 // NewZrFromBytesCanonical implements driver.CanonicalZrDecoder.
 func (p *Fp256Miraclbn) NewZrFromBytesCanonical(b []byte) (driver.Zr, error) {
 	return common.NewBaseZrFromBytesCanonical(&p.Modulus, b)
+}
+
+// miraclG1Infinity returns the canonical identity if P is the identity, else P.
+// MIRACL serialises a computed identity from its leftover coordinates.
+func miraclG1Infinity(P *FP256BN.ECP) *FP256BN.ECP {
+	if P.Is_infinity() {
+		return FP256BN.NewECP()
+	}
+
+	return P
+}
+
+// miraclG2Infinity is the G2 analogue of miraclG1Infinity.
+func miraclG2Infinity(P *FP256BN.ECP2) *FP256BN.ECP2 {
+	if P.Is_infinity() {
+		return FP256BN.NewECP2()
+	}
+
+	return P
 }
