@@ -99,6 +99,10 @@ func (g *bls12377G1) IsInfinity() bool {
 func (g *bls12377G1) String() string {
 	rawstr := g.G1Affine.String()
 	m := g1StrRegexp.FindAllStringSubmatch(rawstr, -1)
+	if m == nil {
+		// e.g. the point at infinity, which gnark-crypto renders as "O"
+		return rawstr
+	}
 
 	return "(" + strings.TrimLeft(m[0][1], "0") + "," + strings.TrimLeft(m[0][2], "0") + ")"
 }
@@ -348,49 +352,48 @@ func (c *Bls12_377) NewG2() driver.G2 {
 
 func (c *Bls12_377) NewG1FromBytes(b []byte) driver.G1 {
 	v := &bls12377G1{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12377.SizeOfG1AffineUncompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Bls12_377) NewG2FromBytes(b []byte) driver.G2 {
 	v := &bls12377G2{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12377.SizeOfG2AffineUncompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Bls12_377) NewG1FromCompressed(b []byte) driver.G1 {
 	v := &bls12377G1{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12377.SizeOfG1AffineCompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Bls12_377) NewG2FromCompressed(b []byte) driver.G2 {
 	v := &bls12377G2{}
-	_, err := v.SetBytes(b)
-	if err != nil {
-		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
-	}
+	// SetBytes performs the on-curve and subgroup checks.
+	common.SetBytesExact(b, bls12377.SizeOfG2AffineCompressed, v.SetBytes)
 
 	return v
 }
 
 func (c *Bls12_377) NewGtFromBytes(b []byte) driver.Gt {
 	v := &bls12377Gt{}
+	// SetBytes checks the length and that every coefficient is canonical, but
+	// not group membership.
 	err := v.SetBytes(b)
 	if err != nil {
 		panic(fmt.Sprintf("set bytes failed [%s]", err.Error()))
+	}
+	// IsInSubGroup checks z^(p^4-p^2+1) = 1 and then z^(p+1-t) = 1; it does
+	// not reject zero, which trivially satisfies both equations.
+	if v.IsZero() || !v.IsInSubGroup() {
+		panic("invalid Gt element: not in the order-r subgroup")
 	}
 
 	return v
@@ -430,4 +433,9 @@ func (p *Bls12_377) HashToG2WithDomain(data, domain []byte) driver.G2 {
 	}
 
 	return &bls12377G2{g2}
+}
+
+// NewZrFromBytesCanonical implements driver.CanonicalZrDecoder.
+func (p *Bls12_377) NewZrFromBytesCanonical(b []byte) (driver.Zr, error) {
+	return common.NewBaseZrFromBytesCanonical(&p.Modulus, b)
 }

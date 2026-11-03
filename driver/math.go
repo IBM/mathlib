@@ -182,6 +182,17 @@ type Curve interface {
 	ModAddMul3InPlace(result Zr, a1, a2, b1, b2, c1, c2, m Zr)
 }
 
+// CanonicalZrDecoder is an optional interface a Curve implementation can
+// provide to decode scalars strictly. It is kept separate from Curve so that
+// adding it does not break existing third-party Curve implementations; the
+// math package falls back to a generic check when it is not implemented.
+type CanonicalZrDecoder interface {
+	// NewZrFromBytesCanonical decodes a Zr scalar from exactly ScalarByteSize
+	// big-endian bytes and returns an error if the length is wrong or the
+	// encoded value is not strictly smaller than the group order.
+	NewZrFromBytesCanonical(b []byte) (Zr, error)
+}
+
 // Zr represents an element in the scalar field of an elliptic curve.
 // Scalars are integers modulo the curve's group order and are used for
 // scalar multiplication and other arithmetic operations.
